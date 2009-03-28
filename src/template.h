@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) Code template. Source code
+ * @(#) Header template.
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -18,9 +18,9 @@
  * for more details.
  *
  * RCSID $Id$
- * $Author$
- * $Date$
- * $Revision$
  ****************************************************************************/
-
-// File changed...
+ 
+#ifndef XXX_H
+#define XXX_H
+ 
+#endif
