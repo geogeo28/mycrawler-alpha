@@ -3,6 +3,7 @@
  *
  * $MyCrawler:copyright$
  * $MyCrawler:contact$
+ * $Contact$
  *
  * $MyCrawler:licence$
  *
