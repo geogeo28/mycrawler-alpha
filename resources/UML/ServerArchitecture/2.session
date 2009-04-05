@@ -1,0 +1,14 @@
+window_sizes 1280 968 300 900 682 82
+diagrams
+  active  classdiagram_ref 128130 // Class Diagram 1
+    974 812 100 4 0 0
+end
+show_stereotypes
+selected classdiagram_ref 128130 // Class Diagram 1
+open
+  class_ref 128130 // MCServer
+  class_ref 128258 // MCClientPeer
+  class_ref 129410 // MCClientThreadPool
+  class_ref 129538 // MCClientThread
+end
+end
