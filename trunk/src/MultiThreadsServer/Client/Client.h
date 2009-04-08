@@ -17,7 +17,7 @@
  * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * for more details.
  *
- * RCSID $Id: template.h 18 2009-03-28 15:31:25Z geoffrey.anneheim $
+ * RCSID $Id$
  ****************************************************************************/
 
 #ifndef CLIENT_H
