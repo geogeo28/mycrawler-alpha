@@ -1,0 +1,13 @@
+window_sizes 1280 968 300 900 682 82
+diagrams
+  active  classdiagram_ref 128130 // Class Diagram 1
+    963 812 100 4 0 0
+end
+show_stereotypes
+selected operation_ref 128770 // run
+open
+  class_ref 128130 // MCServer
+  class_ref 128258 // MCClientInfo
+  class_ref 128386 // MCClient
+end
+end
