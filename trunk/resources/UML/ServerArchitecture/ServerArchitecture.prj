@@ -1,6 +1,6 @@
 format 66
 "ServerArchitecture"
-  revision 1
+  revision 3
   modified_by 2 "Anneheim Geoffrey"
 
 
@@ -104,7 +104,7 @@ ${inlines}
       end
 
       attribute 128130 "s_instance"
-	class_attribute private explicit_type "MCClient*"
+	class_attribute private explicit_type "MCClientPeer*"
 	init_value "NULL"
 	cpp_decl "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
 "
@@ -114,8 +114,8 @@ ${inlines}
 	idl_decl ""
       end
 
-      attribute 128258 "m_lstClients"
-	private explicit_type "QList<MCClient*>"
+      attribute 128258 "m_lstClientsPeer"
+	private explicit_type "QList<MCClientPeer*>"
 	multiplicity "*"
 	stereotype "list"
 	cpp_decl "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
@@ -129,7 +129,7 @@ ${inlines}
       operation 128258 "addClient"
 	public explicit_return_type "int"
 	nparams 1
-	  param in name "client" explicit_type "MCClient*"
+	  param in name "client" explicit_type "MCClientPeer*"
 	cpp_decl "    ${comment}${friend}${static}${inline}${virtual}${type} ${name}${(}const ${t0} & ${p0}${)}${const}${volatile}${throw}${abstract};
 "
 	cpp_def "${comment}${inline}${type} ${class}::${name}${(}const ${t0} & ${p0}${)}${const}${volatile}${throw}${staticnl}{
@@ -157,6 +157,19 @@ ${inlines}
 	
 	comment "Définir une exception"
       end
+
+      classrelation 131202 // <composition>
+	relation 130562 *---
+	  stereotype "list"
+	  a role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
+"
+	    classrelation_ref 131202 // <composition>
+	  b role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
+"
+	    classrelation_ref 131330 // <composition>
+      end
     end
 
     class 128258 "MCClientInfo"
@@ -177,7 +190,7 @@ ${inlines}
 	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} * ${name}${value};
 "
 	    classrelation_ref 128642 // <unidirectional association>
-	  b parent class_ref 128386 // MCClient
+	  b parent class_ref 128386 // MCClientPeer
       end
 
       attribute 128386 "m_u32AddressIP"
@@ -219,14 +232,21 @@ ${inlines}
 	python_decl ""
 	idl_decl ""
       end
+
+      classrelation 131074 // <unidirectional association>
+	relation 130434 --->
+	  a role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} * ${name}${value};
+"
+	    classrelation_ref 131074 // <unidirectional association>
+	  b parent class_ref 128386 // MCClientPeer
+      end
     end
 
-    class 128386 "MCClient"
+    class 128386 "MCClientPeer"
       visibility package 
-      nformals 2
+      nformals 1
       formal name "QTcpSocket" type "class" explicit_default_value ""
-        explicit_extends ""
-      formal name "QThread" type "class" explicit_default_value ""
         explicit_extends ""
       cpp_decl "${comment}${template}class ${name}${inherit} {
 ${members}};
@@ -254,7 +274,7 @@ ${inlines}
 	relation_ref 128258 // <aggregation>
       end
 
-      operation 128642 "MCClient"
+      operation 128642 "MCClientPeer"
 	public explicit_return_type ""
 	nparams 2
 	  param in name "socketDescriptor" explicit_type "int"
@@ -270,18 +290,63 @@ ${inlines}
 	
       end
 
-      operation 128770 "run"
-	public explicit_return_type ""
-	nparams 0
-	cpp_decl "    ${comment}${friend}${static}${inline}${virtual}${type} ${name}${(}${)}${const}${volatile}${throw}${abstract};
+      classrelation 131330 // <composition>
+	relation_ref 130562 // <composition>
+      end
+
+      classrelation 132738 // <unidirectional association>
+	relation 131842 --->
+	  a role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} * ${name}${value};
 "
-	cpp_def "${comment}${inline}${type} ${class}::${name}${(}${)}${const}${volatile}${throw}${staticnl}{
-  ${body}}
+	    classrelation_ref 132738 // <unidirectional association>
+	  b parent class_ref 129538 // MCClientThread
+      end
+    end
+
+    class 129538 "MCClientThread"
+      visibility package 
+      nformals 1
+      formal name "QThread" type "class" explicit_default_value ""
+        explicit_extends ""
+      cpp_decl "${comment}${template}class ${name}${inherit} {
+${members}};
+${inlines}
 "
-	
-	
-	
-	
+      java_decl ""
+      php_decl ""
+      python_2_2 python_decl ""
+      idl_decl ""
+      explicit_switch_type ""
+      
+      classrelation 132610 // <composition>
+	relation_ref 131714 // <composition>
+      end
+    end
+
+    class 129666 "MCClientThreadManager"
+      visibility package stereotype "singleton"
+      cpp_decl "${comment}${template}class ${name}${inherit} {
+${members}};
+${inlines}
+"
+      java_decl ""
+      php_decl ""
+      python_2_2 python_decl ""
+      idl_decl ""
+      explicit_switch_type ""
+      
+      classrelation 132482 // <composition>
+	relation 131714 *---
+	  stereotype "list"
+	  a role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
+"
+	    classrelation_ref 132482 // <composition>
+	  b role_name "" private
+	    cpp default "    ${comment}${static}${mutable}${volatile}${const}${type} ${name}${value};
+"
+	    classrelation_ref 132610 // <composition>
       end
     end
   end
