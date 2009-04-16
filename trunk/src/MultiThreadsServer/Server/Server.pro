@@ -7,8 +7,14 @@ TEMPLATE = app
 SOURCES += main.cpp \
     ServerMainWindow.cpp \
     Server.cpp \
-    Utilities.cpp
+    Utilities.cpp \
+    MCServer.cpp \
+    MCClientPeer.cpp \
+    MCException.cpp
 HEADERS += ServerMainWindow.h \
+    Utilities.h \
     Server.h \
-    Utilities.h
+    MCServer.h \
+    MCClientPeer.h \
+    MCException.h
 FORMS += ServerMainWindow.ui
