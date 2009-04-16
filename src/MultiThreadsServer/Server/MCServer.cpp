@@ -18,27 +18,42 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QtGui/QApplication>
-#include "ServerMainWindow.h"
-
-#include "MCException.h"
 #include "MCServer.h"
+#include "MCClientPeer.h"
 
-int main(int argc, char *argv[])
-{
-  QApplication a(argc, argv);
-  try {
-    /*ServerMainWindow w;
-    w.show();
-    return a.exec();*/
+Q_GLOBAL_STATIC(MCServer, MCServerInstance)
 
+MCServer* MCServer::instance() {
+  return MCServerInstance();
+}
 
-    MCServer::instance()->close();
+MCServer::MCServer(QObject* parent)
+  : QTcpServer(parent)
+{}
 
-    return 0;
+MCServer::~MCServer()
+{}
+
+void MCServer::addClient(MCClientPeer* client) {
+  m_lstClientsPeer << client;
+}
+
+void MCServer::removeClient(MCClientPeer* client) {
+  m_lstClientsPeer.removeAll(client);
+}
+
+void MCServer::incomingConnection(int socketDescriptor) {
+  MCClientPeer* clientPeer = new MCClientPeer(this);
+
+  // Attach the socket of client peer from the socket descriptor
+  if (clientPeer->setSocketDescriptor(socketDescriptor, MCClientPeer::ConnectingState, MCClientPeer::ReadWrite)) {
+    // TODO : Check if MCClientThreadManager can add a new thread ?
+    // TODO : Set signals to slots
+    // TODO : Create a new thread
+
+    return;
   }
-  catch (const _MCException& e) {
-    e.dialog();
-    return -1;
-  }
+
+  clientPeer->abort();
+  delete clientPeer;
 }

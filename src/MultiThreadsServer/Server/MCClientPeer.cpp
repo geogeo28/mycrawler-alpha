@@ -18,27 +18,26 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QtGui/QApplication>
-#include "ServerMainWindow.h"
+#include "MCClientPeer.h"
 
-#include "MCException.h"
-#include "MCServer.h"
-
-int main(int argc, char *argv[])
+MCClientPeer::MCClientPeer(QObject* parent)
+  : QTcpSocket(parent)
 {
-  QApplication a(argc, argv);
-  try {
-    /*ServerMainWindow w;
-    w.show();
-    return a.exec();*/
+  /*// Attach socket from a socket descriptor
+  bool bSuccess = setSocketDescriptor(socketDescriptor, QTcpSocket::ConnectingState, QTcpSocket::ReadWrite);
 
+  // Invalid socket descriptor
+  if (!bSuccess) {
+    throw MCException(
+      "Could not attach a socket to a new client",
+      QString("Invalid socket descriptor : %1").arg(socketDescriptor)
+    );
 
-    MCServer::instance()->close();
-
-    return 0;
-  }
-  catch (const _MCException& e) {
-    e.dialog();
-    return -1;
-  }
+    return;
+  }*/
 }
+
+MCClientPeer::~MCClientPeer()
+{}
+
+

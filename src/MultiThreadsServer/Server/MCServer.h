@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Multi-threads server component.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,27 +20,32 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QtGui/QApplication>
-#include "ServerMainWindow.h"
+#ifndef MCSERVER_H
+#define MCSERVER_H
 
-#include "MCException.h"
-#include "MCServer.h"
+#include <QtNetwork>
 
-int main(int argc, char *argv[])
+class MCClientPeer;
+
+class MCServer : public QTcpServer
 {
-  QApplication a(argc, argv);
-  try {
-    /*ServerMainWindow w;
-    w.show();
-    return a.exec();*/
+  Q_OBJECT
+  
+public:
+    static MCServer* instance();
 
+    MCServer(QObject* parent = NULL);
+    ~MCServer();
 
-    MCServer::instance()->close();
+public:
+    void addClient(MCClientPeer* client);
+    void removeClient(MCClientPeer* client);
 
-    return 0;
-  }
-  catch (const _MCException& e) {
-    e.dialog();
-    return -1;
-  }
-}
+protected:
+    void incomingConnection(int socketDescriptor);
+
+private:    
+    QList<MCClientPeer*> m_lstClientsPeer;
+};
+
+#endif // MCSERVER_H

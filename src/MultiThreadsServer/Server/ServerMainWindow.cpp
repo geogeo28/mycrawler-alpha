@@ -21,6 +21,8 @@
 #include "ServerMainWindow.h"
 #include "ui_ServerMainWindow.h"
 
+#include "MCException.h"
+
 #include "Utilities.h"
 
 void ServerMainWindow::setupWindow_() {

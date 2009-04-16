@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Multi-threads client protocol component.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,27 +20,21 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QtGui/QApplication>
-#include "ServerMainWindow.h"
+#ifndef MCCLIENTPEER_H
+#define MCCLIENTPEER_H
 
-#include "MCException.h"
-#include "MCServer.h"
+#include <QtNetwork>
 
-int main(int argc, char *argv[])
+class MCClientPeer : public QTcpSocket
 {
-  QApplication a(argc, argv);
-  try {
-    /*ServerMainWindow w;
-    w.show();
-    return a.exec();*/
+  Q_OBJECT
 
+public:
+    MCClientPeer(QObject* parent = NULL);
+    ~MCClientPeer();
 
-    MCServer::instance()->close();
+private:
+    QUuid m_uId;
+};
 
-    return 0;
-  }
-  catch (const _MCException& e) {
-    e.dialog();
-    return -1;
-  }
-}
+#endif // MCCLIENTPEER_H
