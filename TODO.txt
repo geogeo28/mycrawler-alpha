@@ -1,0 +1,12 @@
+***********
+TODO list :
+***********
+
+
+Google Code :
+*-*-*-*-*-*-*
+
+- Configure timestamp in Google Code. See $Id$ properties when updated.
+(09/04/09) - Change project description.
+
+
