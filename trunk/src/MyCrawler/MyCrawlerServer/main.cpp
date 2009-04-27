@@ -34,5 +34,6 @@ int main(int argc, char *argv[]) {
   }
   catch (const CException& e) {
     e.dialog();
+    throw;
   }
 }

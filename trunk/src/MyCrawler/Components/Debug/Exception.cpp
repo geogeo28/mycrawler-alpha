@@ -20,7 +20,6 @@
 
 #include <QApplication>
 #include <QMessageBox>
-#include <typeinfo>
 
 #include "Debug/Exception.h"
 
@@ -46,7 +45,7 @@ QString CException::description() const throw() {
     msg += "\nDetails : " + remainder();
 
   // A simple exception without a trace
-  if (function()==NULL) {
+  if (function() == NULL) {
     return (
       QString(
         "An exception %1 occured :\n" \
