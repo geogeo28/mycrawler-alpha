@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Logger class which used to log debug messages into a file.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,21 +20,19 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef LOGGERDEBUG_H
+#define LOGGERDEBUG_H
 
-#include <QWidget>
+#include "Debug/Exception.h"
+#include "Debug/Loggers/LoggerFile.h"
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+class CLoggerDebug : public AbstractLoggerFile
+{
+public:
+    CLoggerDebug(
+      const QString& file = "debug.log", WriteMode mode = AppendMode
+    ) throw(CException);
+    ~CLoggerDebug();
+};
 
-  try {
-    QWidget w;
-    w.show();
-
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
-}
+#endif // LOGGERDEBUG_H

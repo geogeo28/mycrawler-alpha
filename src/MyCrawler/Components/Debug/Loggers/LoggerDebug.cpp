@@ -18,21 +18,16 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#include "Debug/Loggers/LoggerDebug.h"
 
-#include <QWidget>
+CLoggerDebug::CLoggerDebug(const QString& file, WriteMode mode) throw(CException)
+  : AbstractLoggerFile(ILogger::DebugLevel, file, mode)
+{
+  setWriteLevel(false);
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+  textStream << "**** Debug log started: " << ILogger::currentDate() << " " << ILogger::currentTime() << " ****\n";
+}
 
-  try {
-    QWidget w;
-    w.show();
-
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
+CLoggerDebug::~CLoggerDebug() {
+  textStream << "\n";
 }

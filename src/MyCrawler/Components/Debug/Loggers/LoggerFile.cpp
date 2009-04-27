@@ -21,36 +21,38 @@
 #include "Config.h"
 #include "Debug/Logger.h"
 #include "Debug/Loggers/LoggerFile.h"
-#include "Exceptions/MCException.h"
+#include "Debug/Exception.h"
+
+#include <QApplication>
 #include <QFile>
 
-void CLoggerFile::cleanAll_() {
+void AbstractLoggerFile::cleanAll_() {
   // Delete the file stream
-  if (m_pFile) { delete m_pFile; }
+  if (!m_pFile) {
+    m_pFile->close();
+    delete m_pFile;
+  }
 }
 
-CLoggerFile::CLoggerFile(ILogger::LogLevel level, const QString& file, WriteMode mode) throw(_MCException)
-  : ILogger(level),
-    m_pFile(NULL)
+AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode mode) throw(CException)
+  : ILogger(level)
 { 
   // Set the open mode of the file
   QFile::OpenMode openMode = QFile::WriteOnly | QFile::Text;
-  if (mode == CLoggerFile::AppendMode) { openMode |= QFile::Append; }
+  if (mode == AbstractLoggerFile::AppendMode) { openMode |= QFile::Append; }
 
   try {
     m_pFile = new QFile(file);
 
     // Could not open the file (throw an exception)
     if (!m_pFile->open(openMode)) {
-      throw MCException(
+      ThrowException(
         QString("Could not open the file '%1' to log messages.").arg(file), m_pFile->errorString()
       );
     }
 
     // Attachs the device to the Text Stream of the logger
     setDevice(m_pFile);
-
-    writeHeader_();
   }
   catch (...) {
     cleanAll_();
@@ -58,22 +60,21 @@ CLoggerFile::CLoggerFile(ILogger::LogLevel level, const QString& file, WriteMode
   }
 }
 
-CLoggerFile::~CLoggerFile() {
-  writeFooter_();
-
-  m_pFile->close();
-  delete m_pFile;
+AbstractLoggerFile::~AbstractLoggerFile() {
+  cleanAll_();
 }
 
-void CLoggerFile::writeHeader_() {
+CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode) throw(CException)
+  : AbstractLoggerFile(level, file, mode)
+{
   textStream << "  ======================================================================================\n"
-             << "  "_MYCRAWLER_APPNAME_" v"_MYCRAWLER_VERSION_"\n"
+             << "  " + qApp->applicationName() + " v" + qApp->applicationVersion() +"\n"
              << "  Copyright (c) by "_MYCRAWLER_AUTHOR_"\n\n"
              << "  Compiled with "_COMPILER_DESCRIPTION_" at "_COMPILER_BUILD_DATE_"\n"
              << "  ======================================================================================\n";
 }
 
-void CLoggerFile::writeFooter_() {
+CLoggerFile::~CLoggerFile() {
   textStream << "\n  ======================================================================================\n"
              << "  Ending the " << ILogger::currentDate() << " at " << ILogger::currentTime() << "\n"
              << "  ======================================================================================\n";

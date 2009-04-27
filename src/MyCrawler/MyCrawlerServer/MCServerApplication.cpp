@@ -18,21 +18,32 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Config.h"
 #include "MCServerApplication.h"
 
-#include <QWidget>
+MCServerApplication* MCServerApplication::s_instance = NULL;
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+MCServerApplication* MCServerApplication::instance() {
+  return s_instance;
+}
 
-  try {
-    QWidget w;
-    w.show();
+MCServerApplication::MCServerApplication(int &argc, char** argv)
+  : IApplication(argc, argv)
+{
+  Assert(s_instance == NULL);
 
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
+  s_instance = this;
+
+  setInformations(_MYCRAWLER_APPNAME_" (server)", _MYCRAWLER_ORGANIZATION_NAME_, _MYCRAWLER_ORGANIZATION_DOMAIN_);
+  setApplicationVersion(_MYCRAWLER_SERVER_VERSION_);
+
+  installTranslator();
+  installLoggers();
+}
+
+void MCServerApplication::run() {
+  ILogger::Debug() << QString("Test a debug message (int %1)").arg(42);
+  ILogger::Warning() << "Test a warning message (int " << 55 << ")";
+  ILogger::Log(ILogger::ErrorLevel) << "Test an error message (int " << 688 << ")";
+  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);
 }

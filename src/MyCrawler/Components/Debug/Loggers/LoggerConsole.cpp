@@ -18,21 +18,19 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#include <cstdio>
 
-#include <QWidget>
+#include "Debug/Loggers/LoggerConsole.h"
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+CLoggerConsole::CLoggerConsole(int level)
+  : ILogger(level)
+{
+  setWriteDateTime(false);
+  setFlushStream(true);
 
-  try {
-    QWidget w;
-    w.show();
-
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
+  m_outputFile.open(stdout, QIODevice::WriteOnly);
+  setDevice(&m_outputFile);
 }
+
+CLoggerConsole::~CLoggerConsole()
+{}

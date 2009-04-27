@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Application core component.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,21 +20,41 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef APPLICATION_H
+#define APPLICATION_H
 
-#include <QWidget>
+#include <QApplication>
+#include <QTranslator>
+#include <QLocale>
+#include <QLibraryInfo>
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+class CLoggerConsole;
+class CLoggerFile;
+class CLoggerDebug;
 
-  try {
-    QWidget w;
-    w.show();
+class IApplication : public QApplication
+{
+private:
+    void cleanAll_();
 
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
-}
+protected:
+    IApplication(int &argc, char **argv);
+    virtual ~IApplication();    
+
+public:
+    static void setInformations(const QString& name, const QString& organizationName = QString(), const QString& organizationDomain = QString());
+
+    void installTranslator(const QString& name = QLatin1String("qt_") + QLocale::system().name());
+    void installLoggers();
+
+    virtual void run() =0;
+
+private:
+    CLoggerConsole* m_pLoggerConsole;
+    CLoggerFile* m_pLoggerFile;
+    #ifdef QT_DEBUG
+      CLoggerDebug* m_pLoggerDebug;
+    #endif
+};
+
+#endif // APPLICATION_H
