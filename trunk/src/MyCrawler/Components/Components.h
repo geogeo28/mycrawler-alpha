@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Components. Precompiled header.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,21 +20,20 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef COMPONENTS_H
+#define COMPONENTS_H
 
-#include <QWidget>
+// C includes
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+// C++ includes
+#ifdef __cplusplus
+  #include "Config.h"
+  #include "Debug/Exception.h"
+  #include "Debug/Logger.h"
+  #include "Debug/Loggers/LoggerFile.h"
+  #include "Debug/Loggers/LoggerDebug.h"
+  #include "Debug/Loggers/LoggerConsole.h"
+  #include "Core/Application.h"
+#endif
 
-  try {
-    QWidget w;
-    w.show();
-
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
-}
+#endif // COMPONENTS_H

@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Multi-threads server component. Application base class.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,21 +20,20 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef MCSERVERAPPLICATION_H
+#define MCSERVERAPPLICATION_H
 
-#include <QWidget>
+class MCServerApplication : public IApplication
+{
+public:
+    static MCServerApplication* instance();
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+    MCServerApplication(int &argc, char** argv);
 
-  try {
-    QWidget w;
-    w.show();
+    void run();
 
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
-}
+private:
+    static MCServerApplication* s_instance;
+};
+
+#endif // MCSERVERAPPLICATION_H

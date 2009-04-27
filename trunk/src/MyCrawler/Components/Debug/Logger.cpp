@@ -18,51 +18,108 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "Debug/Logger.h"
 #include <QObject>
 #include <QString>
 #include <QDate>
 #include <QTime>
 #include <cstdarg>
-#include <typeinfo>
 
-ILogger* ILogger::s_instance = NULL;
+#include "Debug/Logger.h"
+#include "Debug/Exception.h"
 
-ILogger::ILogger(LogLevel level)
-  : m_nRegisteredLevels(level)
+CLoggerManipulator::CLoggerManipulator(QList<ILogger*> lstLoggers)
+  : m_lstLoggers(lstLoggers)
 {}
+
+CLoggerManipulator::CLoggerManipulator(ILogger* logger) {
+  AssertCheckPtr(logger);
+  m_lstLoggers.push_back(logger);
+}
+
+CLoggerManipulator::~CLoggerManipulator() {
+  *this << "\n";
+
+  // Flush loggers
+  foreach (ILogger* logger, m_lstLoggers) {
+    if (logger->flushStream() == true) {
+      logger->textStream.flush();
+    }
+  }
+}
+
+
+QMultiMap<int, ILogger*> ILogger::s_loggersCollection = QMultiMap<int, ILogger*>();
+
+void ILogger::init_() {
+  setWriteDateTime(true);
+  setWriteLevel(true);
+  setFlushStream(false);
+}
+
+ILogger::ILogger(int level)
+  : m_nRegisteredLevels(level)
+{
+  init_();
+}
 
 ILogger::~ILogger()
-{}
-
-void ILogger::setLogger(ILogger* logger) {
-  s_instance = logger;
+{
+  ILogger::detachLogger(this);
 }
 
-CLoggerManipulator ILogger::Log(LogLevel level, const char* func) {
-  bool bAllowWrite = (level & m_nRegisteredLevels);
+void ILogger::attachLogger(ILogger* logger) {
+  AssertCheckPtr(logger);
 
-  // Allows to write content into the logger if the level of log passed in argument is set within registered levels
-  if (bAllowWrite == true) {
-    textStream << "[" << ILogger::currentDate() << " " << ILogger::currentTime() << "] "
-               << "[" << ILogger::logLevelToString(level) << "] ";
+  int levels = logger->levels();
+  int l = 1;
+  while (levels) {
+    if (levels & 1) { s_loggersCollection.insertMulti(l, logger); }
 
-    // Write debug informations
-    if ((level == DebugLevel) && (func != NULL)) {
-        textStream << "(" << func << ") ";
-    }
-
-    return CLoggerManipulator(&textStream);
+    levels = levels >> 1;
+    l = l << 1;
   }
-
-  // Logger manipulator without Text Stream. It's equivalent to a null stream.
-  return CLoggerManipulator(NULL);
 }
 
-void ILogger::LogC(LogLevel level, const char* format, ...) {
+void ILogger::detachLogger(ILogger* logger) {
+  AssertCheckPtr(logger);
+
+  QMutableMapIterator<int, ILogger*> it(s_loggersCollection);
+  while (it.hasNext()) {
+    if (it.next().value() == logger) {
+      it.remove();
+    }
+  }
+}
+
+CLoggerManipulator ILogger::log() {
+  write_();
+  return CLoggerManipulator(this);
+}
+
+CLoggerManipulator ILogger::log(LogLevel level) {
+  write_(level);
+  return CLoggerManipulator(this);
+}
+
+void ILogger::write(const char* format, ...) {
   va_list params;
   va_start(params, format);
-  Log(level) << QString().vsprintf(format, params);
+  log() << QString().vsprintf(format, params);
+  va_end(params);
+}
+
+void ILogger::write(LogLevel level, const char* format, ...) {
+  va_list params;
+  va_start(params, format);
+  log(level) << QString().vsprintf(format, params);
+  va_end(params);
+}
+
+void ILogger::Log(LogLevel level, const char* format, ...) {
+  CLoggerManipulator lm(ILogger::Log_(level, NULL));
+  va_list params;
+  va_start(params, format);
+  lm << QString().vsprintf(format, params);
   va_end(params);
 }
 
@@ -97,4 +154,46 @@ void ILogger::setDevice(QIODevice* device) {
   Q_CHECK_PTR(device);
 
   textStream.setDevice(device);
+}
+
+CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
+  // Disable debugging
+  #ifndef QT_DEBUG
+    if (level == DebugLevel) { return CLoggerManipulator(NULL); }
+  #endif
+
+  // No loggers attached, returns a logger manipulator empty. It's equivalent to a null stream.
+  if (s_loggersCollection.contains(level) == false) {
+    return CLoggerManipulator();
+  }
+
+  // Allows to write content into loggers if the level of log passed in argument is set within registered levels
+  QList<ILogger*> lstLoggers(s_loggersCollection.values(level));
+  foreach (ILogger* logger, lstLoggers) {
+    logger->write_(level);
+
+    // Write debug informations
+    #ifdef QT_DEBUG
+      if ((level == DebugLevel) && func) { logger->textStream << "(" << func << ") "; }
+    #endif
+  }
+
+  return CLoggerManipulator(lstLoggers);
+}
+
+void ILogger::write_() {
+  // Write date and time if set
+  if (writeDateTime() == true) {
+    textStream << "[" << ILogger::currentDate() << " " << ILogger::currentTime() << "] ";
+  }
+}
+
+void ILogger::write_(LogLevel level) {
+  // Write date and time
+  write_();
+
+  // Write level if set
+  if (writeLevel() == true) {
+    textStream << "[" << ILogger::logLevelToString(level) << "] ";
+  }
 }

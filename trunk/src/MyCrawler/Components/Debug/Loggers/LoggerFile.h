@@ -23,33 +23,42 @@
 #ifndef CLOGGERFILE_H
 #define CLOGGERFILE_H
 
+#include <QPointer>
+
 #include "Debug/Logger.h"
-#include "Exceptions/MCException.h"
+#include "Debug/Exception.h"
 
 class QFile;
 class QString;
 
-class CLoggerFile : public ILogger
+class AbstractLoggerFile : public ILogger
 {
-public:
+  public:
     typedef enum {
       OverwriteMode,
       AppendMode
     } WriteMode;
 
-private:
+  private:
     void cleanAll_();
 
+  protected:
+    AbstractLoggerFile(
+      int level, const QString& file, WriteMode mode = OverwriteMode
+    ) throw(CException);
+    virtual ~AbstractLoggerFile();
+
+  private:
+    QPointer<QFile> m_pFile;
+};
+
+class CLoggerFile : public AbstractLoggerFile
+{
 public:
-    CLoggerFile(ILogger::LogLevel level = ILogger::NoticeLevel, const QString& file = "output.log", WriteMode mode = OverwriteMode) throw(_MCException);
+    CLoggerFile(
+      int level = ILogger::AllLevel, const QString& file = "output.log", WriteMode mode = OverwriteMode
+    ) throw(CException);
     ~CLoggerFile();
-
-private:
-    void writeHeader_();
-    void writeFooter_();
-
-private:
-    QFile* m_pFile;
 };
 
 #endif // CLOGGERFILE_H

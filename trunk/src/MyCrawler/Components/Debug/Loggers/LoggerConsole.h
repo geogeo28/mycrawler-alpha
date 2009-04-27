@@ -1,4 +1,6 @@
 /****************************************************************************
+ * @(#) Logger class which used to log messages into the console.
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,21 +20,21 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef LOGGERCONSOLE_H
+#define LOGGERCONSOLE_H
 
-#include <QWidget>
+#include <QFile>
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+#include "Debug/Logger.h"
 
-  try {
-    QWidget w;
-    w.show();
+class CLoggerConsole : public ILogger
+{ 
+public:
+    CLoggerConsole(int level = ILogger::AllLevel);
+    ~CLoggerConsole();
 
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-  }
-}
+private:
+    QFile m_outputFile;
+};
+
+#endif // LOGGERCONSOLE_H
