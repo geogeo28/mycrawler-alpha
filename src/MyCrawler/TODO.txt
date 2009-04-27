@@ -2,12 +2,24 @@
 TODO list :
 ***********
 
-- Reorganize the src folder with packages (with .pri or .pro files).
-- Add a base exception named Exception with upper exceptions such as CAssertException, CBadAddressException...
-- Add a level Trace into the logger.
-- Add a level MemoryTrace into the logger.
-- Add memory manager to tracking memory leaks.
-- Add the CLoggerConsole inherited of ILogger to log messages into a console.
-- ILogger instance shared with different logger with different levels in order to register logs with ILogger::instance().
-  MemoryTrace => memory.log
-  NoticeAll => stdout and mycrawler.log
+Components :
+------------
+
+X Add a level Trace into the logger.
+X Add a level MemoryTrace into the logger.
+X Add memory manager to tracking memory leaks.
+(2009-04-27 Rev 41) - Reorganize the src folder with packages (with .pri or .pro files).
+(2009-04-27 Rev 41) - Add a base exception named Exception with upper exceptions such as CAssertException, CBadAddressException...
+(2009-04-27 Rev 41) - Add the CLoggerConsole inherited of ILogger to log messages into a console.
+(2009-04-27 Rev 41) - ILogger instance shared with different logger with different levels in order to register logs with ILogger::instance().
+               MemoryTrace => memory.log
+               NoticeAll => stdout and mycrawler.log
+- Create a testing module. See QTest library.
+
+
+MyCrawlerServer :
+-----------------
+
+
+MyCrawlerClient :
+-----------------
