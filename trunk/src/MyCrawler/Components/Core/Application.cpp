@@ -67,7 +67,7 @@ void IApplication::installTranslator(const QString& name) {
 
 void IApplication::installLoggers() {
   // Standard loggers
-  m_pLoggerConsole = new CLoggerConsole(ILogger::AllLevel);
+  m_pLoggerConsole = new CLoggerConsole(ILogger::AllLevel & ~ILogger::DebugLevel);
   m_pLoggerFile = new CLoggerFile(ILogger::AllLevel & ~ILogger::DebugLevel, applicationName() + ".log", CLoggerFile::OverwriteMode);
   m_pLoggerMsgBox = new CLoggerMsgBox(ILogger::WarningLevel | ILogger::ErrorLevel);
 

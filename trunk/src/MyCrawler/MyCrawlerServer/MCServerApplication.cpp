@@ -20,11 +20,22 @@
 
 #include "Config.h"
 #include "MCServerApplication.h"
+#include "MCServerMainWindow.h"
 
 MCServerApplication* MCServerApplication::s_instance = NULL;
 
 MCServerApplication* MCServerApplication::instance() {
   return s_instance;
+}
+
+void MCServerApplication::init_() {
+  ILogger::Debug() << "Allocate memory for the application's main window.";
+  MainWindow = new MCServerMainWindow();
+}
+
+void MCServerApplication::cleanAll_() {
+  ILogger::Debug() << "Unallocate memory for the application's main window.";
+  if (MainWindow) { delete MainWindow; }
 }
 
 MCServerApplication::MCServerApplication(int &argc, char** argv)
@@ -39,11 +50,22 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 
   installTranslator();
   installLoggers();
+
+  ILogger::Debug() << "Creating application components.";
+  init_();
+}
+
+MCServerApplication::~MCServerApplication() {
+  ILogger::Debug() << "Destroying application components.";
+  cleanAll_();
 }
 
 void MCServerApplication::run() {
-  ILogger::Debug() << QString("Test a debug message (int %1)").arg(42);
+  ILogger::Debug() << "Application is running.";
+  MainWindow->show();
+
+  /*ILogger::Debug() << QString("Test a debug message (int %1)").arg(42);
   ILogger::Warning() << "Test a warning message (int " << 55 << ")";
   ILogger::Log(ILogger::ErrorLevel) << "Test an error message (int " << 688 << ")";
-  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);
+  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);*/
 }

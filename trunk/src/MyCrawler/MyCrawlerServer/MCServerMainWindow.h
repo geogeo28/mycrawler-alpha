@@ -1,4 +1,7 @@
 /****************************************************************************
+ * @(#) MyCrawler server. Main window.
+ * GUI interface
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,17 +21,33 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerApplication.h"
+#ifndef MCSERVERMAINWINDOW_H
+#define MCSERVERMAINWINDOW_H
 
-int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
+#include <QtGui>
 
-  try {
-    app.run();
-    return app.exec();
-  }
-  catch (const CException& e) {
-    e.dialog();
-    throw;
-  }
-}
+#include "ui_MCServerMainWindow.h"
+
+class MCServerMainWindow : public QMainWindow,
+                           private Ui_MCServerMainWindowClass
+{
+    Q_OBJECT
+
+private:
+    void setupWindow_();
+    void setupComponents_();
+
+    void cleanAll_();
+    void closeWindow_();
+
+public:
+    MCServerMainWindow(QWidget *parent = NULL);
+    ~MCServerMainWindow();
+
+private slots:
+    void on_buttonServerListen_clicked();
+
+
+};
+
+#endif // MCSERVERMAINWINDOW_H
