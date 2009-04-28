@@ -5,7 +5,6 @@ TODO list :
 Components :
 ------------
 
-X Add a level Trace into the logger.
 X Add a level MemoryTrace into the logger.
 X Add memory manager to tracking memory leaks.
 (2009-04-27 Rev 41) - Reorganize the src folder with packages (with .pri or .pro files).
@@ -14,6 +13,7 @@ X Add memory manager to tracking memory leaks.
 (2009-04-27 Rev 41) - ILogger instance shared with different logger with different levels in order to register logs with ILogger::instance().
                MemoryTrace => memory.log
                NoticeAll => stdout and mycrawler.log
+(2009-04-28 Rev 49) - Add a level Trace into the logger.
 - Create a testing module. See QTest library.
 - Add settings capability. See QSettings class.
 
