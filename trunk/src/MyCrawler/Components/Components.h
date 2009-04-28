@@ -33,6 +33,7 @@
   #include "Debug/Loggers/LoggerFile.h"
   #include "Debug/Loggers/LoggerDebug.h"
   #include "Debug/Loggers/LoggerConsole.h"
+  #include "Debug/Loggers/LoggerMsgBox.h"
   #include "Core/Application.h"
 #endif
 

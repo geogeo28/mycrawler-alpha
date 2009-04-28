@@ -27,20 +27,23 @@
 #include "Debug/Logger.h"
 #include "Debug/Exception.h"
 
-CLoggerManipulator::CLoggerManipulator(QList<ILogger*> lstLoggers)
-  : m_lstLoggers(lstLoggers)
+CLoggerManipulator::CLoggerManipulator(int level, QList<ILogger*> lstLoggers)
+  : m_enumWriteLevel(level), m_lstLoggers(lstLoggers)
 {}
 
-CLoggerManipulator::CLoggerManipulator(ILogger* logger) {
+CLoggerManipulator::CLoggerManipulator(int level, ILogger* logger)
+  : m_enumWriteLevel(level)
+{
   AssertCheckPtr(logger);
   m_lstLoggers.push_back(logger);
 }
 
 CLoggerManipulator::~CLoggerManipulator() {
-  *this << "\n";
-
-  // Flush loggers
   foreach (ILogger* logger, m_lstLoggers) {
+    // Call virtual method for a special device (see CLoggerMsgBox).
+    logger->write(static_cast<ILogger::LogLevel>(m_enumWriteLevel), *(logger->textStream.string()));
+
+    // Flush stream if set
     if (logger->flushStream() == true) {
       logger->textStream.flush();
     }
@@ -93,12 +96,12 @@ void ILogger::detachLogger(ILogger* logger) {
 
 CLoggerManipulator ILogger::log() {
   write_();
-  return CLoggerManipulator(this);
+  return CLoggerManipulator(NoLevel, this);
 }
 
 CLoggerManipulator ILogger::log(LogLevel level) {
   write_(level);
-  return CLoggerManipulator(this);
+  return CLoggerManipulator(level, this);
 }
 
 void ILogger::write(const char* format, ...) {
@@ -116,10 +119,9 @@ void ILogger::write(LogLevel level, const char* format, ...) {
 }
 
 void ILogger::Log(LogLevel level, const char* format, ...) {
-  CLoggerManipulator lm(ILogger::Log_(level, NULL));
   va_list params;
   va_start(params, format);
-  lm << QString().vsprintf(format, params);
+  ILogger::Log_(level, NULL) << QString().vsprintf(format, params);
   va_end(params);
 }
 
@@ -178,7 +180,7 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
     #endif
   }
 
-  return CLoggerManipulator(lstLoggers);
+  return CLoggerManipulator(level, lstLoggers);
 }
 
 void ILogger::write_() {

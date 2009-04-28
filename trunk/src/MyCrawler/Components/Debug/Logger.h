@@ -34,21 +34,25 @@ class ILogger;
 
 class CLoggerManipulator
 {
-  private:
-    QList<ILogger*> m_lstLoggers;
-
   public:
-    CLoggerManipulator(QList<ILogger*> lstLoggers = QList<ILogger*>());
-    CLoggerManipulator(ILogger* logger);
+    CLoggerManipulator(int level = 0, QList<ILogger*> lstLoggers = QList<ILogger*>());
+    CLoggerManipulator(int level, ILogger* logger);
     ~CLoggerManipulator();
 
     template <class T> CLoggerManipulator& operator<<(const T& text);
+
+  private:
+    int m_enumWriteLevel;
+    QList<ILogger*> m_lstLoggers;
 };
 
 class ILogger
 {
+    friend class CLoggerManipulator;
+
 public:
     typedef enum {
+      NoLevel           = 0,
       DebugLevel        = 1,
       WarningLevel      = 2,
       ErrorLevel        = 4,
@@ -99,6 +103,7 @@ protected:
     ILogger(int level);
 
     void setDevice(QIODevice* device);
+    virtual void write(LogLevel level, const QString& message) { textStream << "\n"; }
 
 private:
     static CLoggerManipulator Log_(LogLevel level, const char* func = NULL);

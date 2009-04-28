@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) Application core component.
+ * @(#) Logger class which used to log a message into a message box.
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -20,42 +20,23 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef APPLICATION_H
-#define APPLICATION_H
+#ifndef LOGGERMSGBOX_H
+#define LOGGERMSGBOX_H
 
-#include <QApplication>
-#include <QTranslator>
-#include <QLocale>
-#include <QLibraryInfo>
+#include <QIODevice>
 
-class CLoggerConsole;
-class CLoggerFile;
-class CLoggerDebug;
+#include "Debug/Logger.h"
 
-class IApplication : public QApplication
+class CLoggerMsgBox : public ILogger
 {
-private:
-    void cleanAll_();
+public:
+    CLoggerMsgBox(int level = ILogger::WarningLevel | ILogger::ErrorLevel);
 
 protected:
-    IApplication(int &argc, char **argv);
-    virtual ~IApplication();    
-
-public:
-    static void setInformations(const QString& name, const QString& organizationName = QString(), const QString& organizationDomain = QString());
-
-    void installTranslator(const QString& name = QLatin1String("qt_") + QLocale::system().name());
-    void installLoggers();
-
-    virtual void run() =0;
+    void write(LogLevel level, const QString& message);
 
 private:
-    CLoggerConsole* m_pLoggerConsole;
-    CLoggerFile* m_pLoggerFile;
-    CLoggerMsgBox* m_pLoggerMsgBox;
-    #ifdef QT_DEBUG
-      CLoggerDebug* m_pLoggerDebug;
-    #endif
+    QString m_sBuffer;
 };
 
-#endif // APPLICATION_H
+#endif // LOGGERMSGBOX_H
