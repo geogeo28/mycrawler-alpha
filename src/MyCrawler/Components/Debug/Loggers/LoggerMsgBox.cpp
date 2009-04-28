@@ -51,6 +51,6 @@ void CLoggerMsgBox::write(LogLevel level, const QString& message) {
   QMessageBox m(icon, QApplication::applicationName(), message, QMessageBox::Ok, NULL);
   m.exec();
 
-  // Avoid to accumulate messages
+  // Avoid accumulating messages
   m_sBuffer.clear();
 }

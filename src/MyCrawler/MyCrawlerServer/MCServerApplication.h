@@ -23,17 +23,31 @@
 #ifndef MCSERVERAPPLICATION_H
 #define MCSERVERAPPLICATION_H
 
+#include <QPointer>
+
+class MCServerMainWindow;
+
 class MCServerApplication : public IApplication
 {
+public:
+    QPointer<MCServerMainWindow> MainWindow;
+
+private:
+    void init_();
+    void cleanAll_();
+
 public:
     static MCServerApplication* instance();
 
     MCServerApplication(int &argc, char** argv);
+    ~MCServerApplication();
 
     void run();
 
 private:
     static MCServerApplication* s_instance;
 };
+
+#define MCApp   MCServerApplication::instance()
 
 #endif // MCSERVERAPPLICATION_H
