@@ -1,6 +1,4 @@
 /****************************************************************************
- * @(#) Application core component.
- *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -20,42 +18,39 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef APPLICATION_H
-#define APPLICATION_H
-
 #include <QApplication>
-#include <QTranslator>
-#include <QLocale>
-#include <QLibraryInfo>
+#include <QMessageBox>
 
-class CLoggerConsole;
-class CLoggerFile;
-class CLoggerDebug;
+#include "Debug/Loggers/LoggerMsgBox.h"
 
-class IApplication : public QApplication
+CLoggerMsgBox::CLoggerMsgBox(int level)
+  : ILogger(level)
 {
-private:
-    void cleanAll_();
+  setWriteDateTime(false);
+  setWriteLevel(false);
 
-protected:
-    IApplication(int &argc, char **argv);
-    virtual ~IApplication();    
+  textStream.setString(&m_sBuffer);
+}
 
-public:
-    static void setInformations(const QString& name, const QString& organizationName = QString(), const QString& organizationDomain = QString());
+void CLoggerMsgBox::write(LogLevel level, const QString& message) {
+  QMessageBox::Icon icon(QMessageBox::NoIcon);
+  switch (level) {
+    case ILogger::WarningLevel:
+      icon = QMessageBox::Warning;
+      break;
+    case ILogger::ErrorLevel:
+      icon = QMessageBox::Critical;
+      break;
+    case ILogger::InformationLevel:
+      icon = QMessageBox::Information;
+      break;
 
-    void installTranslator(const QString& name = QLatin1String("qt_") + QLocale::system().name());
-    void installLoggers();
+    default:;
+  }
 
-    virtual void run() =0;
+  QMessageBox m(icon, QApplication::applicationName(), message, QMessageBox::Ok, NULL);
+  m.exec();
 
-private:
-    CLoggerConsole* m_pLoggerConsole;
-    CLoggerFile* m_pLoggerFile;
-    CLoggerMsgBox* m_pLoggerMsgBox;
-    #ifdef QT_DEBUG
-      CLoggerDebug* m_pLoggerDebug;
-    #endif
-};
-
-#endif // APPLICATION_H
+  // Avoid to accumulate messages
+  m_sBuffer.clear();
+}

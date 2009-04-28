@@ -66,11 +66,18 @@ void IApplication::installTranslator(const QString& name) {
 }
 
 void IApplication::installLoggers() {
+  // Standard loggers
   m_pLoggerConsole = new CLoggerConsole(ILogger::AllLevel);
   m_pLoggerFile = new CLoggerFile(ILogger::AllLevel & ~ILogger::DebugLevel, applicationName() + ".log", CLoggerFile::OverwriteMode);
-  m_pLoggerDebug = new CLoggerDebug("debug.log", CLoggerDebug::AppendMode);
+  m_pLoggerMsgBox = new CLoggerMsgBox(ILogger::WarningLevel | ILogger::ErrorLevel);
 
   ILogger::attachLogger(m_pLoggerConsole);
   ILogger::attachLogger(m_pLoggerFile);
-  ILogger::attachLogger(m_pLoggerDebug);
+  ILogger::attachLogger(m_pLoggerMsgBox);
+
+  // Logger of debugging
+  #ifdef QT_DEBUG
+    m_pLoggerDebug = new CLoggerDebug("debug.log", CLoggerDebug::AppendMode);
+    ILogger::attachLogger(m_pLoggerDebug);
+  #endif
 }

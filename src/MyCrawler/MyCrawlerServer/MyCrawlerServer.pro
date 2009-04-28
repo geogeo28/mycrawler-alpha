@@ -7,11 +7,10 @@ CONFIG += qt \
 
 # Debug build options
 CONFIG(debug, debug|release):CONFIG += console # Enable a read-only console window (i.e. for printf etc.)
+
 INCLUDEPATH += .
 INCLUDEPATH += ../Components/
-
 PRECOMPILED_HEADER = Components.h
-
 HEADERS += ../Components/Config.h \
     MCServer.h \
     MCClientThreadManager.h \
