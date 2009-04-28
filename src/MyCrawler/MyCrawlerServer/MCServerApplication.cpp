@@ -19,6 +19,8 @@
  ****************************************************************************/
 
 #include "Config.h"
+#include "Debug/Logger.h"
+
 #include "MCServerApplication.h"
 #include "MCServerMainWindow.h"
 
@@ -61,11 +63,14 @@ MCServerApplication::~MCServerApplication() {
 }
 
 void MCServerApplication::run() {
-  ILogger::Debug() << "Application is running.";
-  MainWindow->show();
-
   /*ILogger::Debug() << QString("Test a debug message (int %1)").arg(42);
   ILogger::Warning() << "Test a warning message (int " << 55 << ")";
   ILogger::Log(ILogger::ErrorLevel) << "Test an error message (int " << 688 << ")";
-  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);*/
+  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);
+  ILogger::Trace() << "Test a trace message";*/
+
+  ILogger::Debug() << "Application is running.";
+  MainWindow->show();
+
+
 }

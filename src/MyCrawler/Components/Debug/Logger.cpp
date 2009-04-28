@@ -136,6 +136,9 @@ QString ILogger::logLevelToString(LogLevel level) {
     case DebugLevel:
       s = QT_TRANSLATE_NOOP(ILogger, "Debug");
       break;
+    case TraceLevel:
+      s = QT_TRANSLATE_NOOP(ILogger, "Trace");
+      break;
     case WarningLevel:
       s = QT_TRANSLATE_NOOP(ILogger, "Warning");
       break;

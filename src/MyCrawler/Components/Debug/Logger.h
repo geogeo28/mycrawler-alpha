@@ -54,12 +54,13 @@ public:
     typedef enum {
       NoLevel           = 0,
       DebugLevel        = 1,
-      WarningLevel      = 2,
-      ErrorLevel        = 4,
-      InformationLevel  = 8,
+      TraceLevel        = 2,
+      WarningLevel      = 4,
+      ErrorLevel        = 8,
+      InformationLevel  = 16,
 
-      NoticeLevel   = WarningLevel | ErrorLevel | InformationLevel,
-      AllLevel      = DebugLevel | WarningLevel | ErrorLevel | InformationLevel
+      NoticeLevel   = TraceLevel |WarningLevel | ErrorLevel | InformationLevel,
+      AllLevel      = DebugLevel | TraceLevel | WarningLevel | ErrorLevel | InformationLevel
     } LogLevel;
 
 private:
@@ -90,6 +91,7 @@ public:
     static void Log(LogLevel level, const char* format, ...);
     static CLoggerManipulator Log(LogLevel level) { return Log_(level, NULL); }
     static CLoggerManipulator Debug_(const char* func)  {return Log_(DebugLevel, func); }
+    static CLoggerManipulator Trace()       { return Log_(TraceLevel); }
     static CLoggerManipulator Warning()     { return Log_(WarningLevel); }
     static CLoggerManipulator Error()       { return Log_(ErrorLevel); }
     static CLoggerManipulator Information() { return Log_(InformationLevel); }
