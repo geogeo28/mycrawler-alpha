@@ -29,7 +29,7 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  //if (!MyApp.settings().loadLayout(this)) {
+  if (!MCApp->Settings->loadLayout(this)) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -39,7 +39,7 @@ void MCServerMainWindow::setupWindow_() {
     else {
       this->setWindowState(Qt::WindowMaximized);
     }
-  //}
+  }
 }
 
 void MCServerMainWindow::setupComponents_() {
@@ -51,6 +51,9 @@ void MCServerMainWindow::cleanAll_() {
 }
 
 void MCServerMainWindow::closeWindow_() {
+  // Save window layout
+  MCApp->Settings->saveLayout(this);
+
   deleteLater();
 }
 

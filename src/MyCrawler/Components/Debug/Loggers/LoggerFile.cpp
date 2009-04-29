@@ -18,7 +18,7 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "Config.h"
+#include "Config/Config.h"
 #include "Debug/Logger.h"
 #include "Debug/Loggers/LoggerFile.h"
 #include "Debug/Exception.h"
@@ -51,7 +51,7 @@ AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode
       );
     }
 
-    // Attachs the device to the Text Stream of the logger
+    // Attach the device to the Text Stream of the logger
     setDevice(m_pFile);
   }
   catch (...) {

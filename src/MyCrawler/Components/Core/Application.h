@@ -27,6 +27,9 @@
 #include <QTranslator>
 #include <QLocale>
 #include <QLibraryInfo>
+#include <QPointer>
+
+#include "Config/Settings.h"
 
 class CLoggerConsole;
 class CLoggerFile;
@@ -46,8 +49,12 @@ public:
 
     void installTranslator(const QString& name = QLatin1String("qt_") + QLocale::system().name());
     void installLoggers();
+    void installSettings(const QString& fileName, const QString& folderName = QString("\\"), CSettings::Scope = CSettings::UserScope);
 
     virtual void run() =0;
+
+public:
+    QPointer<CSettings> Settings;
 
 private:
     CLoggerConsole* m_pLoggerConsole;

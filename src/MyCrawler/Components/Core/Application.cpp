@@ -25,17 +25,21 @@
 #include "Debug/Loggers/LoggerDebug.h"
 
 void IApplication::cleanAll_() {
+  // Delete loggers
   if (m_pLoggerConsole) { delete m_pLoggerConsole; m_pLoggerConsole = NULL; }
   if (m_pLoggerFile) { delete m_pLoggerFile; m_pLoggerFile = NULL; }
 
   #ifdef QT_DEBUG
     delete m_pLoggerDebug; m_pLoggerDebug = NULL;
   #endif
+
+  // Delete settings instance
+  if (Settings) delete Settings;
 }
 
 IApplication::IApplication(int &argc, char **argv)
   : QApplication(argc, argv),
-    m_pLoggerConsole(NULL), m_pLoggerFile(NULL)
+    m_pLoggerConsole(NULL), m_pLoggerFile(NULL), m_pLoggerMsgBox(NULL)
 {
   #ifdef QT_DEBUG
     m_pLoggerDebug = NULL;
@@ -65,11 +69,25 @@ void IApplication::installTranslator(const QString& name) {
   QApplication::installTranslator(translator);
 }
 
+void IApplication::installSettings(const QString& fileName, const QString& folderName, CSettings::Scope scope) {
+  if (!Settings.isNull()) {
+    ILogger::Error() << "Settings manager was previously installed.";
+    return;
+  }
+
+  Settings = new CSettings(fileName, folderName, scope);
+}
+
 void IApplication::installLoggers() {
+  if (m_pLoggerConsole || m_pLoggerFile || m_pLoggerMsgBox) {
+    ILogger::Error() << "Loggers were previously installed.";
+    return;
+  }
+
   // Standard loggers
   m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevel);
   m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevel, applicationName() + ".log", CLoggerFile::OverwriteMode);
-  m_pLoggerMsgBox = new CLoggerMsgBox(ILogger::WarningLevel | ILogger::ErrorLevel);
+  m_pLoggerMsgBox = new CLoggerMsgBox(ILogger::InformationLevel | ILogger::WarningLevel | ILogger::ErrorLevel);
 
   ILogger::attachLogger(m_pLoggerConsole);
   ILogger::attachLogger(m_pLoggerFile);
