@@ -25,6 +25,8 @@
 
 #include <QPointer>
 
+#include "Core/Application.h"
+
 class MCServerMainWindow;
 
 class MCServerApplication : public IApplication

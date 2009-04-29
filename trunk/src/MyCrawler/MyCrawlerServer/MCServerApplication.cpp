@@ -18,7 +18,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "Config.h"
+#include "Config/Config.h"
+#include "Config/Settings.h"
 #include "Debug/Logger.h"
 
 #include "MCServerApplication.h"
@@ -47,11 +48,18 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 
   s_instance = this;
 
+  // Set application informations
   setInformations(_MYCRAWLER_APPNAME_" (server)", _MYCRAWLER_ORGANIZATION_NAME_, _MYCRAWLER_ORGANIZATION_DOMAIN_);
   setApplicationVersion(_MYCRAWLER_SERVER_VERSION_);
 
+  // Install base components
   installTranslator();
   installLoggers();
+
+  // Install settings manager
+  CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
+  CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
+  installSettings("settings");
 
   ILogger::Debug() << "Creating application components.";
   init_();
@@ -63,14 +71,13 @@ MCServerApplication::~MCServerApplication() {
 }
 
 void MCServerApplication::run() {
-  /*ILogger::Debug() << QString("Test a debug message (int %1)").arg(42);
-  ILogger::Warning() << "Test a warning message (int " << 55 << ")";
-  ILogger::Log(ILogger::ErrorLevel) << "Test an error message (int " << 688 << ")";
-  ILogger::Log(ILogger::InformationLevel, "Test an information message (int %d)", 654);
-  ILogger::Trace() << "Test a trace message";*/
-
   ILogger::Debug() << "Application is running.";
+
   MainWindow->show();
 
-
+  // Default configuration if the settings file isn't present
+  /*if (Settings->isEmpty()) {
+    ILogger::Warning() << "The settings file was not found on your computer. The default configuration will be loaded.\n" \
+                          "Please changed the application' parameters with the dialog box of configuration.";
+  }*/
 }

@@ -18,12 +18,13 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Exception.h"
 #include "MCServerApplication.h"
 
 int main(int argc, char *argv[]) {
-  MCServerApplication app(argc, argv);
-
   try {
+    MCServerApplication app(argc, argv);
+
     app.run();
     return app.exec();
   }

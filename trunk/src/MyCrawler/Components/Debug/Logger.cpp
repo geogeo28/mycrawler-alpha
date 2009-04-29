@@ -40,7 +40,7 @@ CLoggerManipulator::CLoggerManipulator(int level, ILogger* logger)
 
 CLoggerManipulator::~CLoggerManipulator() {
   foreach (ILogger* logger, m_lstLoggers) {
-    Assert(logger && logger->textStream.device());
+    Assert(logger && (logger->textStream.device() || logger->textStream.string()));
 
     // Call virtual method for a special device (see CLoggerMsgBox).
     logger->write(static_cast<ILogger::LogLevel>(m_enumWriteLevel), *(logger->textStream.string()));
@@ -174,7 +174,7 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
     return CLoggerManipulator();
   }
 
-  // Allows to write content into loggers if the level of log passed in argument is set within registered levels
+  // Allow to write content into loggers if the level of log passed in argument is set within registered levels
   QList<ILogger*> lstLoggers(s_loggersCollection.values(level));
   foreach (ILogger* logger, lstLoggers) {
     logger->write_(level);
@@ -189,7 +189,7 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
 }
 
 void ILogger::write_() {
-  AssertCheckPtr(textStream.device());
+  Assert(textStream.device() || textStream.string());
 
   // Write date and time if set
   if (writeDateTime() == true) {
@@ -198,7 +198,7 @@ void ILogger::write_() {
 }
 
 void ILogger::write_(LogLevel level) {
-  AssertCheckPtr(textStream.device());
+  Assert(textStream.device() || textStream.string());
 
   // Write date and time
   write_();

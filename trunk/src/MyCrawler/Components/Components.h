@@ -27,7 +27,7 @@
 
 // C++ includes
 #ifdef __cplusplus
-  #include "Config.h"
+  #include "Config/Config.h"
   #include "Debug/Exception.h"
   #include "Debug/Logger.h"
   #include "Debug/Loggers/LoggerFile.h"
@@ -35,6 +35,7 @@
   #include "Debug/Loggers/LoggerConsole.h"
   #include "Debug/Loggers/LoggerMsgBox.h"
   #include "Core/Application.h"
+  #include "Config/Settings.h"
 #endif
 
 #endif // COMPONENTS_H
