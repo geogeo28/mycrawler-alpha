@@ -14,8 +14,9 @@ X Add memory manager to tracking memory leaks.
                MemoryTrace => memory.log
                NoticeAll => stdout and mycrawler.log
 (2009-04-28 Rev 49) - Add a level Trace into the logger.
+(2009-04-29 Rev 53) - Add settings capability. See QSettings class.
 - Create a testing module. See QTest library.
-- Add settings capability. See QSettings class.
+
 
 
 MyCrawlerServer :
