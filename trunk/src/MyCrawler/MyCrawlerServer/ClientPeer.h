@@ -20,20 +20,20 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCCLIENTPEER_H
-#define MCCLIENTPEER_H
+#ifndef CLIENTPEER_H
+#define CLIENTPEER_H
 
 #include <QtNetwork>
 
 class MCClientPeer : public QTcpSocket
 {
-  Q_OBJECT
+    Q_OBJECT
 
 public:
     MCClientPeer(QObject* parent = NULL);
 
 private:
-    QUuid m_uId;
+
 };
 
-#endif // MCCLIENTPEER_H
+#endif // CLIENTPEER_H

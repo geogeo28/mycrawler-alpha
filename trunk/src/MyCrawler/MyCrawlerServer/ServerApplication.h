@@ -20,8 +20,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCSERVERAPPLICATION_H
-#define MCSERVERAPPLICATION_H
+#ifndef SERVERAPPLICATION_H
+#define SERVERAPPLICATION_H
 
 #include <QPointer>
 
@@ -52,4 +52,4 @@ private:
 
 #define MCApp   MCServerApplication::instance()
 
-#endif // MCSERVERAPPLICATION_H
+#endif // SERVERAPPLICATION_H

@@ -21,8 +21,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCSERVERMAINWINDOW_H
-#define MCSERVERMAINWINDOW_H
+#ifndef SERVERMAINWINDOW_H
+#define SERVERMAINWINDOW_H
 
 #include <QtGui>
 
@@ -50,4 +50,4 @@ private slots:
 
 };
 
-#endif // MCSERVERMAINWINDOW_H
+#endif // SERVERMAINWINDOW_H

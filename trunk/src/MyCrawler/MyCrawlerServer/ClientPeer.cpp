@@ -22,19 +22,6 @@
 
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent)
-{
-  /*// Attach socket from a socket descriptor
-  bool bSuccess = setSocketDescriptor(socketDescriptor, QTcpSocket::ConnectingState, QTcpSocket::ReadWrite);
-
-  // Invalid socket descriptor
-  if (!bSuccess) {
-    throw MCException(
-      "Could not attach a socket to a new client",
-      QString("Invalid socket descriptor : %1").arg(socketDescriptor)
-    );
-
-    return;
-  }*/
-}
+{}
 
 

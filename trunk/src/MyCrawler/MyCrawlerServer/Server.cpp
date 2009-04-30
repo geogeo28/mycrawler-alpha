@@ -23,7 +23,7 @@
 #include "ClientThread.h"
 #include "ClientThreadManager.h"
 
-Q_GLOBAL_STATIC(MCServer, MCServerInstance)
+Q_GLOBAL_STATIC(MCServer, MCServerInstance)        
 
 MCServer* MCServer::instance() {
   return MCServerInstance();
@@ -31,27 +31,32 @@ MCServer* MCServer::instance() {
 
 MCServer::MCServer(QObject* parent)
   : QTcpServer(parent)
-{}
-
-MCServer::~MCServer()
-{}
-
-void MCServer::addClientPeer(MCClientPeer* client) {
-  m_lstClientsPeer << client;
+{
+  setError_(NoError);
 }
 
-void MCServer::removeClientPeer(MCClientPeer* client) {
-  m_lstClientsPeer.removeAll(client);
+bool MCServer::canAcceptNewConnection() const {
+  return (m_lstClientThreads.size() < maxConnections());
+}
+
+void MCServer::errorClient_(MCClientThread::Error error) {
+  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  emit errorClient(client, error);
+}
+
+void MCServer::finishedClient_() {
+  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  emit finishedClient(client);
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
-  MCClientThread* clientThread = MCClientThreadManager::instance()->createThread(socketDescriptor);
+  //MCClientThread* clientThread = MCClientThreadManager::instance()->createThread(socketDescriptor);
 
   // Could not create a new client thread
-  if (clientThread == NULL) {
-
-    return;
-  }
+  //if (clientThread == NULL) {
+  //
+  //  return;
+  //}
 
   // Attachs the new client peer to the server
   //MCClientPeer* clientPeer = clientThread->clientPeer();
@@ -59,6 +64,26 @@ void MCServer::incomingConnection(int socketDescriptor) {
 
   // Signals and slots connections and etablishs a communication between the server and the client
 
-  clientThread->start();
+  //clientThread->start();
 }
 
+void MCServer::setError_(Error error, bool signal) {
+  m_enumError = error;
+
+  switch (error) {
+    case NoError:
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "No error");
+      break;
+    case ServerFull:
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "The server is full. You must increase the variable MAX_CONNECTIONS to accept new clients.");
+      break;
+    default:
+      m_enumError = UnknownError;
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "Unknown error");
+      break;
+  }
+
+  if (signal == true) {
+    emit MCServer::error(m_enumError);
+  }
+}
