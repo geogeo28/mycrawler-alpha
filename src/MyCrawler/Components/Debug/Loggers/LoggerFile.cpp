@@ -67,15 +67,15 @@ AbstractLoggerFile::~AbstractLoggerFile() {
 CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode) throw(CException)
   : AbstractLoggerFile(level, file, mode)
 {
-  textStream << "  ======================================================================================\n"
-             << "  " + qApp->applicationName() + " v" + qApp->applicationVersion() +"\n"
-             << "  Copyright (c) by "_MYCRAWLER_AUTHOR_"\n\n"
-             << "  Compiled with "_COMPILER_DESCRIPTION_" at "_COMPILER_BUILD_DATE_"\n"
-             << "  ======================================================================================\n";
+  *this << "  ======================================================================================\n"
+        << "  " + qApp->applicationName() + " v" + qApp->applicationVersion() +"\n"
+        << "  Copyright (c) by "_MYCRAWLER_AUTHOR_"\n\n"
+        << "  Compiled with "_COMPILER_DESCRIPTION_" at "_COMPILER_BUILD_DATE_"\n"
+        << "  ======================================================================================\n";
 }
 
 CLoggerFile::~CLoggerFile() {
-  textStream << "\n  ======================================================================================\n"
-             << "  Ending the " << ILogger::currentDate() << " at " << ILogger::currentTime() << "\n"
-             << "  ======================================================================================\n";
+  *this << "\n  ======================================================================================\n"
+        << "  Ending the " << ILogger::currentDate() << " at " << ILogger::currentTime() << "\n"
+        << "  ======================================================================================\n";
 }

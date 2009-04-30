@@ -29,26 +29,34 @@
 
 CLoggerManipulator::CLoggerManipulator(int level, QList<ILogger*> lstLoggers)
   : m_enumWriteLevel(level), m_lstLoggers(lstLoggers)
-{}
+{
+  foreach (ILogger* logger, lstLoggers) {
+    logger->m_mutex.lock();
+  }
+}
 
 CLoggerManipulator::CLoggerManipulator(int level, ILogger* logger)
   : m_enumWriteLevel(level)
 {
   AssertCheckPtr(logger);
+
+  logger->m_mutex.lock();
   m_lstLoggers.push_back(logger);
 }
 
 CLoggerManipulator::~CLoggerManipulator() {
   foreach (ILogger* logger, m_lstLoggers) {
-    Assert(logger && (logger->textStream.device() || logger->textStream.string()));
+    Assert(logger && (logger->device() || logger->string()));
 
     // Call virtual method for a special device (see CLoggerMsgBox).
-    logger->write(static_cast<ILogger::LogLevel>(m_enumWriteLevel), *(logger->textStream.string()));
+    logger->write(static_cast<ILogger::LogLevel>(m_enumWriteLevel), *(logger->string()));
 
     // Flush stream if set
     if (logger->flushStream() == true) {
-      logger->textStream.flush();
+      logger->flush();
     }
+
+    logger->m_mutex.unlock();
   }
 }
 
@@ -62,7 +70,8 @@ void ILogger::init_() {
 }
 
 ILogger::ILogger(int level)
-  : m_nRegisteredLevels(level)
+  : m_mutex(QMutex::Recursive),
+    m_nRegisteredLevels(level)
 {
   init_();
 }
@@ -94,6 +103,13 @@ void ILogger::detachLogger(ILogger* logger) {
       it.remove();
     }
   }
+}
+
+// Thread-safe flush TextStream
+void ILogger::flush() {  
+  m_mutex.lock();
+  m_textStream.flush();
+  m_mutex.unlock();
 }
 
 CLoggerManipulator ILogger::log() {
@@ -160,7 +176,17 @@ QString ILogger::logLevelToString(LogLevel level) {
 void ILogger::setDevice(QIODevice* device) {
   AssertCheckPtr(device);
 
-  textStream.setDevice(device);
+  m_mutex.lock();
+  m_textStream.setDevice(device);
+  m_mutex.unlock();
+}
+
+void ILogger::setString(QString* string) {
+  AssertCheckPtr(string);
+
+  m_mutex.lock();
+  m_textStream.setString(string);
+  m_mutex.unlock();
 }
 
 CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
@@ -181,7 +207,7 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
 
     // Write debug informations
     #ifdef QT_DEBUG
-      if ((level == DebugLevel) && func) { logger->textStream << "(" << func << ") "; }
+      if ((level == DebugLevel) && func) { *logger << "(" << func << ") "; }
     #endif
   }
 
@@ -189,22 +215,22 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
 }
 
 void ILogger::write_() {
-  Assert(textStream.device() || textStream.string());
+  Assert(device() || string());
 
   // Write date and time if set
   if (writeDateTime() == true) {
-    textStream << "[" << ILogger::currentDate() << " " << ILogger::currentTime() << "] ";
+    *this << "[" << ILogger::currentDate() << " " << ILogger::currentTime() << "] ";
   }
 }
 
 void ILogger::write_(LogLevel level) {
-  Assert(textStream.device() || textStream.string());
+  Assert(device() || string());
 
   // Write date and time
   write_();
 
   // Write level if set
   if (writeLevel() == true) {
-    textStream << "[" << ILogger::logLevelToString(level) << "] ";
+    *this << "[" << ILogger::logLevelToString(level) << "] ";
   }
 }

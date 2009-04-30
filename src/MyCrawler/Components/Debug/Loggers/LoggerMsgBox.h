@@ -23,19 +23,24 @@
 #ifndef LOGGERMSGBOX_H
 #define LOGGERMSGBOX_H
 
+#include <QMessageBox>
 #include <QIODevice>
 
 #include "Debug/Logger.h"
 
+class QWidget;
+
 class CLoggerMsgBox : public ILogger
 {
 public:
-    CLoggerMsgBox(int level = ILogger::WarningLevel | ILogger::ErrorLevel);
+    CLoggerMsgBox(QWidget* widgetParent, int level = ILogger::WarningLevel | ILogger::ErrorLevel);
 
 protected:
     void write(LogLevel level, const QString& message);
 
 private:
+
+    QWidget* m_widgetParent;
     QString m_sBuffer;
 };
 
