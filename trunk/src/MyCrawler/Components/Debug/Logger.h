@@ -26,6 +26,7 @@
 #include <QTextStream>
 #include <QList>
 #include <QMultiMap>
+#include <QMutex>
 
 class QString;
 class QIODevice;
@@ -34,6 +35,8 @@ class ILogger;
 
 class CLoggerManipulator
 {
+  friend class ILogger;
+
   public:
     CLoggerManipulator(int level = 0, QList<ILogger*> lstLoggers = QList<ILogger*>());
     CLoggerManipulator(int level, ILogger* logger);
@@ -71,8 +74,10 @@ public:
     static void attachLogger(ILogger* logger);
     static void detachLogger(ILogger* logger);
 
-    ILogger(QTextStream* textStream);
-    virtual ~ILogger();
+    template <class T> ILogger& operator<<(const T& text);
+    void flush();
+    QString* string() { return m_textStream.string(); }
+    QIODevice* device() { return m_textStream.device(); }
 
     CLoggerManipulator log();
     CLoggerManipulator log(LogLevel level);
@@ -103,9 +108,11 @@ protected:
 
 protected:
     ILogger(int level);
+    virtual ~ILogger();
 
     void setDevice(QIODevice* device);
-    virtual void write(LogLevel level, const QString& message) { textStream << "\n"; }
+    void setString(QString* string);
+    virtual void write(LogLevel level, const QString& message) { *this << "\n"; }
 
 private:
     static CLoggerManipulator Log_(LogLevel level, const char* func = NULL);
@@ -114,22 +121,33 @@ private:
     void write_();
     void write_(LogLevel level);
     
-public:
-    QTextStream textStream;
-
 private:
     static QMultiMap<int, ILogger*> s_loggersCollection;
+
+private:
+    QTextStream m_textStream;
+    QMutex m_mutex;
     int m_nRegisteredLevels;
     bool m_bWriteDateTime;
     bool m_bWriteLevel;
     bool m_bFlushStream;
 };
 
+// Thread-safe writing operation
+template <class T>
+ILogger& ILogger::operator<<(const T& text) {
+  m_mutex.lock();
+  m_textStream << text;
+  m_mutex.unlock();
+
+  return *this;
+}
+
 template <class T>
 CLoggerManipulator& CLoggerManipulator::operator<<(const T& text)
 {
   foreach (ILogger* logger, m_lstLoggers) {
-    logger->textStream << text;
+    *logger << text;
   }
 
   return *this;

@@ -25,9 +25,9 @@ CLoggerDebug::CLoggerDebug(const QString& file, WriteMode mode) throw(CException
 {
   setWriteLevel(false);
 
-  textStream << "**** Debug log started: " << ILogger::currentDate() << " " << ILogger::currentTime() << " ****\n";
+  *this << "**** Debug log started: " << ILogger::currentDate() << " " << ILogger::currentTime() << " ****\n";
 }
 
 CLoggerDebug::~CLoggerDebug() {
-  textStream << "\n";
+  *this << "\n";
 }

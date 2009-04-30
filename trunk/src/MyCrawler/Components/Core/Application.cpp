@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include "Core/Application.h"
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
 #include "Debug/Loggers/LoggerConsole.h"
 #include "Debug/Loggers/LoggerFile.h"
@@ -79,23 +80,33 @@ void IApplication::installSettings(const QString& fileName, const QString& folde
 }
 
 void IApplication::installLoggers() {
-  if (m_pLoggerConsole || m_pLoggerFile || m_pLoggerMsgBox) {
-    ILogger::Error() << "Loggers were previously installed.";
+  if (m_pLoggerConsole || m_pLoggerFile) {
+    ILogger::Error() << "Loggers (console, file) were previously installed.";
     return;
   }
 
   // Standard loggers
   m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevel);
   m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevel, applicationName() + ".log", CLoggerFile::OverwriteMode);
-  m_pLoggerMsgBox = new CLoggerMsgBox(ILogger::InformationLevel | ILogger::WarningLevel | ILogger::ErrorLevel);
 
   ILogger::attachLogger(m_pLoggerConsole);
   ILogger::attachLogger(m_pLoggerFile);
-  ILogger::attachLogger(m_pLoggerMsgBox);
 
   // Logger of debugging
   #ifdef QT_DEBUG
     m_pLoggerDebug = new CLoggerDebug("debug.log", CLoggerDebug::AppendMode);
     ILogger::attachLogger(m_pLoggerDebug);
   #endif
+}
+
+void IApplication::installLoggerMsgBox(QWidget* widgetParent) {
+  AssertCheckPtr(widgetParent);
+
+  if (m_pLoggerMsgBox) {
+    ILogger::Error() << "Logger (message box) was previously installed.";
+    return;
+  }
+
+  m_pLoggerMsgBox = new CLoggerMsgBox(widgetParent, ILogger::InformationLevel | ILogger::WarningLevel | ILogger::ErrorLevel);
+  ILogger::attachLogger(m_pLoggerMsgBox);
 }

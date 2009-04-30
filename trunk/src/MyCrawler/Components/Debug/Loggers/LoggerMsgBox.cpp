@@ -19,17 +19,20 @@
  ****************************************************************************/
 
 #include <QApplication>
-#include <QMessageBox>
 
+#include "Debug/Exception.h"
 #include "Debug/Loggers/LoggerMsgBox.h"
 
-CLoggerMsgBox::CLoggerMsgBox(int level)
-  : ILogger(level)
+CLoggerMsgBox::CLoggerMsgBox(QWidget* widgetParent, int level)
+  : ILogger(level),
+    m_widgetParent(widgetParent)
 {
+  AssertCheckPtr(widgetParent);
+
+  setString(&m_sBuffer);
+
   setWriteDateTime(false);
   setWriteLevel(false);
-
-  textStream.setString(&m_sBuffer);
 }
 
 void CLoggerMsgBox::write(LogLevel level, const QString& message) {
@@ -48,8 +51,10 @@ void CLoggerMsgBox::write(LogLevel level, const QString& message) {
     default:;
   }
 
-  QMessageBox m(icon, QApplication::applicationName(), message, QMessageBox::Ok, NULL);
-  m.exec();
+  // Show the message box
+  QMessageBox* m = new QMessageBox(icon, QApplication::applicationName(), message, QMessageBox::Ok, m_widgetParent);
+  QObject::connect(m, SIGNAL(finished(int)), m, SLOT(deleteLater())); // Avoid memory leaks
+  m->show();
 
   // Avoid accumulating messages
   m_sBuffer.clear();
