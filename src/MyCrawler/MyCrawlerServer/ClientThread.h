@@ -20,12 +20,14 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCCLIENTTHREAD_H
-#define MCCLIENTTHREAD_H
+#ifndef CLIENTTHREAD_H
+#define CLIENTTHREAD_H
 
 #include <QThread>
+#include <QPointer>
+#include <QUuid>
 
-class MCClientPeer;
+#include "ClientPeer.h"
 
 class MCClientThread : public QThread
 {
@@ -40,11 +42,13 @@ public:
 
 public:
     MCClientThread(int socketDescriptor, QObject* parent = NULL);
+    ~MCClientThread();
 
-    Error error() const;
-    QString errorString() const;
+    Error error() const { return m_enumError; }
+    QString errorString() const {return m_sError; }
+    const QUuid uid() const { return m_uid; }
 
-    MCClientPeer* clientPeer();
+    MCClientPeer* clientPeer() {return m_pClientPeer; }
 
 signals:
     void error(MCClientThread::Error error);
@@ -56,11 +60,13 @@ private:
     void setError_(Error error, bool signal = true);
 
 private:
+
     Error m_enumError;
     QString m_sError;
 
+    QUuid m_uid;
     int m_nSocketDescriptor;
-    MCClientPeer* m_pClientPeer;
+    QPointer<MCClientPeer> m_pClientPeer;
 };
 
-#endif // MCCLIENTTHREAD_H
+#endif // CLIENTTHREAD_H

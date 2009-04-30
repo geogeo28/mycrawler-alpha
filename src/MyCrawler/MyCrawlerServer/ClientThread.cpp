@@ -25,22 +25,19 @@
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
-      m_nSocketDescriptor(socketDescriptor), m_pClientPeer(NULL)
+      m_nSocketDescriptor(socketDescriptor)
 {
-  setError_(MCClientThread::NoError, false);
-  m_pClientPeer = new MCClientPeer(/*this*/);
+  ILogger::Debug() << QString("Construct a ClientThread - Uid = %1.").arg(uid().toString());
+
+  setError_(NoError, false);
+
+  QObject::connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
 }
 
-MCClientThread::Error MCClientThread::error() const {
-  return m_enumError;
-}
+MCClientThread::~MCClientThread() {
+  ILogger::Debug() << QString("Destroy a ClientThread - Uid = %1.").arg(uid().toString());
 
-QString MCClientThread::errorString() const {
-  return m_sError;
-}
-
-MCClientPeer* MCClientThread::clientPeer() {
-  return m_pClientPeer;
+  if (m_pClientPeer) { delete m_pClientPeer; }
 }
 
 void MCClientThread::run() {
@@ -55,12 +52,12 @@ void MCClientThread::run() {
                       .arg(m_pClientPeer->peerAddress().toString())
                       .arg(m_pClientPeer->peerPort());*/
 
-  MCClientPeer p;
+  /*MCClientPeer p;
   if (!p.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
     setError_(MCClientThread::ClientPeerError, true);
     p.abort();
     return;
-  }
+  }*/
     
   // Event loop
   exec();

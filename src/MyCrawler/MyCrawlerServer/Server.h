@@ -20,32 +20,61 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCSERVER_H
-#define MCSERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <QtNetwork>
 
-class MCClientPeer;
+#include "ClientThread.h"
 
 class MCServer : public QTcpServer
 {
-  Q_OBJECT
-  
+    Q_OBJECT
+
+public:
+    typedef enum {
+      MAX_CONNECTIONS = 5
+    };
+
+public:
+    typedef enum {
+      NoError,
+      UnknownError,
+      ServerFull
+    } Error;
+
 public:
     static MCServer* instance();
 
     MCServer(QObject* parent = NULL);
-    virtual ~MCServer();
 
 public:
-    void addClientPeer(MCClientPeer* client);
-    void removeClientPeer(MCClientPeer* client);
+    Error error() const { return m_enumError; }
+    QString errorString() const { return m_sError; }
+    int maxConnections() const { return MAX_CONNECTIONS; }
+    bool canAcceptNewConnection() const;
+
+signals:
+    void error(Error error);
+    void errorClient(MCClientThread* client, MCClientThread::Error error);
+    void finishedClient(MCClientThread* client);
+
+private slots:
+    void errorClient_(MCClientThread::Error error);
+    void finishedClient_();
 
 protected:
     void incomingConnection(int socketDescriptor);
 
+private:
+    void setError_(Error error, bool signal = true);
+
+private:
+    Error m_enumError;
+    QString m_sError;
+
 private:    
-    QList<MCClientPeer*> m_lstClientsPeer;
+    QList<MCClientThread*> m_lstClientThreads;
 };
 
-#endif // MCSERVER_H
+#endif // SERVER_H
