@@ -1,3 +1,3 @@
-HEADERS += MCServerMainWindow.h
-SOURCES += MCServerMainWindow.cpp
-FORMS += MCServerMainWindow.ui
+HEADERS += ServerMainWindow.h
+SOURCES += ServerMainWindow.cpp
+FORMS += ServerMainWindow.ui

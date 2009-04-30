@@ -18,23 +18,47 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCClientPeer.h"
+#include "Server.h"
+#include "ClientPeer.h"
+#include "ClientThread.h"
+#include "ClientThreadManager.h"
 
-MCClientPeer::MCClientPeer(QObject* parent)
-  : QTcpSocket(parent)
-{
-  /*// Attach socket from a socket descriptor
-  bool bSuccess = setSocketDescriptor(socketDescriptor, QTcpSocket::ConnectingState, QTcpSocket::ReadWrite);
+Q_GLOBAL_STATIC(MCServer, MCServerInstance)
 
-  // Invalid socket descriptor
-  if (!bSuccess) {
-    throw MCException(
-      "Could not attach a socket to a new client",
-      QString("Invalid socket descriptor : %1").arg(socketDescriptor)
-    );
-
-    return;
-  }*/
+MCServer* MCServer::instance() {
+  return MCServerInstance();
 }
 
+MCServer::MCServer(QObject* parent)
+  : QTcpServer(parent)
+{}
+
+MCServer::~MCServer()
+{}
+
+void MCServer::addClientPeer(MCClientPeer* client) {
+  m_lstClientsPeer << client;
+}
+
+void MCServer::removeClientPeer(MCClientPeer* client) {
+  m_lstClientsPeer.removeAll(client);
+}
+
+void MCServer::incomingConnection(int socketDescriptor) { 
+  MCClientThread* clientThread = MCClientThreadManager::instance()->createThread(socketDescriptor);
+
+  // Could not create a new client thread
+  if (clientThread == NULL) {
+
+    return;
+  }
+
+  // Attachs the new client peer to the server
+  //MCClientPeer* clientPeer = clientThread->clientPeer();
+  //addClientPeer(clientPeer);
+
+  // Signals and slots connections and etablishs a communication between the server and the client
+
+  clientThread->start();
+}
 

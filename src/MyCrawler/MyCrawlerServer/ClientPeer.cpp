@@ -1,7 +1,4 @@
 /****************************************************************************
- * @(#) MyCrawler server. Main window.
- * GUI interface
- *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -21,33 +18,23 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MCSERVERMAINWINDOW_H
-#define MCSERVERMAINWINDOW_H
+#include "ClientPeer.h"
 
-#include <QtGui>
-
-#include "ui_MCServerMainWindow.h"
-
-class MCServerMainWindow : public QMainWindow,
-                           private Ui_MCServerMainWindowClass
+MCClientPeer::MCClientPeer(QObject* parent)
+  : QTcpSocket(parent)
 {
-    Q_OBJECT
+  /*// Attach socket from a socket descriptor
+  bool bSuccess = setSocketDescriptor(socketDescriptor, QTcpSocket::ConnectingState, QTcpSocket::ReadWrite);
 
-private:
-    void setupWindow_();
-    void setupComponents_();
+  // Invalid socket descriptor
+  if (!bSuccess) {
+    throw MCException(
+      "Could not attach a socket to a new client",
+      QString("Invalid socket descriptor : %1").arg(socketDescriptor)
+    );
 
-    void cleanAll_();
-    void closeWindow_();
-
-public:
-    MCServerMainWindow(QWidget *parent = NULL);
-    ~MCServerMainWindow();
-
-private slots:
-    void on_buttonServerListen_clicked();
+    return;
+  }*/
+}
 
 
-};
-
-#endif // MCSERVERMAINWINDOW_H

@@ -47,7 +47,7 @@ public:
     MCClientPeer* clientPeer();
 
 signals:
-    void error(Error error);
+    void error(MCClientThread::Error error);
 
 protected:
     void run();
@@ -61,7 +61,6 @@ private:
 
     int m_nSocketDescriptor;
     MCClientPeer* m_pClientPeer;
-
 };
 
 #endif // MCCLIENTTHREAD_H

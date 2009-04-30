@@ -1,4 +1,7 @@
 /****************************************************************************
+ * @(#) MyCrawler server. Main window.
+ * GUI interface
+ *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -18,46 +21,33 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServer.h"
-#include "MCClientPeer.h"
-#include "MCClientThread.h"
-#include "MCClientThreadManager.h"
+#ifndef MCSERVERMAINWINDOW_H
+#define MCSERVERMAINWINDOW_H
 
-Q_GLOBAL_STATIC(MCServer, MCServerInstance)
+#include <QtGui>
 
-MCServer* MCServer::instance() {
-  return MCServerInstance();
-}
+#include "ui_ServerMainWindow.h"
 
-MCServer::MCServer(QObject* parent)
-  : QTcpServer(parent)
-{}
+class MCServerMainWindow : public QMainWindow,
+                           private Ui_MCServerMainWindowClass
+{
+    Q_OBJECT
 
-MCServer::~MCServer()
-{}
+private:
+    void setupWindow_();
+    void setupComponents_();
 
-void MCServer::addClientPeer(MCClientPeer* client) {
-  m_lstClientsPeer << client;
-}
+    void cleanAll_();
+    void closeWindow_();
 
-void MCServer::removeClientPeer(MCClientPeer* client) {
-  m_lstClientsPeer.removeAll(client);
-}
+public:
+    MCServerMainWindow(QWidget *parent = NULL);
+    ~MCServerMainWindow();
 
-void MCServer::incomingConnection(int socketDescriptor) { 
-  MCClientThread* clientThread = MCClientThreadManager::instance()->createThread(socketDescriptor);
+private slots:
+    void on_buttonServerListen_clicked();
 
-  // Could not create a new client thread
-  if (clientThread==NULL) {
 
-    return;
-  }
+};
 
-  // Attachs the new client peer to the server
-  MCClientPeer* clientPeer = clientThread->clientPeer();
-  addClientPeer(clientPeer);
-
-  // Signals and slots connections and etablishs a communication between the server and the client
-
-}
-
+#endif // MCSERVERMAINWINDOW_H

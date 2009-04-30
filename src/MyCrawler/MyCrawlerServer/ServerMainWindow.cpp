@@ -18,8 +18,9 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCServerMainWindow.h"
-#include "MCServerApplication.h"
+#include "ServerMainWindow.h"
+#include "ServerApplication.h"
+#include "Server.h"
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -79,5 +80,7 @@ MCServerMainWindow::~MCServerMainWindow()
 }
 
 void MCServerMainWindow::on_buttonServerListen_clicked() {
-
+  MCServer::instance()->listen(
+    QHostAddress(textServerAddress->text()), textServerPort->text().toUShort()
+  );
 }
