@@ -18,9 +18,9 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCClientThreadManager.h"
+#include "ClientThreadManager.h"
 
-#include "MCClientThread.h"
+#include "ClientThread.h"
 
 static const int MaxThreads = 10;
 
@@ -60,7 +60,7 @@ MCClientThread* MCClientThreadManager::createThread(int socketDescriptor) {
     return NULL;
   }
 
-  MCClientThread* clientThread = new MCClientThread(socketDescriptor, this);
+  MCClientThread* clientThread = new MCClientThread(socketDescriptor/*, this*/);
 
   QObject::connect(clientThread, SIGNAL(error(MCClientThread::Error)), this, SLOT(errorThread_(MCClientThread::Error)));
   QObject::connect(clientThread, SIGNAL(finished()), this, SLOT(finishedThread_()));

@@ -19,7 +19,7 @@
  ****************************************************************************/
 
 #include "Debug/Exception.h"
-#include "MCServerApplication.h"
+#include "ServerApplication.h"
 
 int main(int argc, char *argv[]) {
   try {

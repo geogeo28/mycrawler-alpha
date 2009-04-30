@@ -18,16 +18,17 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "MCClientThread.h"
+#include "Debug/Logger.h"
 
-#include "MCClientPeer.h"
+#include "ClientThread.h"
+#include "ClientPeer.h"
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
       m_nSocketDescriptor(socketDescriptor), m_pClientPeer(NULL)
 {
   setError_(MCClientThread::NoError, false);
-  m_pClientPeer = new MCClientPeer(this);
+  m_pClientPeer = new MCClientPeer(/*this*/);
 }
 
 MCClientThread::Error MCClientThread::error() const {
@@ -43,13 +44,24 @@ MCClientPeer* MCClientThread::clientPeer() {
 }
 
 void MCClientThread::run() {
-  // Could not attach the socket of the client peer from the socket descriptor
+  /*// Could not attach the socket of the client peer from the socket descriptor
   if (!m_pClientPeer->setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectingState, MCClientPeer::ReadWrite)) {
     setError_(MCClientThread::ClientPeerError, true);
     m_pClientPeer->abort();
     return;
-  }
+  }*/
 
+  /*ILogger::Trace() << QString("Client thread %1:%2 : Running...")
+                      .arg(m_pClientPeer->peerAddress().toString())
+                      .arg(m_pClientPeer->peerPort());*/
+
+  MCClientPeer p;
+  if (!p.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
+    setError_(MCClientThread::ClientPeerError, true);
+    p.abort();
+    return;
+  }
+    
   // Event loop
   exec();
 }

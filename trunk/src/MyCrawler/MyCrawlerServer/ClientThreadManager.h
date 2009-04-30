@@ -26,7 +26,7 @@
 #include <QObject>
 #include <QSet>
 
-#include "MCClientThread.h"
+#include "ClientThread.h"
 
 class MCClientThreadManager : public QObject
 {

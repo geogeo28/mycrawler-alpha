@@ -22,8 +22,8 @@
 #include "Config/Settings.h"
 #include "Debug/Logger.h"
 
-#include "MCServerApplication.h"
-#include "MCServerMainWindow.h"
+#include "ServerApplication.h"
+#include "ServerMainWindow.h"
 
 MCServerApplication* MCServerApplication::s_instance = NULL;
 
@@ -74,10 +74,4 @@ void MCServerApplication::run() {
   ILogger::Debug() << "Application is running.";
 
   MainWindow->show();
-
-  // Default configuration if the settings file isn't present
-  /*if (Settings->isEmpty()) {
-    ILogger::Warning() << "The settings file was not found on your computer. The default configuration will be loaded.\n" \
-                          "Please changed the application' parameters with the dialog box of configuration.";
-  }*/
 }

@@ -10,10 +10,10 @@ CONFIG(debug, debug|release):CONFIG += console # Enable a read-only console wind
 INCLUDEPATH += .
 INCLUDEPATH += ../Components/
 PRECOMPILED_HEADER = Components.h
-HEADERS += MCServerApplication.h \
+HEADERS += ServerApplication.h \
     ../Components/Components.h
 SOURCES += main.cpp \
-    MCServerApplication.cpp
+    ServerApplication.cpp
 OTHER_FILES += ../TODO.txt
 include(../Components/Debug.pri)
 include(../Components/Core.pri)
