@@ -46,6 +46,7 @@ public:
 
     virtual const QString& message() const throw() {return m_sMessage;}
     virtual const char* what() const throw();
+    virtual QString fullMessage() const throw();
     virtual QString description() const throw();
     virtual void dialog() const throw();
 
