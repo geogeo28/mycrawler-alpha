@@ -39,11 +39,14 @@ const char* CException::what() const throw() {
   return m_sMessage.toLatin1().data();
 }
 
-QString CException::description() const throw() {
+QString CException::fullMessage() const throw() {
   QString msg(message());
   if (!remainder().isEmpty())
     msg += "\nDetails : " + remainder();
+  return msg;
+}
 
+QString CException::description() const throw() {
   // A simple exception without a trace
   if (function() == NULL) {
     return (
@@ -52,7 +55,7 @@ QString CException::description() const throw() {
         "%2\n" \
         "Application will now terminate."
       ).arg(type())
-       .arg(msg)
+       .arg(fullMessage())
     );
   }
   // A standard exception with a trace
@@ -66,7 +69,7 @@ QString CException::description() const throw() {
        .arg(function())
        .arg(file())
        .arg(line())
-       .arg(msg)
+       .arg(fullMessage())
     );
   }
 }
