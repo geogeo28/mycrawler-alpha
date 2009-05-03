@@ -18,10 +18,34 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Logger.h"
+
 #include "ClientPeer.h"
 
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent)
-{}
+{
+  //QObject::connect(this, SIGNAL(readyRead()), this, SLOT(readyRead_()));
+  //QObject::connect(this, SIGNAL(connected()), this, SLOT(readyRead_()));
+}
 
+QString MCClientPeer::peerAddressWithPort() const {
+  return QString("%1:%2")
+         .arg(peerAddress().toString())
+         .arg(peerPort());
+}
 
+void MCClientPeer::connectionRefused() {
+  ILogger::Debug() << "Set socket with an error (Connection refused).";
+
+  ILogger::Trace() << "Connection refused.";
+  //setSocketError(ConnectionRefusedError);
+  abort();
+  //disconnectFromHost();
+  //waitForDisconnected();
+}
+
+void MCClientPeer::readyRead_() {
+  ILogger::Trace() << QString("Client peer %1 : Ready read.")
+                      .arg(peerAddressWithPort());
+}

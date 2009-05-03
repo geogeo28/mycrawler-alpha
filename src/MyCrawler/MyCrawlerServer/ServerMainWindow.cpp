@@ -18,9 +18,10 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Logger.h"
+
 #include "ServerMainWindow.h"
 #include "ServerApplication.h"
-#include "Server.h"
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -30,6 +31,7 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
+  ILogger::Debug() << "Try to load the setting window layout.";
   if (!MCApp->Settings->loadLayout(this)) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
@@ -43,8 +45,12 @@ void MCServerMainWindow::setupWindow_() {
   }
 }
 
-void MCServerMainWindow::setupComponents_() {
-
+void MCServerMainWindow::setupComponents_() {  
+  // Setup server signals/slots connections
+  ILogger::Debug() << "Setup server signals/slots connections.";
+  QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
+  QObject::connect(MCServer::instance(), SIGNAL(errorClient(MCClientThread*,MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*,MCClientThread::Error)));
+  QObject::connect(MCServer::instance(), SIGNAL(finishedClient(MCClientThread*)), this, SLOT(slotClientFinished(MCClientThread*)));
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -53,6 +59,7 @@ void MCServerMainWindow::cleanAll_() {
 
 void MCServerMainWindow::closeWindow_() {
   // Save window layout
+  ILogger::Debug() << "Save the setting window layout.";
   MCApp->Settings->saveLayout(this);
 
   deleteLater();
@@ -80,7 +87,27 @@ MCServerMainWindow::~MCServerMainWindow()
 }
 
 void MCServerMainWindow::on_buttonServerListen_clicked() {
-  MCServer::instance()->listen(
-    QHostAddress(textServerAddress->text()), textServerPort->text().toUShort()
-  );
+  QString address = textServerAddress->text();
+  QString port = textServerPort->text();
+
+  ILogger::Trace() << QString("The server listening the address %1 on the port %2.")
+                      .arg(address)
+                      .arg(port);
+
+  MCServer::instance()->listen(QHostAddress(address), port.toUShort());
+}
+
+void MCServerMainWindow::slotServerError(MCServer::Error error) {
+  ILogger::Error() << MCServer::instance()->errorString();
+}
+
+void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
+  /*ILogger::Error() << QString("Client %1 : %2")
+                      .arg(client->clientPeer()->peerAddressWithPort())
+                      .arg(client->errorString());*/
+}
+
+void MCServerMainWindow::slotClientFinished(MCClientThread* client) {
+  /*ILogger::Trace() << QString("Client %1 : Thread finished.")
+                      .arg(client->clientPeer()->peerAddressWithPort());*/
 }

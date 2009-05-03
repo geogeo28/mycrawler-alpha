@@ -32,6 +32,14 @@ class MCClientPeer : public QTcpSocket
 public:
     MCClientPeer(QObject* parent = NULL);
 
+    QString peerAddressWithPort() const;
+
+public slots:
+    void connectionRefused();
+
+private slots:
+    void readyRead_();
+
 private:
 
 };

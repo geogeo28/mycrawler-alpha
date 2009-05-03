@@ -18,49 +18,97 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ClientThread.h"
-#include "ClientPeer.h"
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
       m_nSocketDescriptor(socketDescriptor)
 {
-  ILogger::Debug() << QString("Construct a ClientThread - Uid = %1.").arg(uid().toString());
+  ILogger::Debug() << "Construct a ClientThread.";
 
   setError_(NoError, false);
 
-  QObject::connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+  //QObject::connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
+  //QObject::connect(this, SIGNAL(terminated()), this, SLOT(deleteLater()));
+
 }
 
 MCClientThread::~MCClientThread() {
-  ILogger::Debug() << QString("Destroy a ClientThread - Uid = %1.").arg(uid().toString());
+  ILogger::Debug() << "Destroy a ClientThread.";
 
-  if (m_pClientPeer) { delete m_pClientPeer; }
+  // Close the client peer connection
+  /*if (m_pClientPeer) {
+    m_pClientPeer->close();
+    delete m_pClientPeer;
+  }*/
 }
 
+/*void MCClientThread::changeConnectionState(MCClientThread::ConnectionState state) {
+  switch (state) {
+    case ConnectionRefusedState:
+      //m_pClientPeer->setSocketError(MCClientPeer::ConnectionRefusedError);
+      //m_pClientPeer->abort();
+      //quit();
+      ILogger::Trace() << this->currentThread() << " Emit connection refused.";
+      //emit peerConnectionRefused();
+      m_pClientPeer->connectionRefused();
+      break;
+    default:;
+  }
+}*/
+
 void MCClientThread::run() {
-  /*// Could not attach the socket of the client peer from the socket descriptor
-  if (!m_pClientPeer->setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectingState, MCClientPeer::ReadWrite)) {
-    setError_(MCClientThread::ClientPeerError, true);
-    m_pClientPeer->abort();
-    return;
-  }*/
+  MCClientPeer clientPeer;
 
-  /*ILogger::Trace() << QString("Client thread %1:%2 : Running...")
-                      .arg(m_pClientPeer->peerAddress().toString())
-                      .arg(m_pClientPeer->peerPort());*/
+  QObject::connect(
+    &clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
+    this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)),
+    Qt::DirectConnection
+  );
 
-  /*MCClientPeer p;
-  if (!p.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
+  QObject::connect(
+    &clientPeer, SIGNAL(readyRead()),
+    this, SLOT(peerReadyRead_()),
+    Qt::DirectConnection
+  );
+
+  QObject::connect(
+    this, SIGNAL(peerConnectionRefused()),
+    &clientPeer, SLOT(connectionRefused()),
+    Qt::QueuedConnection
+  );
+
+  // Could not attach the socket of the client peer from the socket descriptor
+  if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
     setError_(MCClientThread::ClientPeerError, true);
-    p.abort();
+    clientPeer.close();
     return;
-  }*/
-    
+  }
+
+  ILogger::Trace() << currentThread() << QString(" Client %1 : Listening...").arg(clientPeer.peerAddressWithPort());
+
+  //emit connected();
+
   // Event loop
   exec();
+}
+
+void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
+  //const MCClientPeer& clientPeer = qobject_cast<const MCClientPeer&>(sender());
+  ILogger::Trace() << "Socket state changed " << socketState;
+}
+
+void MCClientThread::peerReadyRead_() {
+  ILogger::Trace() << "Ready read.";
+  emit connected();
+  //emit peerConnectionRefused();
+}
+
+void MCClientThread::emitPeerConnectionRefused() {
+  emit peerConnectionRefused();
 }
 
 void MCClientThread::setError_(Error error, bool signal) {
@@ -83,4 +131,3 @@ void MCClientThread::setError_(Error error, bool signal) {
     emit MCClientThread::error(m_enumError);
   }
 }
-

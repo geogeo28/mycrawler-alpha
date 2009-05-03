@@ -25,7 +25,6 @@
 
 #include <QThread>
 #include <QPointer>
-#include <QUuid>
 
 #include "ClientPeer.h"
 
@@ -40,33 +39,48 @@ public:
       ClientPeerError
     } Error;
 
+    /*typedef enum {
+      UnconnectedState,
+      ConnectingState,
+      ConnectedState,
+      ConnectionRefusedState,
+      IdleState,
+    } ConnectionState;*/
+
 public:
     MCClientThread(int socketDescriptor, QObject* parent = NULL);
     ~MCClientThread();
 
     Error error() const { return m_enumError; }
-    QString errorString() const {return m_sError; }
-    const QUuid uid() const { return m_uid; }
+    QString errorString() const { return m_sError; }
 
-    MCClientPeer* clientPeer() {return m_pClientPeer; }
+    void emitPeerConnectionRefused();
 
 signals:
     void error(MCClientThread::Error error);
+    void connected();
+
+    void peerConnectionRefused();
+
+public slots:
+    //void changeConnectionState(MCClientThread::ConnectionState state);
+
 
 protected:
     void run();
+
+private slots:
+    void peerStateChanged_(QAbstractSocket::SocketState socketState);
+    void peerReadyRead_();
 
 private:
     void setError_(Error error, bool signal = true);
 
 private:
-
     Error m_enumError;
     QString m_sError;
 
-    QUuid m_uid;
     int m_nSocketDescriptor;
-    QPointer<MCClientPeer> m_pClientPeer;
 };
 
 #endif // CLIENTTHREAD_H

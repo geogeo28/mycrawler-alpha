@@ -27,6 +27,8 @@
 #include <QtGui>
 
 #include "ui_ServerMainWindow.h"
+#include "Server.h"
+#include "ClientThread.h"
 
 class MCServerMainWindow : public QMainWindow,
                            private Ui_MCServerMainWindowClass
@@ -47,6 +49,10 @@ public:
 private slots:
     void on_buttonServerListen_clicked();
 
+private slots:
+    void slotServerError(MCServer::Error error);
+    void slotClientError(MCClientThread* client, MCClientThread::Error error);
+    void slotClientFinished(MCClientThread* client);
 
 };
 

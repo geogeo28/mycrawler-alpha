@@ -18,10 +18,10 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Exception.h"
+#include "Debug/Logger.h"
+
 #include "Server.h"
-#include "ClientPeer.h"
-#include "ClientThread.h"
-#include "ClientThreadManager.h"
 
 Q_GLOBAL_STATIC(MCServer, MCServerInstance)        
 
@@ -36,35 +36,66 @@ MCServer::MCServer(QObject* parent)
 }
 
 bool MCServer::canAcceptNewConnection() const {
-  return (m_lstClientThreads.size() < maxConnections());
+  return (m_lstClientThreads.count() < maxConnections());
+}
+
+bool MCServer::addClient(MCClientThread* client) {
+  if (canAcceptNewConnection() == false) {
+    setError_(ServerFull, false);
+    return false;
+  }
+
+  m_lstClientThreads << client;
+
+  return true;
+}
+
+void MCServer::removeClient(MCClientThread* client) {
+  m_lstClientThreads.removeAll(client);
 }
 
 void MCServer::errorClient_(MCClientThread::Error error) {
-  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  emit errorClient(client, error);
+  //MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  //emit errorClient(client, error);
 }
 
 void MCServer::finishedClient_() {
-  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  emit finishedClient(client);
+  //MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  //emit finishedClient(client);
+}
+
+void MCServer::startedConnection_() {
+  MCClientThread* client = qobject_cast<MCClientThread*>(sender());
+  ILogger::Trace() << "Started connection " << client;
+
+  //client->emitPeerConnectionRefused();
+
+  //client->clientPeer()->abort();
+  //client->clientPeer()->close();
+
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
-  //MCClientThread* clientThread = MCClientThreadManager::instance()->createThread(socketDescriptor);
+  // Vérifier si on peut accepte la connexion
+  // Si non, on ouvre le socket, oon met connection refused et on close
+  // Si oui on créer un thread et on l'ajoute.
 
-  // Could not create a new client thread
-  //if (clientThread == NULL) {
-  //
-  //  return;
+  ILogger::Trace() << "Server : New incoming connection.";
+
+  MCClientThread* client = new MCClientThread(socketDescriptor, this);
+  QObject::connect(client, SIGNAL(connected()), this, SLOT(startedConnection_()));
+
+  client->start();
+
+  //for (int i = 0; i < 1000000; ++i) {
+  //  for (int j = 0; j < 1000; ++j);
   //}
 
-  // Attachs the new client peer to the server
-  //MCClientPeer* clientPeer = clientThread->clientPeer();
-  //addClientPeer(clientPeer);
+  ILogger::Trace() << "Emit connection refused";
+  client->emitPeerConnectionRefused();
+  //QMetaObject::invokeMethod(client, "peerConnectionRefused", Qt::DirectConnection);
 
-  // Signals and slots connections and etablishs a communication between the server and the client
-
-  //clientThread->start();
+  //emit client->peerConnectionRefused();
 }
 
 void MCServer::setError_(Error error, bool signal) {
