@@ -21,6 +21,7 @@
 #include <QApplication>
 #include <QMessageBox>
 
+#include <iostream>
 #include "Debug/Exception.h"
 
 CException::CException(
@@ -75,9 +76,16 @@ QString CException::description() const throw() {
 }
 
 void CException::dialog() const throw() {
-  QMessageBox::critical(
-    NULL, QApplication::applicationName(),
-    description(),
-    QMessageBox::Ok
-  );
+  // No widget (print exception in the console)
+  if (qApp == NULL) {
+    std::cout << description().toAscii().data() << std::endl;
+  }
+  // Show a dialog box in the current widget
+  else {
+    QMessageBox::critical(
+      NULL, QApplication::applicationName(),
+      description(),
+      QMessageBox::Ok
+    );
+  }
 }
