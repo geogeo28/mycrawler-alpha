@@ -24,6 +24,7 @@ CLoggerDebug::CLoggerDebug(const QString& file, WriteMode mode) throw(CException
   : AbstractLoggerFile(ILogger::DebugLevel, file, mode)
 {
   setWriteLevel(false);
+  setFlushStream(true);
 
   *this << "**** Debug log started: " << ILogger::currentDate() << " " << ILogger::currentTime() << " ****\n";
 }
