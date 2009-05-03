@@ -32,12 +32,10 @@ MCServerApplication* MCServerApplication::instance() {
 }
 
 void MCServerApplication::init_() {
-  ILogger::Debug() << "Allocate memory for the application's main window.";
   MainWindow = new MCServerMainWindow();
 }
 
 void MCServerApplication::cleanAll_() {
-  ILogger::Debug() << "Unallocate memory for the application's main window.";
   if (MainWindow) { delete MainWindow; }
 }
 
@@ -61,12 +59,12 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
   CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
   installSettings("settings");
 
-  ILogger::Debug() << "Creating application components.";
   init_();
+
+  installLoggerMsgBox(MainWindow);
 }
 
 MCServerApplication::~MCServerApplication() {
-  ILogger::Debug() << "Destroying application components.";
   cleanAll_();
 }
 

@@ -33,11 +33,6 @@ class MCServer : public QTcpServer
 
 public:
     typedef enum {
-      MAX_CONNECTIONS = 5
-    };
-
-public:
-    typedef enum {
       NoError,
       UnknownError,
       ServerFull
@@ -54,8 +49,12 @@ public:
     int maxConnections() const { return MAX_CONNECTIONS; }
     bool canAcceptNewConnection() const;
 
+public:
+    bool addClient(MCClientThread* client);
+    void removeClient(MCClientThread* client);
+
 signals:
-    void error(Error error);
+    void error(MCServer::Error error);
     void errorClient(MCClientThread* client, MCClientThread::Error error);
     void finishedClient(MCClientThread* client);
 
@@ -63,11 +62,19 @@ private slots:
     void errorClient_(MCClientThread::Error error);
     void finishedClient_();
 
+private slots:
+    void startedConnection_();
+
 protected:
     void incomingConnection(int socketDescriptor);
 
 private:
     void setError_(Error error, bool signal = true);
+
+private:
+    typedef enum {
+      MAX_CONNECTIONS = 0
+    };
 
 private:
     Error m_enumError;
