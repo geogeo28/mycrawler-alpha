@@ -95,7 +95,7 @@ public:
  public:
     static void Log(LogLevel level, const char* format, ...);
     static CLoggerManipulator Log(LogLevel level) { return Log_(level, NULL); }
-    static CLoggerManipulator Debug_(const char* func)  {return Log_(DebugLevel, func); }
+    static CLoggerManipulator Debug_(const char* func, void* object)  {return Log_(DebugLevel, func, object); }
     static CLoggerManipulator Trace()       { return Log_(TraceLevel); }
     static CLoggerManipulator Warning()     { return Log_(WarningLevel); }
     static CLoggerManipulator Error()       { return Log_(ErrorLevel); }
@@ -115,7 +115,7 @@ protected:
     virtual void write(LogLevel level, const QString& message) { *this << "\n"; }
 
 private:
-    static CLoggerManipulator Log_(LogLevel level, const char* func = NULL);
+    static CLoggerManipulator Log_(LogLevel level, const char* func = NULL, void* object = NULL);
 
 private:
     void write_();
@@ -153,6 +153,7 @@ CLoggerManipulator& CLoggerManipulator::operator<<(const T& text)
   return *this;
 }
 
-#define Debug()     Debug_(__PRETTY_FUNCTION__)
+#define CDebug()    Debug_(__PRETTY_FUNCTION__, NULL)
+#define Debug()     Debug_(__PRETTY_FUNCTION__, this)
 
 #endif // ILOGGER_H
