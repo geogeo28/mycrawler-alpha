@@ -189,7 +189,7 @@ void ILogger::setString(QString* string) {
   m_mutex.unlock();
 }
 
-CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
+CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, void* object) {
   // Disable debugging
   #ifndef QT_DEBUG
     if (level == DebugLevel) { return CLoggerManipulator(NULL); }
@@ -207,7 +207,10 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func) {
 
     // Write debug informations
     #ifdef QT_DEBUG
-      if ((level == DebugLevel) && func) { *logger << "(" << func << ") "; }
+      if ((level == DebugLevel) && func) {
+        if (object != NULL) { *logger << object << " "; }
+        *logger << "(" << func << ") ";
+      }
     #endif
   }
 
