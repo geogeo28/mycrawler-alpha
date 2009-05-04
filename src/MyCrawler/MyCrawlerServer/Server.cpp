@@ -25,6 +25,8 @@
 
 Q_GLOBAL_STATIC(MCServer, MCServerInstance)        
 
+int MaxConnections = 5;
+
 MCServer* MCServer::instance() {
   return MCServerInstance();
 }
@@ -35,13 +37,23 @@ MCServer::MCServer(QObject* parent)
   setError_(NoError);
 }
 
+int MCServer::maxConnections() const {
+  return MaxConnections;
+}
+
+void MCServer::setMaxConnections(int n) {
+  Assert(n > 0);
+
+  MaxConnections = n;
+}
+
 bool MCServer::canAcceptNewConnection() const {
   return (m_lstClientThreads.count() < maxConnections());
 }
 
 bool MCServer::addClient(MCClientThread* client) {
   if (canAcceptNewConnection() == false) {
-    setError_(ServerFull, false);
+    setError_(ServerFullError, false);
     return false;
   }
 
@@ -54,48 +66,47 @@ void MCServer::removeClient(MCClientThread* client) {
   m_lstClientThreads.removeAll(client);
 }
 
-void MCServer::errorClient_(MCClientThread::Error error) {
-  //MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  //emit errorClient(client, error);
+void MCServer::clientError_(MCClientThread::Error error) {
+  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  emit clientError(client, error);
 }
 
-void MCServer::finishedClient_() {
-  //MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  //emit finishedClient(client);
-}
-
-void MCServer::startedConnection_() {
-  MCClientThread* client = qobject_cast<MCClientThread*>(sender());
-  ILogger::Trace() << "Started connection " << client;
-
-  //client->emitPeerConnectionRefused();
-
-  //client->clientPeer()->abort();
-  //client->clientPeer()->close();
-
+void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState state) {
+  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  emit clientConnectionStateChanged(client, state);
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
-  // Vérifier si on peut accepte la connexion
-  // Si non, on ouvre le socket, oon met connection refused et on close
-  // Si oui on créer un thread et on l'ajoute.
-
   ILogger::Trace() << "Server : New incoming connection.";
 
+  // The new client cannot be accepted
+  if (canAcceptNewConnection() == false) {
+    MCClientPeer client;
+
+    // Refuse connection
+    if (client.setSocketDescriptor(socketDescriptor) == true) {
+      client.connectionRefused();
+    }
+
+    setError_(ServerFullError, true);
+    return;
+  }
+
+  // Create a new thread
   MCClientThread* client = new MCClientThread(socketDescriptor, this);
-  QObject::connect(client, SIGNAL(connected()), this, SLOT(startedConnection_()));
 
+  // Setup signals/slots connections
+  qRegisterMetaType<MCClientThread::Error>("MCClientThread::Error");
+  qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
+
+  QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
+  QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
+
+  // Add the client in the server
+  addClient(client);
+
+  // Run the thread (Start listening activities on the socket)
   client->start();
-
-  //for (int i = 0; i < 1000000; ++i) {
-  //  for (int j = 0; j < 1000; ++j);
-  //}
-
-  ILogger::Trace() << "Emit connection refused";
-  client->emitPeerConnectionRefused();
-  //QMetaObject::invokeMethod(client, "peerConnectionRefused", Qt::DirectConnection);
-
-  //emit client->peerConnectionRefused();
 }
 
 void MCServer::setError_(Error error, bool signal) {
@@ -105,7 +116,7 @@ void MCServer::setError_(Error error, bool signal) {
     case NoError:
       m_sError = QT_TRANSLATE_NOOP(MCServer, "No error");
       break;
-    case ServerFull:
+    case ServerFullError:
       m_sError = QT_TRANSLATE_NOOP(MCServer, "The server is full. You must increase the variable MAX_CONNECTIONS to accept new clients.");
       break;
     default:

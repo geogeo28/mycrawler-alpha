@@ -35,7 +35,7 @@ public:
     typedef enum {
       NoError,
       UnknownError,
-      ServerFull
+      ServerFullError
     } Error;
 
 public:
@@ -46,7 +46,8 @@ public:
 public:
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
-    int maxConnections() const { return MAX_CONNECTIONS; }
+    int maxConnections() const;
+    void setMaxConnections(int n);
     bool canAcceptNewConnection() const;
 
 public:
@@ -55,26 +56,18 @@ public:
 
 signals:
     void error(MCServer::Error error);
-    void errorClient(MCClientThread* client, MCClientThread::Error error);
-    void finishedClient(MCClientThread* client);
+    void clientError(MCClientThread* client, MCClientThread::Error error);
+    void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
 
 private slots:
-    void errorClient_(MCClientThread::Error error);
-    void finishedClient_();
-
-private slots:
-    void startedConnection_();
+    void clientError_(MCClientThread::Error error);
+    void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
 
 protected:
     void incomingConnection(int socketDescriptor);
 
 private:
     void setError_(Error error, bool signal = true);
-
-private:
-    typedef enum {
-      MAX_CONNECTIONS = 0
-    };
 
 private:
     Error m_enumError;

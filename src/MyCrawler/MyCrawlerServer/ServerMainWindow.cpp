@@ -18,10 +18,12 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ServerMainWindow.h"
 #include "ServerApplication.h"
+#include "ClientPeer.h"
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -49,8 +51,8 @@ void MCServerMainWindow::setupComponents_() {
   // Setup server signals/slots connections
   ILogger::Debug() << "Setup server signals/slots connections.";
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
-  QObject::connect(MCServer::instance(), SIGNAL(errorClient(MCClientThread*,MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*,MCClientThread::Error)));
-  QObject::connect(MCServer::instance(), SIGNAL(finishedClient(MCClientThread*)), this, SLOT(slotClientFinished(MCClientThread*)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -102,12 +104,28 @@ void MCServerMainWindow::slotServerError(MCServer::Error error) {
 }
 
 void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
-  /*ILogger::Error() << QString("Client %1 : %2")
-                      .arg(client->clientPeer()->peerAddressWithPort())
-                      .arg(client->errorString());*/
+  AssertCheckPtr(client);
+
+  QString remainder;
+  if (error == MCClientThread::ClientPeerError) {
+    const MCClientPeer* clientPeer = client->clientPeer();
+    remainder = QString("\nDetails : %1 (%2)")
+                .arg(clientPeer->errorString())
+                .arg(clientPeer->error());
+  }
+
+  ILogger::Error() << QString("Client %1 : Error (%2) : %3%4")
+                      .arg(client->threadInfo().peerAddressAndPort())
+                      .arg(error)
+                      .arg(client->errorString())
+                      .arg(remainder);
 }
 
-void MCServerMainWindow::slotClientFinished(MCClientThread* client) {
-  /*ILogger::Trace() << QString("Client %1 : Thread finished.")
-                      .arg(client->clientPeer()->peerAddressWithPort());*/
+void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
+  AssertCheckPtr(client);
+
+  ILogger::Trace() << QString("Client %1 : State changed (%2) : %3")
+                      .arg(client->threadInfo().peerAddressAndPort())
+                      .arg(state)
+                      .arg(MCClientThread::connectionStateToString(state));
 }

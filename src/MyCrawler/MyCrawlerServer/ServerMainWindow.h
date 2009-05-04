@@ -52,7 +52,7 @@ private slots:
 private slots:
     void slotServerError(MCServer::Error error);
     void slotClientError(MCClientThread* client, MCClientThread::Error error);
-    void slotClientFinished(MCClientThread* client);
+    void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
 
 };
 
