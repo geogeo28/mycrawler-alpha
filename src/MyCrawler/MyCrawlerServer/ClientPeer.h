@@ -31,17 +31,12 @@ class MCClientPeer : public QTcpSocket
 
 public:
     MCClientPeer(QObject* parent = NULL);
+    ~MCClientPeer();
 
     void setConnected();
 
 public slots:
     void connectionRefused();
-
-//signals:
-//    void signal_queryGet(MCClientPeer*);
-
-//public slots:
-//    void call_queryGet() { ILogger::Trace() << this; emit signal_queryGet(this); }
 
 private slots:
     void readyRead_();

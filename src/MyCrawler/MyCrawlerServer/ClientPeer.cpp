@@ -25,17 +25,26 @@
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent)
 {
+  ILogger::Debug() << "Construct.";
+
   QObject::connect(this, SIGNAL(readyRead()), this, SLOT(readyRead_()));
   QObject::connect(this, SIGNAL(connected()), this, SLOT(connected_()));
 }
 
+MCClientPeer::~MCClientPeer() {
+  ILogger::Debug() << "Destroyed.";
+}
+
 void MCClientPeer::setConnected() {
+  ILogger::Debug() << QString("%1:%2 : Set state to connected.")
+                      .arg(peerAddress().toString()).arg(peerPort());
+
   setSocketState(ConnectedState);
   waitForConnected();
 }
 
 void MCClientPeer::connectionRefused() {
-  ILogger::Debug() << QString("Client peer %1:%2 : Connection refused.")
+  ILogger::Debug() << QString("%1:%2 : Connection refused.")
                       .arg(peerAddress().toString()).arg(peerPort());
 
   setSocketError(ConnectionRefusedError);
@@ -43,11 +52,11 @@ void MCClientPeer::connectionRefused() {
 }
 
 void MCClientPeer::readyRead_() {
-  ILogger::Trace() << QString("Client peer %1:%2 : Ready read.")
+  ILogger::Trace() << QString("Client %1:%2 : Ready read.")
                       .arg(peerAddress().toString()).arg(peerPort());
 }
 
 void MCClientPeer::connected_() {
-  ILogger::Debug() << QString("Client peer %1:%2 : Signal connected emitted.")
+  ILogger::Debug() << QString("%1:%2 : Signal connected emitted.")
                       .arg(peerAddress().toString()).arg(peerPort());
 }

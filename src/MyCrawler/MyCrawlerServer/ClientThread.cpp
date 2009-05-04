@@ -42,13 +42,13 @@ MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
       m_nSocketDescriptor(socketDescriptor),
       m_enumConnectionState(UnconnectedState)
 {
-  ILogger::Debug() << "Construct a ClientThread.";
+  ILogger::Debug() << "Construct.";
 
   setError_(NoError, false);
 }
 
 MCClientThread::~MCClientThread() {
-  ILogger::Debug() << "Destroy a ClientThread.";
+  ILogger::Debug() << "Destroyed.";
 }
 
 QString MCClientThread::connectionStateToString(ConnectionState state) {
@@ -65,32 +65,10 @@ QString MCClientThread::connectionStateToString(ConnectionState state) {
   }
 }
 
-/*const MCClientPeer* MCClientThread::clientPeer() {
-  MCClientPeer* peer = NULL;
-
-
-  ILogger::Trace() << "invoke";
-
-  //emit signal_clientPeer();
-
-  int methodIndex = this->metaObject()->indexOfMethod("signal_clientPeer()");
-  QMetaMethod method = this->metaObject()->method(methodIndex);
-
-  ILogger::Trace() << method.methodType() << " " <<  method.signature() << " " << method.tag();
-
-  method.invoke(this, Qt::DirectConnection, Q_RETURN_ARG(MCClientPeer*, peer));
-
-  ILogger::Trace() << peer;
-
-  //QMetaObject::activate(this, &(this->staticMetaObject), 0, 0);
-
-  //ILogger::Trace() << this->metaObject()->indexOfMethod("signal_clientPeer()");
-
-  return peer;
-}*/
-
 void MCClientThread::run() {
   m_mutex.lock();
+
+  ILogger::Debug() << currentThread() << " : Running...";
 
   MCClientPeer clientPeer;
   m_pClientPeer = &clientPeer;
@@ -99,11 +77,10 @@ void MCClientThread::run() {
   qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
   qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
 
-  //QObject::connect(this, SIGNAL(signal_clientPeer()), &clientPeer, SLOT(call_queryGet()));
-  //QObject::connect(&clientPeer, SIGNAL(signal_queryGet(MCClientPeer*)), this, SLOT(peerQueryGet_(MCClientPeer*)));
-
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
+  QObject::connect(&clientPeer, SIGNAL(connected()), this, SLOT(peerConnected_()));
+  QObject::connect(&clientPeer, SIGNAL(disconnected()), this, SLOT(peerDisconnected_()));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -118,14 +95,21 @@ void MCClientThread::run() {
   m_threadInfo.setPeerPort(m_pClientPeer->peerPort());
   
   // Set connection state to listening
-  setConnectionState_(ListeningState, true);
+  //setConnectionState_(ListeningState, true);
 
   m_mutex.unlock();
+
+  ILogger::Debug() << currentThread()
+                   << QString(" - %2 : Execute the event loop.")
+                      .arg(threadInfo().peerAddressAndPort());
 
   // Event loop
   exec();
 
+  m_mutex.lock();
+  clientPeer.disconnectFromHost();
   m_pClientPeer = NULL;
+  m_mutex.unlock();
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
@@ -161,9 +145,23 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
   setConnectionState_(state, true);
 }
 
-void MCClientThread::setError_(Error error, bool signal) {
-  m_mutex.lock();
+void MCClientThread::peerConnected_() {
+  ILogger::Debug() << QString("%1 : Connected.")
+                      .arg(threadInfo().peerAddressAndPort());
 
+  emit connected();
+}
+
+void MCClientThread::peerDisconnected_() {
+  ILogger::Debug() << QString("%1 : Disconnected. Quit and delete the thread.")
+                      .arg(threadInfo().peerAddressAndPort());
+
+  emit disconnected();
+
+  quit();
+}
+
+void MCClientThread::setError_(Error error, bool signal) {
   m_enumError = error;
 
   switch (error) {
@@ -179,8 +177,6 @@ void MCClientThread::setError_(Error error, bool signal) {
       break;
   }
 
-  m_mutex.unlock();
-
   if (signal == true) {
     emit MCClientThread::error(m_enumError);
   }
@@ -190,10 +186,10 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
   // Do nothing if the connection state didn't changed
   if (state == m_enumConnectionState) { return; }
 
-  ILogger::Debug() << QString(" Client %1 : Connection state changed - %2 (%3).")
+  ILogger::Debug() << QString("%1 : Connection state changed : %2 (%3).")
                       .arg(threadInfo().peerAddressAndPort())
-                      .arg(state)
-                      .arg(MCClientThread::connectionStateToString(state));
+                      .arg(MCClientThread::connectionStateToString(state))
+                      .arg(state);
 
   m_enumConnectionState = state;
 

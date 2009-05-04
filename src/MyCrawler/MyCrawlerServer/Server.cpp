@@ -23,18 +23,42 @@
 
 #include "Server.h"
 
-Q_GLOBAL_STATIC(MCServer, MCServerInstance)        
+MCServer* MCServer::s_instance = NULL;
 
 int MaxConnections = 5;
 
 MCServer* MCServer::instance() {
-  return MCServerInstance();
+  if (s_instance == NULL) {
+    s_instance = new MCServer();
+  }
+
+  return s_instance;
+}
+
+void MCServer::destroy() {
+  if (s_instance != NULL) {
+    delete s_instance;
+    s_instance = NULL;
+  }
 }
 
 MCServer::MCServer(QObject* parent)
   : QTcpServer(parent)
 {
+  ILogger::Debug() << "Construct.";
+
   setError_(NoError);
+}
+
+MCServer::~MCServer() {
+  ILogger::Debug() << "Delete all threads.";
+  foreach (MCClientThread* client, m_lstClientThreads) {
+    ILogger::Debug() << "Attempt to destroy the thread " << client << ".";
+    client->quit();
+    client->wait();
+    client->deleteLater();
+  }
+  ILogger::Debug() << "Destroyed.";
 }
 
 int MCServer::maxConnections() const {
@@ -76,6 +100,12 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
   emit clientConnectionStateChanged(client, state);
 }
 
+void MCServer::clientDisconnected_() {
+  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  removeClient(client);
+  client->deleteLater();
+}
+
 void MCServer::incomingConnection(int socketDescriptor) { 
   ILogger::Trace() << "Server : New incoming connection.";
 
@@ -101,6 +131,7 @@ void MCServer::incomingConnection(int socketDescriptor) {
 
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
+  QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
 
   // Add the client in the server
   addClient(client);

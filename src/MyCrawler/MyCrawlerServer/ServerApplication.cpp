@@ -23,6 +23,7 @@
 #include "Debug/Logger.h"
 
 #include "ServerApplication.h"
+#include "Server.h"
 #include "ServerMainWindow.h"
 
 MCServerApplication* MCServerApplication::s_instance = NULL;
@@ -36,12 +37,13 @@ void MCServerApplication::init_() {
 }
 
 void MCServerApplication::cleanAll_() {
+  MCServer::destroy();
   if (MainWindow) { delete MainWindow; }
 }
 
 MCServerApplication::MCServerApplication(int &argc, char** argv)
   : IApplication(argc, argv)
-{
+{ 
   Assert(s_instance == NULL);
 
   s_instance = this;
@@ -66,10 +68,11 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 
 MCServerApplication::~MCServerApplication() {
   cleanAll_();
+  ILogger::Debug() << "Destroyed.";
 }
 
 void MCServerApplication::run() {
-  ILogger::Debug() << "Application is running.";
+  ILogger::Debug() << "Running...";
 
   MainWindow->show();
 }
