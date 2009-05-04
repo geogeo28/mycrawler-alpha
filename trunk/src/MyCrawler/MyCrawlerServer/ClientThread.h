@@ -87,20 +87,17 @@ public:
 public:
     static QString connectionStateToString(ConnectionState state);
 
-//signals:
-//    MCClientPeer* signal_clientPeer();
-
-//public slots:
-//    const MCClientPeer* clientPeer() { return m_pClientPeer; }
-
 signals:
     void error(MCClientThread::Error error);
     void connectionStateChanged(MCClientThread::ConnectionState state);
+    void connected();
+    void disconnected();
 
 private slots:
-    //const MCClientPeer* peerQueryGet_(MCClientPeer* clientPeer) const { ILogger::Trace() << clientPeer; return clientPeer; }
     void peerError_(QAbstractSocket::SocketError socketError);
     void peerStateChanged_(QAbstractSocket::SocketState socketState);
+    void peerConnected_();
+    void peerDisconnected_();
 
 protected:
     void run();

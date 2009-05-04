@@ -40,8 +40,10 @@ public:
 
 public:
     static MCServer* instance();
+    static void destroy();
 
     MCServer(QObject* parent = NULL);
+    ~MCServer();
 
 public:
     Error error() const { return m_enumError; }
@@ -62,6 +64,7 @@ signals:
 private slots:
     void clientError_(MCClientThread::Error error);
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
+    void clientDisconnected_();
 
 protected:
     void incomingConnection(int socketDescriptor);
@@ -70,10 +73,11 @@ private:
     void setError_(Error error, bool signal = true);
 
 private:
+    static MCServer* s_instance;
+
     Error m_enumError;
     QString m_sError;
 
-private:    
     QList<MCClientThread*> m_lstClientThreads;
 };
 

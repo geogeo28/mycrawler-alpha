@@ -27,7 +27,7 @@
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
-  setAttribute(Qt::WA_DeleteOnClose, true);
+  //setAttribute(Qt::WA_DeleteOnClose, true);
 
   // Set title of the window
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
@@ -60,16 +60,15 @@ void MCServerMainWindow::cleanAll_() {
 }
 
 void MCServerMainWindow::closeWindow_() {
-  // Save window layout
   ILogger::Debug() << "Save the setting window layout.";
   MCApp->Settings->saveLayout(this);
-
-  deleteLater();
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
   : QMainWindow(parent)
 {
+  ILogger::Debug() << "Construct.";
+
   setupUi(this);
 
   try {
@@ -86,6 +85,8 @@ MCServerMainWindow::~MCServerMainWindow()
 {
   closeWindow_();
   cleanAll_();
+
+  ILogger::Debug() << "Destroyed.";
 }
 
 void MCServerMainWindow::on_buttonServerListen_clicked() {
@@ -114,18 +115,18 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
                 .arg(clientPeer->error());
   }
 
-  ILogger::Error() << QString("Client %1 : Error (%2) : %3%4")
+  ILogger::Error() << QString("Client %1 : Error : %2 (%4)%3.")
                       .arg(client->threadInfo().peerAddressAndPort())
-                      .arg(error)
                       .arg(client->errorString())
+                      .arg(error)
                       .arg(remainder);
 }
 
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
   AssertCheckPtr(client);
 
-  ILogger::Trace() << QString("Client %1 : State changed (%2) : %3")
+  ILogger::Trace() << QString("Client %1 : State changed : %2 (%3)")
                       .arg(client->threadInfo().peerAddressAndPort())
-                      .arg(state)
-                      .arg(MCClientThread::connectionStateToString(state));
+                      .arg(MCClientThread::connectionStateToString(state))
+                      .arg(state);
 }
