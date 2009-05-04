@@ -23,63 +23,87 @@
 
 #include "ClientThread.h"
 
+MCClientThreadInfo::MCClientThreadInfo(
+  const QString& peerName,
+  const QHostAddress& peerAddress,
+  quint16 peerPort
+)
+  : m_sPeerName(peerName), m_peerAddress(peerAddress), m_u16PeerPort(peerPort)
+{}
+
+QString MCClientThreadInfo::peerAddressAndPort() const {
+  return QString("%1:%2")
+         .arg(peerAddress().toString())
+         .arg(peerPort());
+}
+
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
-      m_nSocketDescriptor(socketDescriptor)
+      m_nSocketDescriptor(socketDescriptor),
+      m_enumConnectionState(UnconnectedState)
 {
   ILogger::Debug() << "Construct a ClientThread.";
 
   setError_(NoError, false);
-
-  //QObject::connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
-  //QObject::connect(this, SIGNAL(terminated()), this, SLOT(deleteLater()));
-
 }
 
 MCClientThread::~MCClientThread() {
   ILogger::Debug() << "Destroy a ClientThread.";
-
-  // Close the client peer connection
-  /*if (m_pClientPeer) {
-    m_pClientPeer->close();
-    delete m_pClientPeer;
-  }*/
 }
 
-/*void MCClientThread::changeConnectionState(MCClientThread::ConnectionState state) {
+QString MCClientThread::connectionStateToString(ConnectionState state) {
   switch (state) {
-    case ConnectionRefusedState:
-      //m_pClientPeer->setSocketError(MCClientPeer::ConnectionRefusedError);
-      //m_pClientPeer->abort();
-      //quit();
-      ILogger::Trace() << this->currentThread() << " Emit connection refused.";
-      //emit peerConnectionRefused();
-      m_pClientPeer->connectionRefused();
-      break;
-    default:;
+    case UnconnectedState:  return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
+    case HostLookUpState:   return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
+    case ConnectingState:   return QT_TRANSLATE_NOOP(MCClientThread, "Connecting");
+    case ConnectedState:    return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
+    case ClosingState:      return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
+    case ListeningState:    return QT_TRANSLATE_NOOP(MCClientThread, "Listening");
+
+    default:
+      return QT_TRANSLATE_NOOP(MCClientThread, "Invalid state");
   }
+}
+
+/*const MCClientPeer* MCClientThread::clientPeer() {
+  MCClientPeer* peer = NULL;
+
+
+  ILogger::Trace() << "invoke";
+
+  //emit signal_clientPeer();
+
+  int methodIndex = this->metaObject()->indexOfMethod("signal_clientPeer()");
+  QMetaMethod method = this->metaObject()->method(methodIndex);
+
+  ILogger::Trace() << method.methodType() << " " <<  method.signature() << " " << method.tag();
+
+  method.invoke(this, Qt::DirectConnection, Q_RETURN_ARG(MCClientPeer*, peer));
+
+  ILogger::Trace() << peer;
+
+  //QMetaObject::activate(this, &(this->staticMetaObject), 0, 0);
+
+  //ILogger::Trace() << this->metaObject()->indexOfMethod("signal_clientPeer()");
+
+  return peer;
 }*/
 
 void MCClientThread::run() {
+  m_mutex.lock();
+
   MCClientPeer clientPeer;
+  m_pClientPeer = &clientPeer;
 
-  QObject::connect(
-    &clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
-    this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)),
-    Qt::DirectConnection
-  );
+  // Setup signals/slots connections
+  qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
+  qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
 
-  QObject::connect(
-    &clientPeer, SIGNAL(readyRead()),
-    this, SLOT(peerReadyRead_()),
-    Qt::DirectConnection
-  );
+  //QObject::connect(this, SIGNAL(signal_clientPeer()), &clientPeer, SLOT(call_queryGet()));
+  //QObject::connect(&clientPeer, SIGNAL(signal_queryGet(MCClientPeer*)), this, SLOT(peerQueryGet_(MCClientPeer*)));
 
-  QObject::connect(
-    this, SIGNAL(peerConnectionRefused()),
-    &clientPeer, SLOT(connectionRefused()),
-    Qt::QueuedConnection
-  );
+  QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
+  QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -88,46 +112,93 @@ void MCClientThread::run() {
     return;
   }
 
-  ILogger::Trace() << currentThread() << QString(" Client %1 : Listening...").arg(clientPeer.peerAddressWithPort());
+  // Set thread' information if doesn't valid
+  m_threadInfo.setPeerName(m_pClientPeer->peerName());
+  m_threadInfo.setPeerAddress(m_pClientPeer->peerAddress());
+  m_threadInfo.setPeerPort(m_pClientPeer->peerPort());
+  
+  // Set connection state to listening
+  setConnectionState_(ListeningState, true);
 
-  //emit connected();
+  m_mutex.unlock();
 
   // Event loop
   exec();
+
+  m_pClientPeer = NULL;
+}
+
+void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
+  setError_(ClientPeerError, true);
 }
 
 void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
-  //const MCClientPeer& clientPeer = qobject_cast<const MCClientPeer&>(sender());
-  ILogger::Trace() << "Socket state changed " << socketState;
-}
+  QMutexLocker locker(&m_mutex);  
 
-void MCClientThread::peerReadyRead_() {
-  ILogger::Trace() << "Ready read.";
-  emit connected();
-  //emit peerConnectionRefused();
-}
+  ConnectionState state = InvalidState;
 
-void MCClientThread::emitPeerConnectionRefused() {
-  emit peerConnectionRefused();
+  // Translate socket state to MCClientThread::connectionState
+  switch (socketState) {
+    case QAbstractSocket::UnconnectedState:
+      state = UnconnectedState;
+      break;
+    case QAbstractSocket::HostLookupState:
+      state = HostLookUpState;
+      break;
+    case QAbstractSocket::ConnectingState:
+      state = ConnectingState;
+      break;
+    case QAbstractSocket::ConnectedState:
+      state = ConnectedState;
+      break;
+    case QAbstractSocket::ClosingState:
+      state = ClosingState;
+      break;
+    default:;
+  }
+
+  // Emit signal state changed
+  setConnectionState_(state, true);
 }
 
 void MCClientThread::setError_(Error error, bool signal) {
+  m_mutex.lock();
+
   m_enumError = error;
 
   switch (error) {
     case NoError:
-      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "No error.");
+      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "No error");
       break;
     case ClientPeerError:
-      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error was occurred in the client peer.");
+      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error was occurred in the client peer");
       break;
     default:
       m_enumError = MCClientThread::UnknownError;
-      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "Unknown error.");
+      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "Unknown error");
       break;
   }
 
+  m_mutex.unlock();
+
   if (signal == true) {
     emit MCClientThread::error(m_enumError);
+  }
+}
+
+void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
+  // Do nothing if the connection state didn't changed
+  if (state == m_enumConnectionState) { return; }
+
+  ILogger::Debug() << QString(" Client %1 : Connection state changed - %2 (%3).")
+                      .arg(threadInfo().peerAddressAndPort())
+                      .arg(state)
+                      .arg(MCClientThread::connectionStateToString(state));
+
+  m_enumConnectionState = state;
+
+  // Emit signal if set
+  if (signal == true) {
+    emit MCClientThread::connectionStateChanged(state);
   }
 }

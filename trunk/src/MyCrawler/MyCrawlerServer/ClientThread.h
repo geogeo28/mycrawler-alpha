@@ -24,9 +24,34 @@
 #define CLIENTTHREAD_H
 
 #include <QThread>
+#include <QMutex>
 #include <QPointer>
+#include <QHostAddress>
 
 #include "ClientPeer.h"
+
+class MCClientThreadInfo {
+  public:
+    MCClientThreadInfo(
+      const QString& peerName = QString(),
+      const QHostAddress& peerAddress = QHostAddress(),
+      quint16 peerPort = 0
+    );
+
+    const QString& peerName() const { return m_sPeerName; }
+    const QHostAddress& peerAddress() const { return m_peerAddress; }
+    quint16 peerPort() const { return m_u16PeerPort;}
+    QString peerAddressAndPort() const;
+
+    void setPeerName(const QString& peerName) { m_sPeerName = peerName; }
+    void setPeerAddress(const QHostAddress& peerAddress) { m_peerAddress = peerAddress; }
+    void setPeerPort(quint16 peerPort) { m_u16PeerPort = peerPort; }
+
+  private:
+    QString m_sPeerName;
+    QHostAddress m_peerAddress;
+    quint16 m_u16PeerPort;
+};
 
 class MCClientThread : public QThread
 {
@@ -39,48 +64,62 @@ public:
       ClientPeerError
     } Error;
 
-    /*typedef enum {
+    typedef enum {
+      InvalidState,
       UnconnectedState,
+      HostLookUpState,
       ConnectingState,
       ConnectedState,
-      ConnectionRefusedState,
-      IdleState,
-    } ConnectionState;*/
+      ClosingState,
+      ListeningState
+    } ConnectionState;
 
 public:
     MCClientThread(int socketDescriptor, QObject* parent = NULL);
     ~MCClientThread();
 
+    const MCClientPeer* clientPeer() { return m_pClientPeer; }
+    const MCClientThreadInfo& threadInfo() const { return m_threadInfo; }
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
+    ConnectionState connectionState() const { return m_enumConnectionState; }
 
-    void emitPeerConnectionRefused();
+public:
+    static QString connectionStateToString(ConnectionState state);
+
+//signals:
+//    MCClientPeer* signal_clientPeer();
+
+//public slots:
+//    const MCClientPeer* clientPeer() { return m_pClientPeer; }
 
 signals:
     void error(MCClientThread::Error error);
-    void connected();
+    void connectionStateChanged(MCClientThread::ConnectionState state);
 
-    void peerConnectionRefused();
-
-public slots:
-    //void changeConnectionState(MCClientThread::ConnectionState state);
-
+private slots:
+    //const MCClientPeer* peerQueryGet_(MCClientPeer* clientPeer) const { ILogger::Trace() << clientPeer; return clientPeer; }
+    void peerError_(QAbstractSocket::SocketError socketError);
+    void peerStateChanged_(QAbstractSocket::SocketState socketState);
 
 protected:
     void run();
 
-private slots:
-    void peerStateChanged_(QAbstractSocket::SocketState socketState);
-    void peerReadyRead_();
-
 private:
     void setError_(Error error, bool signal = true);
+    void setConnectionState_(ConnectionState state, bool signal);
 
 private:
+    QMutex m_mutex;
+
+    MCClientThreadInfo m_threadInfo;
+
     Error m_enumError;
     QString m_sError;
 
     int m_nSocketDescriptor;
+    QPointer<MCClientPeer> m_pClientPeer;
+    ConnectionState m_enumConnectionState;
 };
 
 #endif // CLIENTTHREAD_H
