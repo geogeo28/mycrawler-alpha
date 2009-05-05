@@ -39,7 +39,6 @@ protected:
     void write(LogLevel level, const QString& message);
 
 private:
-
     QWidget* m_widgetParent;
     QString m_sBuffer;
 };
