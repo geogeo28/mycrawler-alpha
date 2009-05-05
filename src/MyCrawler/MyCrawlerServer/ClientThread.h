@@ -96,8 +96,6 @@ signals:
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
     void peerStateChanged_(QAbstractSocket::SocketState socketState);
-    void peerConnected_();
-    void peerDisconnected_();
 
 protected:
     void run();
