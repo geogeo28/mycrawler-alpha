@@ -115,7 +115,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
                 .arg(clientPeer->error());
   }
 
-  ILogger::Error() << QString("Client %1 : Error : %2 (%4)%3.")
+  ILogger::Error() << QString("Client %1 : Error : %2 (%3)%4.")
                       .arg(client->threadInfo().peerAddressAndPort())
                       .arg(client->errorString())
                       .arg(error)
