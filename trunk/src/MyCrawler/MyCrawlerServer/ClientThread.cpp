@@ -79,8 +79,6 @@ void MCClientThread::run() {
 
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
-  QObject::connect(&clientPeer, SIGNAL(connected()), this, SLOT(peerConnected_()));
-  QObject::connect(&clientPeer, SIGNAL(disconnected()), this, SLOT(peerDisconnected_()));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -107,7 +105,15 @@ void MCClientThread::run() {
   exec();
 
   m_mutex.lock();
+
+  ILogger::Debug() << "Quit the event loop and force to disconnect the client peer.";
   clientPeer.disconnectFromHost();
+  if (clientPeer.state() != MCClientPeer::UnconnectedState) {
+    ILogger::Debug() << "Waiting the client peer for disconnected...";
+    clientPeer.waitForDisconnected();
+  }
+
+  setConnectionState_(UnconnectedState, true);
   m_pClientPeer = NULL;
   m_mutex.unlock();
 }
@@ -145,22 +151,6 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
   setConnectionState_(state, true);
 }
 
-void MCClientThread::peerConnected_() {
-  ILogger::Debug() << QString("%1 : Connected.")
-                      .arg(threadInfo().peerAddressAndPort());
-
-  emit connected();
-}
-
-void MCClientThread::peerDisconnected_() {
-  ILogger::Debug() << QString("%1 : Disconnected. Quit and delete the thread.")
-                      .arg(threadInfo().peerAddressAndPort());
-
-  emit disconnected();
-
-  quit();
-}
-
 void MCClientThread::setError_(Error error, bool signal) {
   m_enumError = error;
 
@@ -196,5 +186,32 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
   // Emit signal if set
   if (signal == true) {
     emit MCClientThread::connectionStateChanged(state);
+  }
+
+  // Connected and disconnected
+  switch (state) {
+    // Connected
+    case ConnectedState:
+    {
+      ILogger::Debug() << QString("%1 : Connected.")
+                          .arg(threadInfo().peerAddressAndPort());
+      if (signal == true) { emit connected(); }
+
+      break;
+    }
+
+    // Unconnected
+    case UnconnectedState:
+    {
+      ILogger::Debug() << QString("%1 : Disconnected. Quit and delete the thread.")
+                          .arg(threadInfo().peerAddressAndPort());
+
+      if (signal == true) { emit disconnected(); }
+      quit();
+
+      break;
+    }
+
+    default:;
   }
 }

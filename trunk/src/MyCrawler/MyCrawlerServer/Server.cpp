@@ -52,7 +52,10 @@ MCServer::MCServer(QObject* parent)
 
 MCServer::~MCServer() {
   ILogger::Debug() << "Delete all threads.";
-  foreach (MCClientThread* client, m_lstClientThreads) {
+  QListIterator<MCClientThread*> it(m_lstClientThreads);
+  while (it.hasNext()) {
+    MCClientThread* client = it.next();
+
     ILogger::Debug() << "Attempt to destroy the thread " << client << ".";
     client->quit();
     client->wait();
@@ -81,12 +84,14 @@ bool MCServer::addClient(MCClientThread* client) {
     return false;
   }
 
+  ILogger::Debug() << "Add a new client " << client << ".";
   m_lstClientThreads << client;
 
   return true;
 }
 
 void MCServer::removeClient(MCClientThread* client) {
+  ILogger::Debug() << "Remove the client " << client << ".";
   m_lstClientThreads.removeAll(client);
 }
 
@@ -100,8 +105,10 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
   emit clientConnectionStateChanged(client, state);
 }
 
-void MCServer::clientDisconnected_() {
+void MCServer::clientDisconnected_() { 
   MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
+  ILogger::Debug() << "The thread " << client << " is finished (client disconnected).";
+
   removeClient(client);
   client->deleteLater();
 }
