@@ -48,8 +48,7 @@ void MCServerMainWindow::setupWindow_() {
 }
 
 void MCServerMainWindow::setupComponents_() {  
-  // Setup server signals/slots connections
-  ILogger::Debug() << "Setup server signals/slots connections.";
+  ILogger::Debug() << "Setup signals/slots connections.";
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
