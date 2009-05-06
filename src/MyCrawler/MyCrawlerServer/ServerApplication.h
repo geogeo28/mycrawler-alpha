@@ -26,14 +26,12 @@
 #include <QPointer>
 
 #include "Core/Application.h"
+#include "ServerMainWindow.h"
 
-class MCServerMainWindow;
+//class MCServerMainWindow;
 
 class MCServerApplication : public IApplication
 {
-public:
-    QPointer<MCServerMainWindow> MainWindow;
-
 private:
     void init_();
     void cleanAll_();
@@ -44,11 +42,14 @@ public:
 
     MCServerApplication(int &argc, char** argv);
     ~MCServerApplication();
+    
+    MCServerMainWindow* mainWindow() { return m_pMainWindow; }
 
     void run();
 
 private:
     static MCServerApplication* s_instance;
+    QPointer<MCServerMainWindow> m_pMainWindow;
 };
 
 #define MCApp   MCServerApplication::instance()

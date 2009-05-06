@@ -34,7 +34,7 @@ void MCServerMainWindow::setupWindow_() {
 
   // If this window have not parameters, place the window on the center of the screen if possible
   ILogger::Debug() << "Try to load the setting window layout.";
-  if (!MCApp->Settings->loadLayout(this)) {
+  if (!MCApp->settings()->loadLayout(this)) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -61,7 +61,7 @@ void MCServerMainWindow::cleanAll_() {
 
 void MCServerMainWindow::closeWindow_() {
   ILogger::Debug() << "Save the setting window layout.";
-  MCApp->Settings->saveLayout(this);
+  MCApp->settings()->saveLayout(this);
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)

@@ -40,12 +40,12 @@ void MCServerApplication::destroy() {
 }
 
 void MCServerApplication::init_() {
-  MainWindow = new MCServerMainWindow();
+  m_pMainWindow = new MCServerMainWindow();
 }
 
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
-  if (MainWindow) { delete MainWindow; }
+  if (m_pMainWindow) { delete m_pMainWindow; }
 }
 
 MCServerApplication::MCServerApplication(int &argc, char** argv)
@@ -70,7 +70,7 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 
   init_();
 
-  installLoggerMsgBox(MainWindow);
+  installLoggerMsgBox(mainWindow());
 }
 
 MCServerApplication::~MCServerApplication() {
@@ -81,5 +81,5 @@ MCServerApplication::~MCServerApplication() {
 void MCServerApplication::run() {
   ILogger::Debug() << "Running...";
 
-  MainWindow->show();
+  mainWindow()->show();
 }

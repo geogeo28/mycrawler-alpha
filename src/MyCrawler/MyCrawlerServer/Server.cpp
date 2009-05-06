@@ -92,7 +92,7 @@ bool MCServer::addClient(MCClientThread* client) {
 
 void MCServer::removeClient(MCClientThread* client) {
   ILogger::Debug() << "Remove the client " << client << ".";
-  m_lstClientThreads.removeAll(client);
+  m_lstClientThreads.removeOne(client);
 }
 
 void MCServer::clientError_(MCClientThread::Error error) {
