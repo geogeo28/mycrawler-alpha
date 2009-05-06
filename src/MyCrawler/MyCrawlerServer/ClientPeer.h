@@ -30,19 +30,50 @@ class MCClientPeer : public QTcpSocket
     Q_OBJECT
 
 public:
+    typedef enum {
+      UnknownTimeoutNotify,
+      ConnectTimeoutNotify,
+      PeerTimeoutNotify,
+    } TimeoutNotify;
+
+public:
     MCClientPeer(QObject* parent = NULL);
     ~MCClientPeer();
 
+public:
+    static int timeout() { return s_nTimeout; }
+    static int connectTimeout() { return s_nConnectTimeout; }
+    static int keepAliveInterval() { return s_nKeepAliveInterval; }
+    static void setTimeout(int n) { s_nTimeout = n * 1000; }
+    static void setConnectTimeout(int n) { s_nConnectTimeout = n * 1000; }
+    static void setKeepAliveInterval(int n) { s_nKeepAliveInterval = n * 1000; }
+
     void setConnected();
+
+signals:
+    void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void packetKeepAliveSended();
 
 public slots:
     void connectionRefused();
 
 private slots:
-    void readyRead_();
+    void processIncomingData_();
     void connected_();
 
+protected:
+    void timerEvent(QTimerEvent *event);
+
 private:
+    static int s_nTimeout;
+    static int s_nConnectTimeout;
+    static int s_nKeepAliveInterval;
+
+    int m_idTimeoutTimer;
+    int m_idKeepAliveTimer;
+    bool m_bInvalidateTimeout;
+
+    bool m_bReceivedHandShake;
 
 };
 

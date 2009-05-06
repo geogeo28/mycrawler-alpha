@@ -76,9 +76,12 @@ void MCClientThread::run() {
   // Setup signals/slots connections
   qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
   qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
+  qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
 
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
+  QObject::connect(&clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
+  QObject::connect(&clientPeer, SIGNAL(packetKeepAliveSended()), this, SIGNAL(keepAliveNotify()));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -105,15 +108,17 @@ void MCClientThread::run() {
   exec();
 
   m_mutex.lock();
-
-  ILogger::Debug() << "Quit the event loop and force to disconnect the client peer.";
-  clientPeer.disconnectFromHost();
+  // Disconnection of the client peer volunteer (initiate by the client thread)
   if (clientPeer.state() != MCClientPeer::UnconnectedState) {
-    ILogger::Debug() << "Waiting the client peer for disconnected...";
-    clientPeer.waitForDisconnected();
-  }
+    ILogger::Debug() << "Quit the event loop and force to disconnect the client peer.";
+    clientPeer.disconnectFromHost();
+    if (clientPeer.state() != MCClientPeer::UnconnectedState) {
+      ILogger::Debug() << "Waiting the client peer for disconnected...";
+      clientPeer.waitForDisconnected();
+    }
 
-  setConnectionState_(UnconnectedState, true);
+    setConnectionState_(UnconnectedState, true);
+  }
   m_pClientPeer = NULL;
   m_mutex.unlock();
 }
