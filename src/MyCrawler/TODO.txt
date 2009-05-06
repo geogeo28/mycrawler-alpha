@@ -16,7 +16,7 @@ X Create a testing module. See QTest library.
                NoticeAll => stdout and mycrawler.log
 (2009-04-28 Rev 49) - Add a level Trace into the logger.
 (2009-04-29 Rev 53) - Add settings capability. See QSettings class.
-- Bug : When an exception occured no message box is showed even if a widget has been created.
+(2009-05-06 Rev 71) - Bug : When an exception occured no message box is showed even if a widget has been created.
 
 
 
