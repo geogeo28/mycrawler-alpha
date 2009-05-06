@@ -40,6 +40,7 @@ private:
 
 public:
     static MCServerApplication* instance();
+    static void destroy();
 
     MCServerApplication(int &argc, char** argv);
     ~MCServerApplication();
