@@ -32,6 +32,13 @@ MCServerApplication* MCServerApplication::instance() {
   return s_instance;
 }
 
+void MCServerApplication::destroy() {
+  if (s_instance != NULL) {
+    delete s_instance;
+    s_instance = NULL;
+  }
+}
+
 void MCServerApplication::init_() {
   MainWindow = new MCServerMainWindow();
 }

@@ -25,11 +25,20 @@ int main(int argc, char *argv[]) {
   try {
     MCServerApplication app(argc, argv);
 
-    app.run();
-    return app.exec();
+    try {
+      app.run();
+      return app.exec();
+    }
+    // Show an exception in a message box (occured during execution of the application)
+    catch (const CException& e) {
+      e.dialog();
+    }
   }
+  // Show an exception in the console (occured during the construction of the application)
   catch (const CException& e) {
-    e.dialog();
+    e.print();
     throw;
   }
+
+  return -1;
 }
