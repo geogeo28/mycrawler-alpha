@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include "Debug/Exception.h"
+#include "Debug/Logger.h"
 
 CException::CException(
   const QString& message, const QString& remainder,
@@ -31,10 +32,14 @@ CException::CException(
   : std::exception(),
     m_sMessage(message), m_sRemainder(remainder),
     m_pFunc(func), m_pFile(file), m_nLine(line)
-{}
+{
+  ILogger::Debug() << "Construct.";
+}
 
 CException::~CException() throw()
-{}
+{
+  ILogger::Debug() << "Destroyed.";
+}
 
 const char* CException::what() const throw() {
   return m_sMessage.toLatin1().data();
@@ -75,10 +80,14 @@ QString CException::description() const throw() {
   }
 }
 
+void CException::print() const throw() {
+  // Print the exception in the console
+  std::cout << description().toLatin1().constData() << std::endl;
+}
 void CException::dialog() const throw() {
-  // No widget (print exception in the console)
+  // No widget (print the exception in the console)
   if (qApp == NULL) {
-    std::cout << description().toAscii().data() << std::endl;
+    print();
   }
   // Show a dialog box in the current widget
   else {
