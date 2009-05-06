@@ -192,7 +192,7 @@ void ILogger::setString(QString* string) {
 CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, void* object) {
   // Disable debugging
   #ifndef QT_DEBUG
-    if (level == DebugLevel) { return CLoggerManipulator(NULL); }
+    if (level == DebugLevel) { return CLoggerManipulator(); }
   #endif
 
   // No loggers attached, returns a logger manipulator empty. It's equivalent to a null stream.
@@ -203,6 +203,8 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, void* object)
   // Allow to write content into loggers if the level of log passed in argument is set within registered levels
   QList<ILogger*> lstLoggers(s_loggersCollection.values(level));
   foreach (ILogger* logger, lstLoggers) {
+    AssertCheckPtr(logger);
+
     logger->write_(level);
 
     // Write debug informations
