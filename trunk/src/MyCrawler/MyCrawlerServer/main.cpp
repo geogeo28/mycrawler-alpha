@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
     // Show an exception in a message box (occured during execution of the application)
     catch (const CException& e) {
       e.dialog();
+      throw;
     }
   }
   // Show an exception in the console (occured during the construction of the application)

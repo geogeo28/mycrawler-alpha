@@ -26,16 +26,17 @@
 #include "Debug/Loggers/LoggerDebug.h"
 
 void IApplication::cleanAll_() {
+  // Delete settings instance
+  if (m_pSettings) { delete m_pSettings; }
+
   // Delete loggers
   if (m_pLoggerConsole) { delete m_pLoggerConsole; m_pLoggerConsole = NULL; }
   if (m_pLoggerFile) { delete m_pLoggerFile; m_pLoggerFile = NULL; }
+  if (m_pLoggerMsgBox) { delete m_pLoggerMsgBox; m_pLoggerMsgBox = NULL; }
 
   #ifdef QT_DEBUG
     delete m_pLoggerDebug; m_pLoggerDebug = NULL;
-  #endif
-
-  // Delete settings instance
-  if (Settings) delete Settings;
+  #endif 
 }
 
 IApplication::IApplication(int &argc, char **argv)
@@ -71,12 +72,12 @@ void IApplication::installTranslator(const QString& name) {
 }
 
 void IApplication::installSettings(const QString& fileName, const QString& folderName, CSettings::Scope scope) {
-  if (!Settings.isNull()) {
+  if (m_pSettings) {
     ILogger::Error() << "Settings manager was previously installed.";
     return;
   }
 
-  Settings = new CSettings(fileName, folderName, scope);
+  m_pSettings = new CSettings(fileName, folderName, scope);
 }
 
 void IApplication::installLoggers() {

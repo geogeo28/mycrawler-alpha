@@ -180,10 +180,14 @@ CSettings::CSettings(
   QObject* parent
 )
   : QSettings(XmlFormat, scope, folderName, fileName, parent)
-{}
+{
+  ILogger::Debug() << "Construct.";
+}
 
 CSettings::~CSettings()
-{}
+{
+  ILogger::Debug() << "Destroyed.";
+}
 
 void CSettings::saveLayout(const QWidget* widget) {
   AssertCheckPtr(widget);

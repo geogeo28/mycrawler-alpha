@@ -54,10 +54,9 @@ public:
     void installLoggerMsgBox(QWidget* widgetParent);
     void installSettings(const QString& fileName, const QString& folderName = QString("\\"), CSettings::Scope = CSettings::UserScope);
 
-    virtual void run() =0;
+    CSettings* settings() { return m_pSettings; }
 
-public:
-    QPointer<CSettings> Settings;
+    virtual void run() =0;
 
 private:
     CLoggerConsole* m_pLoggerConsole;
@@ -66,6 +65,8 @@ private:
     #ifdef QT_DEBUG
       CLoggerDebug* m_pLoggerDebug;
     #endif
+
+    QPointer<CSettings> m_pSettings;
 };
 
 #endif // APPLICATION_H
