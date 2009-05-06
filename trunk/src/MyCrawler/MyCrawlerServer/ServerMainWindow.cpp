@@ -53,6 +53,8 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientKeepAliveNotify(MCClientThread*)), this, SLOT(slotClientKeepAliveNotify(MCClientThread*)));
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -90,6 +92,8 @@ MCServerMainWindow::~MCServerMainWindow()
 }
 
 void MCServerMainWindow::on_buttonServerListen_clicked() {
+  // TODO : Disconnect button and close all connections
+
   QString address = textServerAddress->text();
   QString port = textServerPort->text();
 
@@ -115,7 +119,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
                 .arg(clientPeer->error());
   }
 
-  ILogger::Error() << QString("Client %1 : Error : %2 (%3)%4.")
+  ILogger::Error() << QString("Error in the client %1 : %2 (%3)%4.")
                       .arg(client->threadInfo().peerAddressAndPort())
                       .arg(client->errorString())
                       .arg(error)
@@ -125,8 +129,34 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
   AssertCheckPtr(client);
 
-  ILogger::Trace() << QString("Client %1 : State changed : %2 (%3)")
+  ILogger::Trace() << QString("Connection state changed in the client %1 : %2 (%3)")
                       .arg(client->threadInfo().peerAddressAndPort())
                       .arg(MCClientThread::connectionStateToString(state))
                       .arg(state);
+}
+
+void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
+  QString m("Unknown timeout");
+
+  switch (notifiedWhen) {
+    case MCClientPeer::ConnectTimeoutNotify:
+      m = QString("Connection timeout");
+      break;
+    case MCClientPeer::PeerTimeoutNotify:
+      m = QString("Peer timeout");
+      break;
+
+    default:;
+  }
+
+  ILogger::Error() << QString(
+      "The client %1 not responding (%2).\n" \
+      "Check your Internet connection.")
+      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(m);
+}
+
+void MCServerMainWindow::slotClientKeepAliveNotify(MCClientThread* client) {
+  ILogger::Trace() << QString("The server has sended a Keep-Alive message to the client %1.")
+                      .arg(client->threadInfo().peerAddressAndPort());
 }

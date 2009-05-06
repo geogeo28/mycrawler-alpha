@@ -90,27 +90,20 @@ bool MCServer::addClient(MCClientThread* client) {
   return true;
 }
 
-void MCServer::removeClient(MCClientThread* client) {
-  ILogger::Debug() << "Remove the client " << client << ".";
-  m_lstClientThreads.removeOne(client);
-}
+void MCServer::clientDisconnected_() {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
 
-void MCServer::clientError_(MCClientThread::Error error) {
-  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  emit clientError(client, error);
-}
-
-void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState state) {
-  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
-  emit clientConnectionStateChanged(client, state);
-}
-
-void MCServer::clientDisconnected_() { 
-  MCClientThread* client = qobject_cast<MCClientThread*>(this->sender());
   ILogger::Debug() << "The thread " << client << " is finished (client disconnected).";
 
   removeClient(client);
   client->deleteLater();
+}
+
+
+void MCServer::removeClient(MCClientThread* client) {
+  ILogger::Debug() << "Remove the client " << client << ".";
+  m_lstClientThreads.removeOne(client);
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
@@ -135,10 +128,13 @@ void MCServer::incomingConnection(int socketDescriptor) {
   // Setup signals/slots connections
   qRegisterMetaType<MCClientThread::Error>("MCClientThread::Error");
   qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
+  qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
 
+  QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
-  QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
+  QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
+  QObject::connect(client, SIGNAL(keepAliveNotify()), this, SLOT(clientKeepAliveNotify_()));
 
   // Add the client in the server
   addClient(client);

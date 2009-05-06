@@ -92,6 +92,8 @@ signals:
     void connectionStateChanged(MCClientThread::ConnectionState state);
     void connected();
     void disconnected();
+    void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void keepAliveNotify();
 
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);

@@ -60,16 +60,21 @@ signals:
     void error(MCServer::Error error);
     void clientError(MCClientThread* client, MCClientThread::Error error);
     void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+    void clientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
+    void clientKeepAliveNotify(MCClientThread* client);
 
 private slots:
-    void clientError_(MCClientThread::Error error);
-    void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
     void clientDisconnected_();
+    void clientError_(MCClientThread::Error error) { emit clientError(senderClientThread_(), error); }
+    void clientConnectionStateChanged_(MCClientThread::ConnectionState state) { emit clientConnectionStateChanged(senderClientThread_(), state); }
+    void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) { emit clientTimeout(senderClientThread_(), notifiedWhen); }
+    void clientKeepAliveNotify_() { emit clientKeepAliveNotify(senderClientThread_()); }
 
 protected:
     void incomingConnection(int socketDescriptor);
 
 private:
+    inline MCClientThread* senderClientThread_() const { return qobject_cast<MCClientThread*>(sender()); }
     void setError_(Error error, bool signal = true);
 
 private:

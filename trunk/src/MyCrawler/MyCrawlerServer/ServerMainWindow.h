@@ -29,6 +29,7 @@
 #include "ui_ServerMainWindow.h"
 #include "Server.h"
 #include "ClientThread.h"
+#include "ClientPeer.h"
 
 class MCServerMainWindow : public QMainWindow,
                            private Ui_MCServerMainWindowClass
@@ -53,6 +54,8 @@ private slots:
     void slotServerError(MCServer::Error error);
     void slotClientError(MCClientThread* client, MCClientThread::Error error);
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+    void slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
+    void slotClientKeepAliveNotify(MCClientThread* client);
 
 };
 
