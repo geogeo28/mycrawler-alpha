@@ -33,30 +33,34 @@ class QString;
 
 class AbstractLoggerFile : public ILogger
 {
-  public:
+    Q_OBJECT
+
+public:
     typedef enum {
       OverwriteMode,
       AppendMode
     } WriteMode;
 
-  private:
+private:
     void cleanAll_();
 
-  protected:
+protected:
     AbstractLoggerFile(
-      int level, const QString& file, WriteMode mode = OverwriteMode
+      int level, const QString& file, WriteMode mode = OverwriteMode, QObject* parent = NULL
     ) throw(CException);
     virtual ~AbstractLoggerFile();
 
-  private:
+private:
     QPointer<QFile> m_pFile;
 };
 
 class CLoggerFile : public AbstractLoggerFile
 {
+    Q_OBJECT
+
 public:
     CLoggerFile(
-      int level = ILogger::AllLevel, const QString& file = "output.log", WriteMode mode = OverwriteMode
+      int level = ILogger::AllLevel, const QString& file = "output.log", WriteMode mode = OverwriteMode, QObject* parent = NULL
     ) throw(CException);
     ~CLoggerFile();
 };

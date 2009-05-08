@@ -31,8 +31,10 @@ class QWidget;
 
 class CLoggerMsgBox : public ILogger
 {
+    Q_OBJECT
+
 public:
-    CLoggerMsgBox(QWidget* widgetParent, int level = ILogger::WarningLevel | ILogger::ErrorLevel);
+    CLoggerMsgBox(QWidget* widgetParent, int level = ILogger::WarningLevel | ILogger::ErrorLevel, QObject* parent = NULL);
 
 protected:
     void write(LogLevel level, const QString& message);

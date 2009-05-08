@@ -22,8 +22,8 @@
 
 #include "Debug/Loggers/LoggerConsole.h"
 
-CLoggerConsole::CLoggerConsole(int level)
-  : ILogger(level)
+CLoggerConsole::CLoggerConsole(int level, QObject* parent)
+  : ILogger(level, parent)
 {
   setWriteDateTime(false);
   setFlushStream(true);

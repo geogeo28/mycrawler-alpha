@@ -21,7 +21,7 @@
 #include <QApplication>
 #include <QMessageBox>
 
-#include <iostream>
+#include <cstdio>
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
@@ -81,8 +81,9 @@ QString CException::description() const throw() {
 }
 
 void CException::print() const throw() {
-  // Print the exception in the console
-  std::cout << description().toLatin1().constData() << std::endl;
+  // Print the exception on the console
+  QTextStream s(stdout);
+  s << description() << "\n";
 }
 void CException::dialog() const throw() {
   // No widget (print the exception in the console)

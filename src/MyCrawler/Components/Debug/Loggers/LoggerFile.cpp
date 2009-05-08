@@ -27,22 +27,18 @@
 #include <QFile>
 
 void AbstractLoggerFile::cleanAll_() {
-  // Delete the file stream
-  if (!m_pFile) {
-    m_pFile->close();
-    delete m_pFile;
-  }
+
 }
 
-AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode mode) throw(CException)
-  : ILogger(level)
+AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CException)
+  : ILogger(level, parent)
 { 
   // Set the open mode of the file
   QFile::OpenMode openMode = QFile::WriteOnly | QFile::Text;
   if (mode == AbstractLoggerFile::AppendMode) { openMode |= QFile::Append; }
 
   try {
-    m_pFile = new QFile(file);
+    m_pFile = new QFile(file, this);
 
     // Could not open the file (throw an exception)
     if (!m_pFile->open(openMode)) {
@@ -64,8 +60,8 @@ AbstractLoggerFile::~AbstractLoggerFile() {
   cleanAll_();
 }
 
-CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode) throw(CException)
-  : AbstractLoggerFile(level, file, mode)
+CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CException)
+  : AbstractLoggerFile(level, file, mode, parent)
 {
   *this << "  ======================================================================================\n"
         << "  " + qApp->applicationName() + " v" + qApp->applicationVersion() +"\n"

@@ -23,8 +23,8 @@
 #include "Debug/Exception.h"
 #include "Debug/Loggers/LoggerMsgBox.h"
 
-CLoggerMsgBox::CLoggerMsgBox(QWidget* widgetParent, int level)
-  : ILogger(level),
+CLoggerMsgBox::CLoggerMsgBox(QWidget* widgetParent, int level, QObject* parent)
+  : ILogger(level, parent),
     m_widgetParent(widgetParent)
 {
   AssertCheckPtr(widgetParent);

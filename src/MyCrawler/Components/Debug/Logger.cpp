@@ -69,8 +69,9 @@ void ILogger::init_() {
   setFlushStream(false);
 }
 
-ILogger::ILogger(int level)
-  : m_mutex(QMutex::Recursive),
+ILogger::ILogger(int level, QObject* parent)
+  : QObject(parent),
+    m_mutex(QMutex::Recursive),
     m_nRegisteredLevels(level)
 {
   init_();
@@ -148,29 +149,16 @@ QString ILogger::currentTime() { return QTime::currentTime().toString(Qt::ISODat
 QString ILogger::currentDate() { return QDate::currentDate().toString(Qt::ISODate); }
 
 QString ILogger::logLevelToString(LogLevel level) {
-  QString s;
-
   switch (level) {
-    case DebugLevel:
-      s = QT_TRANSLATE_NOOP(ILogger, "Debug");
-      break;
-    case TraceLevel:
-      s = QT_TRANSLATE_NOOP(ILogger, "Trace");
-      break;
-    case WarningLevel:
-      s = QT_TRANSLATE_NOOP(ILogger, "Warning");
-      break;
-    case ErrorLevel:
-      s = QT_TRANSLATE_NOOP(ILogger, "Error");
-      break;
-    case InformationLevel:
-      s = QT_TRANSLATE_NOOP(ILogger, "Information");
-      break;
+    case DebugLevel:       return QT_TRANSLATE_NOOP(ILogger, "Debug");
+    case TraceLevel:       return QT_TRANSLATE_NOOP(ILogger, "Trace");
+    case WarningLevel:     return QT_TRANSLATE_NOOP(ILogger, "Warning");
+    case ErrorLevel:       return QT_TRANSLATE_NOOP(ILogger, "Error");
+    case InformationLevel: return QT_TRANSLATE_NOOP(ILogger, "Information");
 
-    default:;
+    default:
+      return QT_TRANSLATE_NOOP(ILogger, "Level unknown");
   }
-
-  return s;
 }
 
 void ILogger::setDevice(QIODevice* device) {
@@ -207,7 +195,7 @@ CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, void* object)
 
     logger->write_(level);
 
-    // Write debug informations
+    // Write debug information
     #ifdef QT_DEBUG
       if ((level == DebugLevel) && func) {
         if (object != NULL) { *logger << object << " "; }

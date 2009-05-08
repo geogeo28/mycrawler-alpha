@@ -26,27 +26,12 @@
 #include "Debug/Loggers/LoggerDebug.h"
 
 void IApplication::cleanAll_() {
-  // Delete settings instance
-  if (m_pSettings) { delete m_pSettings; }
 
-  // Delete loggers
-  if (m_pLoggerConsole) { delete m_pLoggerConsole; m_pLoggerConsole = NULL; }
-  if (m_pLoggerFile) { delete m_pLoggerFile; m_pLoggerFile = NULL; }
-  if (m_pLoggerMsgBox) { delete m_pLoggerMsgBox; m_pLoggerMsgBox = NULL; }
-
-  #ifdef QT_DEBUG
-    delete m_pLoggerDebug; m_pLoggerDebug = NULL;
-  #endif 
 }
 
 IApplication::IApplication(int &argc, char **argv)
-  : QApplication(argc, argv),
-    m_pLoggerConsole(NULL), m_pLoggerFile(NULL), m_pLoggerMsgBox(NULL)
+  : QApplication(argc, argv)
 {
-  #ifdef QT_DEBUG
-    m_pLoggerDebug = NULL;
-  #endif
-
   #if defined(Q_WS_MAC)
     QApplication::setQuitOnLastWindowClosed(false);
   #else
@@ -59,7 +44,7 @@ IApplication::~IApplication()
   cleanAll_();
 }
 
-void IApplication::setInformations(const QString& name, const QString& organizationName, const QString& organizationDomain) {
+void IApplication::setInformation(const QString& name, const QString& organizationName, const QString& organizationDomain) {
   setApplicationName(name);
   setOrganizationName(organizationName);
   setOrganizationDomain(organizationDomain);
@@ -77,27 +62,28 @@ void IApplication::installSettings(const QString& fileName, const QString& folde
     return;
   }
 
-  m_pSettings = new CSettings(fileName, folderName, scope);
+  m_pSettings = new CSettings(fileName, folderName, scope, this);
 }
 
 void IApplication::installLoggers() {
+  // Logger of debugging
+  #ifdef QT_DEBUG
+    Assert(m_pLoggerDebug == NULL);
+    m_pLoggerDebug = new CLoggerDebug("debug.log", CLoggerDebug::AppendMode, this);
+    ILogger::attachLogger(m_pLoggerDebug);
+  #endif
+
   if (m_pLoggerConsole || m_pLoggerFile) {
     ILogger::Error() << "Loggers (console, file) were previously installed.";
     return;
   }
 
   // Standard loggers
-  m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevel);
-  m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevel, applicationName() + ".log", CLoggerFile::OverwriteMode);
+  m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevel, this);
+  m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevel, applicationName() + ".log", CLoggerFile::OverwriteMode, this);
 
   ILogger::attachLogger(m_pLoggerConsole);
   ILogger::attachLogger(m_pLoggerFile);
-
-  // Logger of debugging
-  #ifdef QT_DEBUG
-    m_pLoggerDebug = new CLoggerDebug("debug.log", CLoggerDebug::AppendMode);
-    ILogger::attachLogger(m_pLoggerDebug);
-  #endif
 }
 
 void IApplication::installLoggerMsgBox(QWidget* widgetParent) {
@@ -108,6 +94,6 @@ void IApplication::installLoggerMsgBox(QWidget* widgetParent) {
     return;
   }
 
-  m_pLoggerMsgBox = new CLoggerMsgBox(widgetParent, ILogger::InformationLevel | ILogger::WarningLevel | ILogger::ErrorLevel);
+  m_pLoggerMsgBox = new CLoggerMsgBox(widgetParent, ILogger::InformationLevel | ILogger::WarningLevel | ILogger::ErrorLevel, this);
   ILogger::attachLogger(m_pLoggerMsgBox);
 }

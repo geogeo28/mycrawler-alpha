@@ -28,9 +28,11 @@
 
 class CLoggerDebug : public AbstractLoggerFile
 {
+    Q_OBJECT
+
 public:
     CLoggerDebug(
-      const QString& file = "debug.log", WriteMode mode = AppendMode
+      const QString& file = "debug.log", WriteMode mode = AppendMode, QObject* parent = NULL
     ) throw(CException);
     ~CLoggerDebug();
 };
