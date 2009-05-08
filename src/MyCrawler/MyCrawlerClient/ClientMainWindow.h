@@ -53,7 +53,6 @@ private slots:
     void slotClientConnectionStateChanged(QAbstractSocket::SocketState state);
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientKeepAliveNotify();
 
 private:
     bool m_bClientConnected;

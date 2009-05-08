@@ -56,8 +56,6 @@ private slots:
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientKeepAliveNotify(MCClientThread* client);
-
 };
 
 #endif // SERVERMAINWINDOW_H

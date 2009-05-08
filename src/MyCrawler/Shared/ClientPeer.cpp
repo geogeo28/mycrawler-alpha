@@ -18,6 +18,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QDataStream>
+
 #include "Debug/Logger.h"
 
 #include "ClientPeer.h"
@@ -33,7 +35,7 @@ MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent),
     m_idTimeoutTimer(0), m_idKeepAliveTimer(0), m_bInvalidateTimeout(false),
     m_bReceivedHandShake(false), m_bSentHandShake(false),
-    m_u32PacketSize(0), m_u32PacketType(0)
+    m_u32PacketSize(0), m_u16PacketType(0)
 {
   ILogger::Debug() << "Construct.";
 
@@ -45,11 +47,26 @@ MCClientPeer::~MCClientPeer() {
   ILogger::Debug() << "Destroyed.";
 }
 
-void MCClientPeer::setConnected() {
-  ILogger::Debug() << "Set state to connected.";
+void MCClientPeer::sendPacket(PacketType type, const QByteArray& data) {
+  ILogger::Debug() << QString("Sending the packet : %1 (%2)...")
+                      .arg(packetTypeToString(type))
+                      .arg(type);
 
-  setSocketState(ConnectedState);
-  waitForConnected();
+  // Prepate the packet
+  QByteArray packet;
+  QDataStream out(&packet, QIODevice::WriteOnly);
+
+  quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
+  out << (quint32)packetSize; // Size of the packet
+  out << (quint16)type; // Type of the packet
+  if (!data.isEmpty()) {
+    out << data; // Data transported
+  }
+
+  // Send the packet
+  write(packet);
+
+  emit packetSent(type, packetSize);
 }
 
 QString MCClientPeer::stateToString(QAbstractSocket::SocketState state) {
@@ -69,7 +86,7 @@ QString MCClientPeer::stateToString(QAbstractSocket::SocketState state) {
 QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
   switch (notify) {
     case ConnectTimeoutNotify:   return QT_TRANSLATE_NOOP(MCClientPeer, "Connection timed out");
-    case HandShakeTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "HandShake timed out");
+    case HandShakeTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "Handshake timed out");
     case PeerTimeoutNotify:      return QT_TRANSLATE_NOOP(MCClientPeer, "Peer timed out");
 
     default:
@@ -77,10 +94,21 @@ QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
   }
 }
 
+QString MCClientPeer::packetTypeToString(PacketType type) {
+  switch (type) {
+    case HandShakePacket: return QT_TRANSLATE_NOOP(MCClientPeer, "Handshake");
+    case KeepAlivePacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
+
+    default:
+      return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
+  }
+}
+
 QString MCClientPeer::packetErrorToString(PacketError error) {
   switch (error) {
-    case PacketSizeError: return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
-    case PacketTypeError: return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+    case PacketSizeError:                  return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
+    case PacketTypeError:                  return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+    case HandShakePacketNotReceivedError : return QT_TRANSLATE_NOOP(MCClientPeer, "Could not process the packet because no handshake message was received");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
@@ -115,6 +143,18 @@ void MCClientPeer::disconnect(int msecs) {
   }
 }
 
+void MCClientPeer::sendHandShake() {
+  m_bSentHandShake = true;
+
+  // Restart the timeout
+  if (m_idTimeoutTimer) {
+    killTimer(m_idTimeoutTimer);
+  }
+  m_idTimeoutTimer = startTimer(s_nTimeout);
+
+  sendPacket(HandShakePacket);
+}
+
 void MCClientPeer::connectionStateChanged_(QAbstractSocket::SocketState state) {
   ILogger::Debug() << QString("Connection state changed : %1 (%2).")
                       .arg(stateToString(state))
@@ -146,49 +186,49 @@ void MCClientPeer::connectionStateChanged_(QAbstractSocket::SocketState state) {
 }
 
 void MCClientPeer::processIncomingData_() {
-  ILogger::Trace() << QString("Client %1:%2 : Ready read.")
-                      .arg(peerAddress().toString()).arg(peerPort());
+  ILogger::Debug() << "Ready read";
 
   m_bInvalidateTimeout = true;
 
-  // New packet
-  if (m_u32PacketSize == 0) {
-    // Check that we received enough data
-    if (bytesAvailable() < MinimalPacketSize) {
+  do {
+    // New packet
+    if (m_u32PacketSize == 0) {
+      // Check that we received enough data
+      if (bytesAvailable() < MinimalPacketSize) {
+        return;
+      }
+
+      // Get packet size and packet type
+      QDataStream dataStream(this);
+      dataStream >> m_u32PacketSize;
+      dataStream >> m_u16PacketType;
+
+      // Prevent DoS attack
+      if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 200000)) {
+        errorProcessingPacket_(PacketSizeError, true);
+        return;
+      }
+    }
+
+    // Attempts to have enough bytes to process the packet
+    if (bytesAvailable() < (m_u32PacketSize - MinimalPacketSize)) {
       return;
     }
 
-    // Get packet size and packet type
-    QDataStream dataStream(this);
-    dataStream >> m_u32PacketSize;
-    dataStream >> m_u32PacketType;
+    processPacket_();
 
-    // Prevent DoS attack
-    if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 200000)) {
-      sendErrorProcessingPacket_(PacketSizeError, true);
-      return;
-    }
-  }
-
-  // Attempts to have enough bytes to process the packet
-  if (bytesAvailable() < (m_u32PacketSize - MinimalPacketSize)) {
-    return;
-  }
-
-  processPacket_();
-
-  m_u32PacketSize = 0;
+    m_u32PacketSize = 0;
+  } while (bytesAvailable() >= MinimalPacketSize);
 }
 
 void MCClientPeer::timerEvent(QTimerEvent *event) {
+  // Timeout (Connect, Handshake, Peer)
   if (event->timerId() == m_idTimeoutTimer) {
     // Disconnect if we timed out; otherwise the timeout is restarted.
-    if (m_bInvalidateTimeout) {
+    if (m_bInvalidateTimeout == true) {
       m_bInvalidateTimeout = false;
     }
     else {
-      ILogger::Debug() << "Timeout.";
-
       TimeoutNotify notify = UnknownTimeoutNotify;
       if (state() == ConnectingState) {
         notify = ConnectTimeoutNotify;
@@ -198,20 +238,23 @@ void MCClientPeer::timerEvent(QTimerEvent *event) {
         else { notify = PeerTimeoutNotify; }
       }
 
+      ILogger::Debug() << QString("%1 (%2).")
+                          .arg(timeoutNotifyToString(notify))
+                          .arg(notify);
       emit timeout(notify);
       abort();
     }
   }
+  // KeepAlive
   else if (event->timerId() == m_idKeepAliveTimer) {
-    //sendKeepAlive();
-    emit packetKeepAliveSent();
+    sendPacket(KeepAlivePacket);
   }
 
   QTcpSocket::timerEvent(event);
 }
 
-void MCClientPeer::sendErrorProcessingPacket_(MCClientPeer::PacketError error, bool aborted) {
-  PacketType packetType = static_cast<PacketType>(m_u32PacketType);
+void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted) {
+  PacketType packetType = static_cast<PacketType>(m_u16PacketType);
 
   emit errorProcessingPacket(error, packetType, m_u32PacketSize, aborted);
 
@@ -230,11 +273,6 @@ void MCClientPeer::connecting_() {
 
 void MCClientPeer::connected_() {
   m_idTimeoutTimer = startTimer(s_nHandShakeTimeout);
-
-  /*// Initialize keep-alive timer
-  if (!m_idKeepAliveTimer) {
-    m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval);
-  }*/
 }
 
 void MCClientPeer::closing_() {
@@ -251,22 +289,37 @@ void MCClientPeer::disconnected_() {
 }
 
 void MCClientPeer::processPacket_() {
-  PacketType packetType = static_cast<PacketType>(m_u32PacketType);
+  PacketType packetType = static_cast<PacketType>(m_u16PacketType);
+
+  ILogger::Debug() << QString("Processing the packet : %1 (%2)...")
+                      .arg(packetTypeToString(packetType))
+                      .arg(packetType);
+
+  // Could not process the packet because no handshake message was received.
+  if ((m_bReceivedHandShake == false) && (packetType != HandShakePacket)) {
+    errorProcessingPacket_(HandShakePacketNotReceivedError, true);
+    return;
+  }
 
   switch (packetType) {
     case HandShakePacket:
-      ILogger::Debug() << "Process a HandShake packet.";
+      m_bReceivedHandShake = true;
+
+      // Initialize keep-alive timer
+      if (!m_idKeepAliveTimer) {
+        m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval);
+      }
+
+      if (m_bSentHandShake == false) {
+        sendHandShake();
+      }
       break;
 
     case KeepAlivePacket:
-      ILogger::Debug() << "Process a KeepAlive packet.";
-      break;
-
-    case NotificationPacket:
-      ILogger::Debug() << "Process a Notification packet.";
+      sendHandShake();
       break;
 
     default:
-      sendErrorProcessingPacket_(PacketTypeError, true);
+      errorProcessingPacket_(PacketTypeError, true);
   }
 }
