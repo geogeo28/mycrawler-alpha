@@ -96,6 +96,8 @@ void MCServer::clientDisconnected_() {
 
   ILogger::Debug() << "The thread " << client << " is finished (client disconnected).";
 
+  client->quit();
+  client->wait();
   removeClient(client);
   client->deleteLater();
 }

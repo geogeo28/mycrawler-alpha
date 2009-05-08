@@ -67,7 +67,7 @@ public:
     typedef enum {
       InvalidState,
       UnconnectedState,
-      HostLookUpState,
+      HostLookupState,
       ConnectingState,
       ConnectedState,
       ClosingState,

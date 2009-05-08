@@ -33,8 +33,16 @@ public:
     typedef enum {
       UnknownTimeoutNotify,
       ConnectTimeoutNotify,
+      HandShakeTimeoutNotify,
       PeerTimeoutNotify,
     } TimeoutNotify;
+
+private:
+    typedef enum {
+      HandShakePacket,
+      KeepAlivePacket,
+      NotificationPacket
+    } PacketType;
 
 public:
     MCClientPeer(QObject* parent = NULL);
@@ -43,38 +51,53 @@ public:
 public:
     static int timeout() { return s_nTimeout; }
     static int connectTimeout() { return s_nConnectTimeout; }
+    static int handShakeTimeout() { return s_nHandShakeTimeout; }
     static int keepAliveInterval() { return s_nKeepAliveInterval; }
-    static void setTimeout(int n) { s_nTimeout = n * 1000; }
-    static void setConnectTimeout(int n) { s_nConnectTimeout = n * 1000; }
-    static void setKeepAliveInterval(int n) { s_nKeepAliveInterval = n * 1000; }
+    static void setTimeout(int sec) { s_nTimeout = sec * 1000; }
+    static void setConnectTimeout(int sec) { s_nConnectTimeout = sec * 1000; }
+    static void setHandShakeTimeout(int sec) { s_nHandShakeTimeout = sec * 1000; }
+    static void setKeepAliveInterval(int sec) { s_nKeepAliveInterval = sec * 1000; }
 
     void setConnected();
 
+public:
+    static QString stateToString(QAbstractSocket::SocketState state);
+    static QString timeoutNotifyToString(MCClientPeer::TimeoutNotify notify);
+
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void packetKeepAliveSended();
+    void packetKeepAliveSent();
 
 public slots:
     void connectionRefused();
+    void disconnect(int msecs = 30000);
 
 private slots:
+    void connectionStateChanged_(QAbstractSocket::SocketState state);
     void processIncomingData_();
-    void connected_();
 
 protected:
     void timerEvent(QTimerEvent *event);
 
 private:
+    void connecting_();
+    void connected_();
+    void closing_();
+    void disconnected_();
+    void processPacket_();
+
+private:
     static int s_nTimeout;
     static int s_nConnectTimeout;
+    static int s_nHandShakeTimeout;
     static int s_nKeepAliveInterval;
 
     int m_idTimeoutTimer;
     int m_idKeepAliveTimer;
     bool m_bInvalidateTimeout;
 
-    bool m_bReceivedHandShake;
-
+    bool m_bReceivedHandShake, m_bSentHandShake;
+    quint32 m_u32PacketSize, m_u32PacketType;
 };
 
 #endif // CLIENTPEER_H

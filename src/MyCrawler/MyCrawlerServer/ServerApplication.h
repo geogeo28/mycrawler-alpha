@@ -28,8 +28,6 @@
 #include "Core/Application.h"
 #include "ServerMainWindow.h"
 
-//class MCServerMainWindow;
-
 class MCServerApplication : public IApplication
 {
 private:

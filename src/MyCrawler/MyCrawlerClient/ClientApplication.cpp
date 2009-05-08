@@ -23,6 +23,7 @@
 #include "Debug/Logger.h"
 
 #include "ClientApplication.h"
+#include "Client.h"
 #include "ClientMainWindow.h"
 
 MCClientApplication* MCClientApplication::s_instance = NULL;
@@ -43,6 +44,7 @@ void MCClientApplication::init_() {
 }
 
 void MCClientApplication::cleanAll_() {
+  MCClient::destroy();
   if (m_pMainWindow) { delete m_pMainWindow; }
 }
 

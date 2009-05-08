@@ -54,7 +54,7 @@ MCClientThread::~MCClientThread() {
 QString MCClientThread::connectionStateToString(ConnectionState state) {
   switch (state) {
     case UnconnectedState:  return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
-    case HostLookUpState:   return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
+    case HostLookupState:   return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
     case ConnectingState:   return QT_TRANSLATE_NOOP(MCClientThread, "Connecting");
     case ConnectedState:    return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
     case ClosingState:      return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
@@ -81,7 +81,7 @@ void MCClientThread::run() {
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
   QObject::connect(&clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
-  QObject::connect(&clientPeer, SIGNAL(packetKeepAliveSended()), this, SIGNAL(keepAliveNotify()));
+  QObject::connect(&clientPeer, SIGNAL(packetKeepAliveSent()), this, SIGNAL(keepAliveNotify()));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -98,29 +98,21 @@ void MCClientThread::run() {
   // Set connection state to listening
   //setConnectionState_(ListeningState, true);
 
-  m_mutex.unlock();
-
   ILogger::Debug() << currentThread()
                    << QString(" - %2 : Execute the event loop.")
                       .arg(threadInfo().peerAddressAndPort());
+  m_mutex.unlock();
 
   // Event loop
   exec();
 
-  m_mutex.lock();
+  ILogger::Debug() << "Exit event loop.";
+
   // Disconnection of the client peer volunteer (initiate by the client thread)
   if (clientPeer.state() != MCClientPeer::UnconnectedState) {
-    ILogger::Debug() << "Quit the event loop and force to disconnect the client peer.";
-    clientPeer.disconnectFromHost();
-    if (clientPeer.state() != MCClientPeer::UnconnectedState) {
-      ILogger::Debug() << "Waiting the client peer for disconnected...";
-      clientPeer.waitForDisconnected();
-    }
-
-    setConnectionState_(UnconnectedState, true);
+    clientPeer.disconnect();
   }
   m_pClientPeer = NULL;
-  m_mutex.unlock();
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
@@ -138,7 +130,7 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
       state = UnconnectedState;
       break;
     case QAbstractSocket::HostLookupState:
-      state = HostLookUpState;
+      state = HostLookupState;
       break;
     case QAbstractSocket::ConnectingState:
       state = ConnectingState;
@@ -164,7 +156,7 @@ void MCClientThread::setError_(Error error, bool signal) {
       m_sError = QT_TRANSLATE_NOOP(MCClientThread, "No error");
       break;
     case ClientPeerError:
-      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error was occurred in the client peer");
+      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error was occurred on the client peer");
       break;
     default:
       m_enumError = MCClientThread::UnknownError;
@@ -212,8 +204,6 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
                           .arg(threadInfo().peerAddressAndPort());
 
       if (signal == true) { emit disconnected(); }
-      quit();
-
       break;
     }
 
