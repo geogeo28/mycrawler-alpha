@@ -8,6 +8,7 @@ Components :
 X Add a level MemoryTrace into the logger.
 X Add memory manager to tracking memory leaks.
 X Create a testing module. See QTest library.
+X Bug : Cannot show a message box in the logger CLoggerMsgBox from a thread without GUI widget.
 (2009-04-27 Rev 41) - Reorganize the src folder with packages (with .pri or .pro files).
 (2009-04-27 Rev 41) - Add a base exception named Exception with upper exceptions such as CAssertException, CBadAddressException...
 (2009-04-27 Rev 41) - Add the CLoggerConsole inherited of ILogger to log messages into a console.
@@ -17,7 +18,7 @@ X Create a testing module. See QTest library.
 (2009-04-28 Rev 49) - Add a level Trace into the logger.
 (2009-04-29 Rev 53) - Add settings capability. See QSettings class.
 (2009-05-06 Rev 71) - Bug : When an exception occured no message box is showed even if a widget has been created.
-- Bug : Cannot show a message box in the logger CLoggerMsgBox from a thread without GUI widget.
+
 
 
 MyCrawlerServer :
