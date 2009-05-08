@@ -54,7 +54,6 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
   QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
   QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
-  QObject::connect(MCServer::instance(), SIGNAL(clientKeepAliveNotify(MCClientThread*)), this, SLOT(slotClientKeepAliveNotify(MCClientThread*)));
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -148,7 +147,7 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
   bool aborted
 )
 {
-  ILogger::Error() << QString("The client %1 sent an invalid packet.\n" \
+  ILogger::Error() << QString("Error processing a packet of the client %1.\n" \
                               "(Type = %2, Size = %3) %4 (%5) \n" \
                               "%6")
                       .arg(client->threadInfo().peerAddressAndPort())
@@ -160,9 +159,4 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
                         (aborted == true)?
                         "To prevent of a DoS attack, the connection with the client was aborted.":
                         "Trying recover the packet.");
-}
-
-void MCServerMainWindow::slotClientKeepAliveNotify(MCClientThread* client) {
-  ILogger::Trace() << QString("A Keep-Alive message was sent to the client %1.")
-                      .arg(client->threadInfo().peerAddressAndPort());
 }

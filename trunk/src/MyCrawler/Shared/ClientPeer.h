@@ -24,6 +24,7 @@
 #define CLIENTPEER_H
 
 #include <QtNetwork>
+#include <QByteArray>
 
 class MCClientPeer : public QTcpSocket
 {
@@ -39,14 +40,14 @@ public:
 
     typedef enum {
       HandShakePacket,
-      KeepAlivePacket,
-      NotificationPacket
+      KeepAlivePacket
     } PacketType;
 
     typedef enum {
       PacketUnknownError,
       PacketSizeError,
-      PacketTypeError
+      PacketTypeError,
+      HandShakePacketNotReceivedError
     } PacketError;
 
 public:
@@ -63,21 +64,23 @@ public:
     static void setHandShakeTimeout(int sec) { s_nHandShakeTimeout = sec * 1000; }
     static void setKeepAliveInterval(int sec) { s_nKeepAliveInterval = sec * 1000; }
 
-    void setConnected();
+    void sendPacket(PacketType type, const QByteArray& data = QByteArray());
 
 public:
     static QString stateToString(QAbstractSocket::SocketState state);
     static QString timeoutNotifyToString(TimeoutNotify notify);
+    static QString packetTypeToString(PacketType type);
     static QString packetErrorToString(PacketError error);
 
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void packetKeepAliveSent();
+    void packetSent(MCClientPeer::PacketType type, quint32 size);
 
 public slots:
     void connectionRefused();
     void disconnect(int msecs = 30000);
+    void sendHandShake();
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -87,7 +90,7 @@ protected:
     void timerEvent(QTimerEvent *event);
 
 private:
-    void sendErrorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
+    void errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
 
 private:
     void connecting_();
@@ -107,7 +110,8 @@ private:
     bool m_bInvalidateTimeout;
 
     bool m_bReceivedHandShake, m_bSentHandShake;
-    quint32 m_u32PacketSize, m_u32PacketType;
+    quint32 m_u32PacketSize;
+    quint16 m_u16PacketType;
 };
 
 #endif // CLIENTPEER_H

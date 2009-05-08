@@ -139,7 +139,6 @@ void MCServer::incomingConnection(int socketDescriptor) {
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
   QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
   QObject::connect(client, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(clientErrorProcessingPacket_(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
-  QObject::connect(client, SIGNAL(keepAliveNotify()), this, SLOT(clientKeepAliveNotify_()));
 
   // Add the client in the server
   addClient(client);

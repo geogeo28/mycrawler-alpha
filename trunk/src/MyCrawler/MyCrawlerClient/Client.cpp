@@ -45,13 +45,16 @@ MCClient::MCClient(QObject* parent)
 {
   ILogger::Debug() << "Construct.";
 
+  // Send HandShake
+  QObject::connect(&m_clientPeer, SIGNAL(connected()), &m_clientPeer, SLOT(sendHandShake()));
+
+  // Other connections
   QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)));
   QObject::connect(&m_clientPeer, SIGNAL(connected()), this, SIGNAL(connected()));
   QObject::connect(&m_clientPeer, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
-  QObject::connect(&m_clientPeer, SIGNAL(packetKeepAliveSent()), this, SIGNAL(keepAliveNotify()));
 }
 
 MCClient::~MCClient() {
