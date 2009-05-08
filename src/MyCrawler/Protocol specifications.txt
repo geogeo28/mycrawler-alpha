@@ -10,11 +10,14 @@ The server opens a socket bound to an address and a port. The address and
 the port must be valid and free. 
 
 When a new client incoming on the server and the state of the connection
-is valid (connected), the server sends a handshake packet which contains
+is valid (connected), the client sends a handshake packet which contains
 a description of the protocol and information about the machine
 (signature). The server attempts a response of the client during a period
 defined by the handshake timeout. If the time limit is exceeded, the
-connection is closed. The connection between the client and the server is
+connection is closed. 
+
+
+To summarize, the connection between the client and the server is
 established when the client sends handshake response to the server and the
 server accepts this response (checks the protocol).
 
@@ -44,9 +47,9 @@ Keep-Alive notification :
 *************************
 
 When the user is connected to the host and the user received a handshake
-message, a Keep-Alive is sent every 30 seconds (by default) when the host
-not responding. The Keep-Alive timeout is updated each time the user
-received a packet from the host. 
+message, a Keep-Alive interval is set. A Keep-Alive message is sent every
+30 seconds (by default). The host which receive a Keep-Alive message
+responds with a handshake message. 
 
 
 ******************
@@ -56,7 +59,7 @@ uint32 : Size of the packet in bytes.
 uint16 : Type of packet
 ?      : Data
 
-It's the minimal structure of a packet (4 bytes minimal).
+It's the minimal structure of a packet (6 bytes minimal).
 If the packet don't contain data, the first word (size of the packet) would
 be set with the value 6.
 
@@ -73,17 +76,5 @@ this message.
   
   1 = Keep-Alive :
   
-Inform the host that the user attemps a notification packet.
-
-
-  2 = Notification :
-
-This packet is used after received a Keep-Alive message.
-It's a fictif request used to inform the inform the host that
-the user received a Keep-Alive message.
-
-
-Revisions :
------------
-
-05-08-2009 : Initial.
+Inform the host that the user attemps a notification. In other words, the host
+which receive a Keep-Alive message responds with a handshake message.
