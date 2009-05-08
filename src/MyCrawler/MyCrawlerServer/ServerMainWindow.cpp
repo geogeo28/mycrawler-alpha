@@ -53,6 +53,7 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
   QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(MCServer::instance(), SIGNAL(clientKeepAliveNotify(MCClientThread*)), this, SLOT(slotClientKeepAliveNotify(MCClientThread*)));
 }
 
@@ -140,6 +141,25 @@ void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer:
       "Check your Internet connection.")
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen));
+}
+
+void MCServerMainWindow::slotClientErrorProcessingPacket(
+  MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size,
+  bool aborted
+)
+{
+  ILogger::Error() << QString("The client %1 sent an invalid packet.\n" \
+                              "(Type = %2, Size = %3) %4 (%5) \n" \
+                              "%6")
+                      .arg(client->threadInfo().peerAddressAndPort())
+                      .arg(type)
+                      .arg(size)
+                      .arg(MCClientPeer::packetErrorToString(error))
+                      .arg(error)
+                      .arg(
+                        (aborted == true)?
+                        "To prevent of a DoS attack, the connection with the client was aborted.":
+                        "Trying recover the packet.");
 }
 
 void MCServerMainWindow::slotClientKeepAliveNotify(MCClientThread* client) {

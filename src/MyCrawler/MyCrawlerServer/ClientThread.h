@@ -93,6 +93,7 @@ signals:
     void connected();
     void disconnected();
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void keepAliveNotify();
 
 private slots:

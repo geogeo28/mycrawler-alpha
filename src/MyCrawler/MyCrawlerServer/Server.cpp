@@ -131,11 +131,14 @@ void MCServer::incomingConnection(int socketDescriptor) {
   qRegisterMetaType<MCClientThread::Error>("MCClientThread::Error");
   qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
   qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
+  qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
+  qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
 
   QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
   QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
+  QObject::connect(client, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(clientErrorProcessingPacket_(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(client, SIGNAL(keepAliveNotify()), this, SLOT(clientKeepAliveNotify_()));
 
   // Add the client in the server

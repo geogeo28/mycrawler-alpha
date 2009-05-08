@@ -50,6 +50,7 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(connected()), this, SIGNAL(connected()));
   QObject::connect(&m_clientPeer, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
+  QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(&m_clientPeer, SIGNAL(packetKeepAliveSent()), this, SIGNAL(keepAliveNotify()));
 }
 

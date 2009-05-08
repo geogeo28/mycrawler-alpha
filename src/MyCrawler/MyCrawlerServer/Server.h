@@ -61,6 +61,7 @@ signals:
     void clientError(MCClientThread* client, MCClientThread::Error error);
     void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void clientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
+    void clientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void clientKeepAliveNotify(MCClientThread* client);
 
 private slots:
@@ -68,6 +69,7 @@ private slots:
     void clientError_(MCClientThread::Error error) { emit clientError(senderClientThread_(), error); }
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state) { emit clientConnectionStateChanged(senderClientThread_(), state); }
     void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) { emit clientTimeout(senderClientThread_(), notifiedWhen); }
+    void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) { emit clientErrorProcessingPacket(senderClientThread_(), error, type, size, aborted); }
     void clientKeepAliveNotify_() { emit clientKeepAliveNotify(senderClientThread_()); }
 
 protected:

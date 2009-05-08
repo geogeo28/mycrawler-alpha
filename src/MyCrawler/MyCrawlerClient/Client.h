@@ -42,11 +42,11 @@ public:
     ~MCClient();
 
 public:
+    // Wrapper
     QAbstractSocket::SocketError error() const { return m_clientPeer.error(); }
     QString errorString() const { return m_clientPeer.errorString(); }
-    //MCClientPeer* clientPeer() { return &m_clientPeer; }
-
     QAbstractSocket::SocketState state() const { return m_clientPeer.state(); }
+
     void connectToHost(const QString& address, quint16 port);
     void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(address.toString(), port); }
 
@@ -56,6 +56,7 @@ signals:
     void connected();
     void disconnected();
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void keepAliveNotify();
 
 public slots:
