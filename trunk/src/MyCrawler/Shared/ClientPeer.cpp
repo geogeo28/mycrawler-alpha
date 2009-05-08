@@ -66,14 +66,24 @@ QString MCClientPeer::stateToString(QAbstractSocket::SocketState state) {
   }
 }
 
-QString MCClientPeer::timeoutNotifyToString(MCClientPeer::TimeoutNotify notify) {
+QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
   switch (notify) {
-    case ConnectTimeoutNotify:   return QT_TRANSLATE_NOOP(MCClientPeer, "Connection timeout");
-    case HandShakeTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "HandShake timeout");
-    case PeerTimeoutNotify:      return QT_TRANSLATE_NOOP(MCClientPeer, "Peer timeout");
+    case ConnectTimeoutNotify:   return QT_TRANSLATE_NOOP(MCClientPeer, "Connection timed out");
+    case HandShakeTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "HandShake timed out");
+    case PeerTimeoutNotify:      return QT_TRANSLATE_NOOP(MCClientPeer, "Peer timed out");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown timeout");
+  }
+}
+
+QString MCClientPeer::packetErrorToString(PacketError error) {
+  switch (error) {
+    case PacketSizeError: return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
+    case PacketTypeError: return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+
+    default:
+      return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
   }
 }
 
@@ -155,10 +165,7 @@ void MCClientPeer::processIncomingData_() {
 
     // Prevent DoS attack
     if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 200000)) {
-      ILogger::Error() << QString("The host sent an invalid packet size (%1).\n" \
-                                  "To prevent of a DoS attack, the connection was aborted.")
-                          .arg(m_u32PacketType);
-      abort();
+      sendErrorProcessingPacket_(PacketSizeError, true);
       return;
     }
   }
@@ -201,6 +208,17 @@ void MCClientPeer::timerEvent(QTimerEvent *event) {
   }
 
   QTcpSocket::timerEvent(event);
+}
+
+void MCClientPeer::sendErrorProcessingPacket_(MCClientPeer::PacketError error, bool aborted) {
+  PacketType packetType = static_cast<PacketType>(m_u32PacketType);
+
+  emit errorProcessingPacket(error, packetType, m_u32PacketSize, aborted);
+
+  // Abort the connection
+  if (aborted == true) {
+    abort();
+  }
 }
 
 // Initialize all state variable
@@ -249,8 +267,6 @@ void MCClientPeer::processPacket_() {
       break;
 
     default:
-      ILogger::Error() << QString("The host sent an invalid packet (%1).\n" \
-                                  "To prevent of a DoS attack, the connection was aborted.")
-                          .arg(packetType);
+      sendErrorProcessingPacket_(PacketTypeError, true);
   }
 }

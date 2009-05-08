@@ -37,12 +37,17 @@ public:
       PeerTimeoutNotify,
     } TimeoutNotify;
 
-private:
     typedef enum {
       HandShakePacket,
       KeepAlivePacket,
       NotificationPacket
     } PacketType;
+
+    typedef enum {
+      PacketUnknownError,
+      PacketSizeError,
+      PacketTypeError
+    } PacketError;
 
 public:
     MCClientPeer(QObject* parent = NULL);
@@ -62,10 +67,12 @@ public:
 
 public:
     static QString stateToString(QAbstractSocket::SocketState state);
-    static QString timeoutNotifyToString(MCClientPeer::TimeoutNotify notify);
+    static QString timeoutNotifyToString(TimeoutNotify notify);
+    static QString packetErrorToString(PacketError error);
 
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void packetKeepAliveSent();
 
 public slots:
@@ -78,6 +85,9 @@ private slots:
 
 protected:
     void timerEvent(QTimerEvent *event);
+
+private:
+    void sendErrorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
 
 private:
     void connecting_();
