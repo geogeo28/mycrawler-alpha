@@ -5,7 +5,7 @@ Protocol specifications :
 Communication Exchanges :
 *************************
 
-A connection can only established from a client to a local/remote server.
+A connection can only be established from a client to a local/remote server.
 The server opens a socket bound to an address and a port. The address and
 the port must be valid and free. 
 
@@ -16,7 +16,7 @@ a description of the protocol and information about the machine
 defined by the handshake timeout. If the time limit is exceeded, the
 connection is closed. The connection between the client and the server is
 established when the client sends handshake response to the server and the
-server accepts this response (check the protocol).
+server accepts this response (checks the protocol).
 
 
 *********************
