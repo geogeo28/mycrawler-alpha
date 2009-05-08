@@ -23,6 +23,7 @@
 #ifndef ILOGGER_H
 #define ILOGGER_H
 
+#include <QObject>
 #include <QTextStream>
 #include <QList>
 #include <QMultiMap>
@@ -49,8 +50,10 @@ class CLoggerManipulator
     QList<ILogger*> m_lstLoggers;
 };
 
-class ILogger
+class ILogger : public QObject
 {
+    Q_OBJECT
+
     friend class CLoggerManipulator;
 
 public:
@@ -107,7 +110,7 @@ protected:
     static QString logLevelToString(LogLevel level);
 
 protected:
-    ILogger(int level);
+    ILogger(int level, QObject* parent = NULL);
     virtual ~ILogger();
 
     void setDevice(QIODevice* device);

@@ -47,7 +47,7 @@ protected:
     virtual ~IApplication();    
 
 public:
-    static void setInformations(const QString& name, const QString& organizationName = QString(), const QString& organizationDomain = QString());
+    static void setInformation(const QString& name, const QString& organizationName = QString(), const QString& organizationDomain = QString());
 
     void installTranslator(const QString& name = QLatin1String("qt_") + QLocale::system().name());
     void installLoggers();
@@ -59,11 +59,11 @@ public:
     virtual void run() =0;
 
 private:
-    CLoggerConsole* m_pLoggerConsole;
-    CLoggerFile* m_pLoggerFile;
-    CLoggerMsgBox* m_pLoggerMsgBox;
+    QPointer<CLoggerConsole> m_pLoggerConsole;
+    QPointer<CLoggerFile> m_pLoggerFile;
+    QPointer<CLoggerMsgBox> m_pLoggerMsgBox;
     #ifdef QT_DEBUG
-      CLoggerDebug* m_pLoggerDebug;
+      QPointer<CLoggerDebug> m_pLoggerDebug;
     #endif
 
     QPointer<CSettings> m_pSettings;

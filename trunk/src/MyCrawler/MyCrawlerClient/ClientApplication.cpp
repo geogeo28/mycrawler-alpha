@@ -55,8 +55,8 @@ MCClientApplication::MCClientApplication(int &argc, char** argv)
 
   s_instance = this;
 
-  // Set application informations
-  setInformations(_MYCRAWLER_APPNAME_" (client)", _MYCRAWLER_ORGANIZATION_NAME_, _MYCRAWLER_ORGANIZATION_DOMAIN_);
+  // Set application information
+  setInformation(_MYCRAWLER_APPNAME_" (client)", _MYCRAWLER_ORGANIZATION_NAME_, _MYCRAWLER_ORGANIZATION_DOMAIN_);
   setApplicationVersion(_MYCRAWLER_CLIENT_VERSION_);
 
   // Install base components

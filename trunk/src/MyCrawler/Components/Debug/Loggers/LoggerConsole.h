@@ -29,8 +29,10 @@
 
 class CLoggerConsole : public ILogger
 { 
+    Q_OBJECT
+
 public:
-    CLoggerConsole(int level = ILogger::AllLevel);
+    CLoggerConsole(int level = ILogger::AllLevel, QObject* parent = NULL);
     ~CLoggerConsole();
 
 private:
