@@ -24,7 +24,6 @@
 #define LOGGERMSGBOX_H
 
 #include <QMessageBox>
-#include <QIODevice>
 
 #include "Debug/Logger.h"
 

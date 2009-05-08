@@ -27,6 +27,7 @@
 #include <QtGui>
 
 #include "ui_ClientMainWindow.h"
+#include "ClientPeer.h"
 
 class MCClientMainWindow : public QMainWindow,
                            private Ui_MCClientMainWindowClass
@@ -43,6 +44,18 @@ private:
 public:
     MCClientMainWindow(QWidget *parent = NULL);
     ~MCClientMainWindow();
+
+public slots:
+    void on_buttonClientConnect_clicked();
+
+private slots:
+    void slotClientError(QAbstractSocket::SocketError error);
+    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state);
+    void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void slotClientKeepAliveNotify();
+
+private:
+    bool m_bClientConnected;
 };
 
 #endif // CLIENTMAINWINDOW_H

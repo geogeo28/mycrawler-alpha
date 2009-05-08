@@ -1,0 +1,89 @@
+Protocol specifications :
+-------------------------
+
+*************************
+Communication Exchanges :
+*************************
+
+A connection can only established from a client to a local/remote server.
+The server opens a socket bound to an address and a port. The address and
+the port must be valid and free. 
+
+When a new client incoming on the server and the state of the connection
+is valid (connected), the server sends a handshake packet which contains
+a description of the protocol and information about the machine
+(signature). The server attempts a response of the client during a period
+defined by the handshake timeout. If the time limit is exceeded, the
+connection is closed. The connection between the client and the server is
+established when the client sends handshake response to the server and the
+server accepts this response (check the protocol).
+
+
+*********************
+Timeouts management :
+*********************   
+
+Timeouts are used to close a connection when the peer not responding.
+Here timeouts defined :
+During connecting state : Connect Timeout (60 seconds by default).
+- When the user is connected to the host but no handshake message was 
+received : 
+  < HandShake Timeout > (60 seconds by default)
+- When the user is connected to the host and a handshake message was 
+received : 
+  < Peer Timeout > (120 seconds by default)
+- When the user received a request but it cannot be processed (attemps new
+message chunks): 
+  < PendingRequest Timeout > (60 seconds by default)
+
+Timeout values can be changed by the user.
+
+
+*************************
+Keep-Alive notification :
+*************************
+
+When the user is connected to the host and the user received a handshake
+message, a Keep-Alive is sent every 30 seconds (by default) when the host
+not responding. The Keep-Alive timeout is updated each time the user
+received a packet from the host. 
+
+
+******************
+Packet structure :
+******************
+uint32 : Size of the packet in bytes.
+uint16 : Type of packet
+?      : Data
+
+It's the minimal structure of a packet (4 bytes minimal).
+If the packet don't contain data, the first word (size of the packet) would
+be set with the value 6.
+
+
+*****************
+Type of packets :
+***************** 
+  0 = HandShake :
+
+This message is used in order to etablish a connection between two
+entities. A connection is established when both entities received
+this message.
+  
+  
+  1 = Keep-Alive :
+  
+Inform the host that the user attemps a notification packet.
+
+
+  2 = Notification :
+
+This packet is used after received a Keep-Alive message.
+It's a fictif request used to inform the inform the host that
+the user received a Keep-Alive message.
+
+
+Revisions :
+-----------
+
+05-08-2009 : Initial.

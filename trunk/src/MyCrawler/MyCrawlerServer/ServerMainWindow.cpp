@@ -94,13 +94,13 @@ void MCServerMainWindow::on_buttonServerListen_clicked() {
   // TODO : Disconnect button and close all connections
 
   QString address = textServerAddress->text();
-  QString port = textServerPort->text();
+  quint16 port = textServerPort->text().toUShort();
 
   ILogger::Trace() << QString("The server listening the address %1 on the port %2.")
                       .arg(address)
                       .arg(port);
 
-  MCServer::instance()->listen(QHostAddress(address), port.toUShort());
+  MCServer::instance()->listen(QHostAddress(address), port);
 }
 
 void MCServerMainWindow::slotServerError(MCServer::Error error) {
@@ -118,7 +118,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
                 .arg(clientPeer->error());
   }
 
-  ILogger::Error() << QString("Error in the client %1 : %2 (%3)%4.")
+  ILogger::Error() << QString("Error on the client %1 : %2 (%3)%4.")
                       .arg(client->threadInfo().peerAddressAndPort())
                       .arg(client->errorString())
                       .arg(error)
@@ -128,34 +128,21 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
   AssertCheckPtr(client);
 
-  ILogger::Trace() << QString("Connection state changed in the client %1 : %2 (%3)")
+  ILogger::Trace() << QString("Connection state changed to the client %1 : %2 (%3)")
                       .arg(client->threadInfo().peerAddressAndPort())
                       .arg(MCClientThread::connectionStateToString(state))
                       .arg(state);
 }
 
 void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
-  QString m("Unknown timeout");
-
-  switch (notifiedWhen) {
-    case MCClientPeer::ConnectTimeoutNotify:
-      m = QString("Connection timeout");
-      break;
-    case MCClientPeer::PeerTimeoutNotify:
-      m = QString("Peer timeout");
-      break;
-
-    default:;
-  }
-
   ILogger::Error() << QString(
       "The client %1 not responding (%2).\n" \
       "Check your Internet connection.")
       .arg(client->threadInfo().peerAddressAndPort())
-      .arg(m);
+      .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen));
 }
 
 void MCServerMainWindow::slotClientKeepAliveNotify(MCClientThread* client) {
-  ILogger::Trace() << QString("The server has sended a Keep-Alive message to the client %1.")
+  ILogger::Trace() << QString("A Keep-Alive message was sent to the client %1.")
                       .arg(client->threadInfo().peerAddressAndPort());
 }
