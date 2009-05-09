@@ -197,7 +197,7 @@ bool CSettings::loadLayout(QWidget* widget) const {
   QByteArray tmpArray;
   tmpArray = QByteArray::fromBase64(this->value(widget->objectName() + "/Geometry").toByteArray());
   if (tmpArray.isEmpty()) {
-    ILogger::Trace() <<  "The setting 'Geometry' of the widget layout '" << widget->objectName() << "' doesn't exist.";
+    ILogger::Notice() <<  "The setting 'Geometry' of the widget layout '" << widget->objectName() << "' doesn't exist.";
     return false;
   }
 
@@ -222,7 +222,7 @@ bool CSettings::loadLayout(QMainWindow* window) const {
   QByteArray tmpArray;
   tmpArray = QByteArray::fromBase64(this->value(window->objectName() + "/State").toByteArray());
   if (tmpArray.isEmpty()) {
-    ILogger::Trace() << "The setting 'State' of the main window layout'" << window->objectName() << "' doesn't exist.";
+    ILogger::Notice() << "The setting 'State' of the main window layout'" << window->objectName() << "' doesn't exist.";
     return false;
   }
 

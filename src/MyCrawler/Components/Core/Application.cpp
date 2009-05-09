@@ -79,8 +79,8 @@ void IApplication::installLoggers() {
   }
 
   // Standard loggers
-  m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevel, this);
-  m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevel, applicationName() + ".log", CLoggerFile::OverwriteMode, this);
+  m_pLoggerConsole = new CLoggerConsole(ILogger::NoticeLevels, this);
+  m_pLoggerFile = new CLoggerFile(ILogger::NoticeLevels, applicationName() + ".log", CLoggerFile::OverwriteMode, this);
 
   ILogger::attachLogger(m_pLoggerConsole);
   ILogger::attachLogger(m_pLoggerFile);

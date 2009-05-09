@@ -61,12 +61,13 @@ public:
       NoLevel           = 0,
       DebugLevel        = 1,
       TraceLevel        = 2,
-      WarningLevel      = 4,
-      ErrorLevel        = 8,
-      InformationLevel  = 16,
+      NoticeLevel       = 4,
+      WarningLevel      = 8,
+      ErrorLevel        = 16,
+      InformationLevel  = 32,
 
-      NoticeLevel   = TraceLevel |WarningLevel | ErrorLevel | InformationLevel,
-      AllLevel      = DebugLevel | TraceLevel | WarningLevel | ErrorLevel | InformationLevel
+      NoticeLevels   = TraceLevel | NoticeLevel | WarningLevel | ErrorLevel | InformationLevel,
+      AllLevels      = DebugLevel | TraceLevel | NoticeLevel | WarningLevel | ErrorLevel | InformationLevel
     } LogLevel;
 
 private:
@@ -100,6 +101,7 @@ public:
     static CLoggerManipulator Log(LogLevel level) { return Log_(level, NULL); }
     static CLoggerManipulator Debug_(const char* func, void* object)  {return Log_(DebugLevel, func, object); }
     static CLoggerManipulator Trace()       { return Log_(TraceLevel); }
+    static CLoggerManipulator Notice()      { return Log_(NoticeLevel); }
     static CLoggerManipulator Warning()     { return Log_(WarningLevel); }
     static CLoggerManipulator Error()       { return Log_(ErrorLevel); }
     static CLoggerManipulator Information() { return Log_(InformationLevel); }
