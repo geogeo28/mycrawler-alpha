@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) Logger class which used to log messages into the console.
+ * @(#) QTabWidget extended.
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -20,23 +20,21 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef LOGGERCONSOLE_H
-#define LOGGERCONSOLE_H
+#ifndef MYQTABWIDGET_H
+#define MYQTABWIDGET_H
 
-#include <QFile>
+#include <QtGui>
 
-#include "Debug/Logger.h"
-
-class CLoggerConsole : public ILogger
-{ 
-    Q_OBJECT
-
+class MyQTabWidget : public QTabWidget
+{
 public:
-    CLoggerConsole(int level = ILogger::AllLevels, QObject* parent = NULL);
-    ~CLoggerConsole();
+    MyQTabWidget(QWidget* parent = 0)
+      : QTabWidget(parent)
+    {
+      tabBar()->setHidden(true);
+    }
 
-private:
-    QFile m_outputFile;
+    QSize sizeHint() const { return baseSize(); }
 };
 
-#endif // LOGGERCONSOLE_H
+#endif // MYQTABWIDGET_H

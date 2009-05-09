@@ -60,7 +60,7 @@ class CLoggerFile : public AbstractLoggerFile
 
 public:
     CLoggerFile(
-      int level = ILogger::AllLevel, const QString& file = "output.log", WriteMode mode = OverwriteMode, QObject* parent = NULL
+      int level = ILogger::AllLevels, const QString& file = "output.log", WriteMode mode = OverwriteMode, QObject* parent = NULL
     ) throw(CException);
     ~CLoggerFile();
 };
