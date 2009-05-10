@@ -51,16 +51,7 @@ MCServer::MCServer(QObject* parent)
 }
 
 MCServer::~MCServer() {
-  ILogger::Debug() << "Delete all threads.";
-  QListIterator<MCClientThread*> it(m_lstClientThreads);
-  while (it.hasNext()) {
-    MCClientThread* client = it.next();
-
-    ILogger::Debug() << "Attempt to destroy the thread " << client << ".";
-    client->quit();
-    client->wait();
-    client->deleteLater();
-  }
+  MCServer::close();
   ILogger::Debug() << "Destroyed.";
 }
 
@@ -70,12 +61,46 @@ int MCServer::maxConnections() const {
 
 void MCServer::setMaxConnections(int n) {
   Assert(n > 0);
-
   MaxConnections = n;
 }
 
 bool MCServer::canAcceptNewConnection() const {
   return (m_lstClientThreads.count() < maxConnections());
+}
+
+bool MCServer::listen(const QHostAddress& address, quint16 port) {
+  ILogger::Debug() << QString("Try to listening the address %1 on the port %2.")
+                      .arg(address.toString())
+                      .arg(port);
+
+  bool success = QTcpServer::listen(address, port);
+  if (success == false) {
+    setError_(SocketError, false);
+  }
+
+  return success;
+}
+
+void MCServer::close() {
+  #ifdef QT_DEBUG
+    if (countClients() > 0) {
+      ILogger::Debug() << "Disconnect all clients.";
+    }
+  #endif
+
+  QListIterator<MCClientThread*> it(m_lstClientThreads);
+  while (it.hasNext()) {
+    MCClientThread* client = it.next();
+
+    ILogger::Debug() << "Attempt to destroy the thread " << client << ".";
+    client->quit();
+    client->wait();
+    client->deleteLater();
+  }
+
+  m_lstClientThreads.clear();
+
+  QTcpServer::close();
 }
 
 bool MCServer::addClient(MCClientThread* client) {
@@ -90,6 +115,11 @@ bool MCServer::addClient(MCClientThread* client) {
   return true;
 }
 
+void MCServer::removeClient(MCClientThread* client) {
+  ILogger::Debug() << "Remove the client " << client << ".";
+  m_lstClientThreads.removeOne(client);
+}
+
 void MCServer::clientDisconnected_() {
   MCClientThread* client = senderClientThread_();
   AssertCheckPtr(client);
@@ -100,12 +130,6 @@ void MCServer::clientDisconnected_() {
   client->wait();
   removeClient(client);
   client->deleteLater();
-}
-
-
-void MCServer::removeClient(MCClientThread* client) {
-  ILogger::Debug() << "Remove the client " << client << ".";
-  m_lstClientThreads.removeOne(client);
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
@@ -154,9 +178,13 @@ void MCServer::setError_(Error error, bool signal) {
     case NoError:
       m_sError = QT_TRANSLATE_NOOP(MCServer, "No error");
       break;
-    case ServerFullError:
-      m_sError = QT_TRANSLATE_NOOP(MCServer, "The server is full. You must increase the variable MAX_CONNECTIONS to accept new clients.");
+    case SocketError:
+      m_sError = QTcpServer::errorString();
       break;
+    case ServerFullError:
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "Could not accept a new client because the server is full. You must increase the number of connections than the server can supported.");
+      break;
+
     default:
       m_enumError = UnknownError;
       m_sError = QT_TRANSLATE_NOOP(MCServer, "Unknown error");

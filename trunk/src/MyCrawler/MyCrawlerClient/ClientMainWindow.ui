@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <author>ANNEHEIM Geoffrey</author>
- <class>MCClientMainWindowClass</class>
- <widget class="QMainWindow" name="MCClientMainWindowClass">
+ <class>MCClientMainWindow</class>
+ <widget class="QMainWindow" name="MCClientMainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -176,7 +176,7 @@
   <connection>
    <sender>buttonQuit</sender>
    <signal>clicked()</signal>
-   <receiver>MCClientMainWindowClass</receiver>
+   <receiver>MCClientMainWindow</receiver>
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
