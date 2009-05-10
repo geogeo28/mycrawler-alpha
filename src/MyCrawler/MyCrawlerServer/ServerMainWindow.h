@@ -31,15 +31,20 @@
 #include "ClientThread.h"
 #include "ClientPeer.h"
 
+class QAction;
+
 class MCServerMainWindow : public QMainWindow,
-                           private Ui_MCServerMainWindowClass
+                           private Ui_MCServerMainWindow
 {
     Q_OBJECT
 
 private:
     void setupWindow_();
+    void setupMainToolBar_();
+    void setupMenu_();
     void setupComponents_();
 
+    void saveSettings_();
     void cleanAll_();
     void closeWindow_();
 
@@ -49,6 +54,8 @@ public:
 
 private slots:
     void on_buttonServerListen_clicked();
+    void on_mainToolBar_actionTriggered(QAction* action);
+    void on_doMainToolBarConnectDisconnect_triggered();
 
 private slots:
     void slotServerError(MCServer::Error error);
@@ -56,6 +63,13 @@ private slots:
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+
+private:
+    bool connectServer_();
+    void disconnectServer_();
+
+private:
+    QAction* m_pActionCurrentForm;
 };
 
 #endif // SERVERMAINWINDOW_H

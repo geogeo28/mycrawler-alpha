@@ -35,6 +35,7 @@ public:
     typedef enum {
       NoError,
       UnknownError,
+      SocketError,
       ServerFullError
     } Error;
 
@@ -53,8 +54,13 @@ public:
     bool canAcceptNewConnection() const;
 
 public:
+    // Override QTcpServer methods
+    bool listen(const QHostAddress& address = QHostAddress::Any, quint16 port = 0);
+    void close();
+
     bool addClient(MCClientThread* client);
     void removeClient(MCClientThread* client);
+    int countClients() const { return m_lstClientThreads.count(); }
 
 signals:
     void error(MCServer::Error error);

@@ -34,7 +34,6 @@ void MCClientMainWindow::setupWindow_() {
   setWindowTitle(MCClientApplication::applicationName() + " v" + _MYCRAWLER_CLIENT_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  ILogger::Debug() << "Try to load the setting window layout.";
   if (!MCApp->settings()->loadLayout(this)) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
@@ -49,8 +48,6 @@ void MCClientMainWindow::setupWindow_() {
 }
 
 void MCClientMainWindow::setupComponents_() {
-  ILogger::Debug() << "Setup signals/slots connections.";
-
   QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)));
   QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)));
   QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));

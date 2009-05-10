@@ -30,7 +30,7 @@
 #include "ClientPeer.h"
 
 class MCClientMainWindow : public QMainWindow,
-                           private Ui_MCClientMainWindowClass
+                           private Ui_MCClientMainWindow
 {
     Q_OBJECT
 

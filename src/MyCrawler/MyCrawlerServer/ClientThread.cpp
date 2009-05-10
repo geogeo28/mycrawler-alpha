@@ -192,19 +192,13 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
     // Connected
     case ConnectedState:
     {
-      ILogger::Debug() << QString("%1 : Connected.")
-                          .arg(threadInfo().peerAddressAndPort());
       if (signal == true) { emit connected(); }
-
       break;
     }
 
     // Unconnected
     case UnconnectedState:
     {
-      ILogger::Debug() << QString("%1 : Disconnected. Quit and delete the thread.")
-                          .arg(threadInfo().peerAddressAndPort());
-
       if (signal == true) { emit disconnected(); }
       break;
     }

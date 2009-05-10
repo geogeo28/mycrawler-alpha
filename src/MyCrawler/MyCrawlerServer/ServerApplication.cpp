@@ -46,6 +46,9 @@ void MCServerApplication::init_() {
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
   if (m_pMainWindow) { delete m_pMainWindow; }
+
+  ILogger::Debug() << "Clean-up resources.";
+  Q_CLEANUP_RESOURCE(resources);
 }
 
 MCServerApplication::MCServerApplication(int &argc, char** argv)
@@ -67,6 +70,10 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
   CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
   CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
   installSettings("settings");
+
+  // Load resources
+  ILogger::Debug() << "Load resources.";
+  Q_INIT_RESOURCE(resources);
 
   init_();
 

@@ -30,6 +30,7 @@ int MCClientPeer::s_nHandShakeTimeout = 60 * 1000;
 int MCClientPeer::s_nKeepAliveInterval = 30 * 1000;
 
 static const quint32 MinimalPacketSize = 6;
+static const char ProtocolId[] = "MyCrawler protocol";
 
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent),
@@ -124,8 +125,6 @@ void MCClientPeer::connectionRefused() {
 }
 
 void MCClientPeer::disconnect(int msecs) {
-  ILogger::Debug() << "Try to disconnect the client peer.";
-
   // Close the connection
   if (state() == MCClientPeer::ConnectingState) {
     ILogger::Debug() << "Close the connection.";

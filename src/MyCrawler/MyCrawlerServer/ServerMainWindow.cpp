@@ -25,6 +25,8 @@
 #include "ServerApplication.h"
 #include "ClientPeer.h"
 
+const char* SettingCurrentForm = "CurrentForm";
+
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
   //setAttribute(Qt::WA_DeleteOnClose, true);
@@ -33,7 +35,6 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  ILogger::Debug() << "Try to load the setting window layout.";
   if (!MCApp->settings()->loadLayout(this)) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
@@ -47,8 +48,28 @@ void MCServerMainWindow::setupWindow_() {
   }
 }
 
-void MCServerMainWindow::setupComponents_() {  
-  ILogger::Debug() << "Setup signals/slots connections.";
+void MCServerMainWindow::setupMainToolBar_() {
+  QString sActionName = MCApp->settings()->value(SettingCurrentForm, "doMainToolBarClients").toString();
+  QAction* action = qFindChild<QAction*>(this, sActionName);
+  if (action == NULL) {
+    ILogger::Notice() << QString("Invalid value '%1' for the setting '%2'.")
+                         .arg(sActionName)
+                         .arg(SettingCurrentForm);
+    action = doMainToolBarClients;
+  }
+
+  on_mainToolBar_actionTriggered(action);
+}
+
+void MCServerMainWindow::setupMenu_() {
+  // View menu (Toolbars)
+  menuViewToolBars->addAction(mainToolBar->toggleViewAction());
+
+  // Help menu
+  QObject::connect(doHelpAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+}
+
+void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
@@ -56,17 +77,23 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
 }
 
+void MCServerMainWindow::saveSettings_() {
+  ILogger::Debug() << "Save settings.";
+  MCApp->settings()->setValue(SettingCurrentForm, m_pActionCurrentForm->objectName());
+  MCApp->settings()->saveLayout(this); // Window layout
+}
+
 void MCServerMainWindow::cleanAll_() {
 
 }
 
 void MCServerMainWindow::closeWindow_() {
-  ILogger::Debug() << "Save the setting window layout.";
-  MCApp->settings()->saveLayout(this);
+  saveSettings_();
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
-  : QMainWindow(parent)
+  : QMainWindow(parent),
+    m_pActionCurrentForm(NULL)
 {
   ILogger::Debug() << "Construct.";
 
@@ -74,6 +101,8 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
 
   try {
     setupWindow_();
+    setupMainToolBar_();
+    setupMenu_();
     setupComponents_();
   }
   catch(...) {
@@ -82,8 +111,7 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
   }
 }
 
-MCServerMainWindow::~MCServerMainWindow()
-{
+MCServerMainWindow::~MCServerMainWindow() {
   closeWindow_();
   cleanAll_();
 
@@ -101,6 +129,56 @@ void MCServerMainWindow::on_buttonServerListen_clicked() {
                       .arg(port);
 
   MCServer::instance()->listen(QHostAddress(address), port);
+}
+
+void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
+  QVariant mcFormIndex = action->property("mcFormIndex");
+  if (mcFormIndex.isValid()) {
+    // New action clicked
+    if (action != m_pActionCurrentForm) {
+      tabWidgetForms->setCurrentIndex(mcFormIndex.toInt());
+
+      // Uncheck the preview action
+      if (m_pActionCurrentForm != NULL) {
+        m_pActionCurrentForm->setChecked(false);
+      }
+    }
+
+    action->setChecked(true);
+    m_pActionCurrentForm = action;
+  }
+}
+
+void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
+  // Connect
+  if (MCServer::instance()->isListening() == false) {
+    if (connectServer_() == true) {
+      doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
+      ILogger::Information() << QString("Listening the address %1 on the port %2...")
+                                .arg(MCServer::instance()->serverAddress().toString())
+                                .arg(MCServer::instance()->serverPort());
+    }
+  }
+  // Disconnect
+  else {
+    int nClients = MCServer::instance()->countClients();
+    if (nClients > 0) {
+      int button = QMessageBox::warning(
+        this, QApplication::applicationName(),
+        QString("%1 client(s) are currently connected.\n" \
+                "Do you want to continue and close all connections ?")
+        .arg(nClients),
+        QMessageBox::Yes | QMessageBox::No
+      );
+
+      if (button == QMessageBox::No) {
+        return;
+      }
+    }
+
+    MCServer::instance()->close();
+    doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/UnconnectedIcon"));
+  }
 }
 
 void MCServerMainWindow::slotServerError(MCServer::Error error) {
@@ -159,4 +237,25 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
                         (aborted == true)?
                         "To prevent of a DoS attack, the connection with the client was aborted.":
                         "Trying recover the packet.");
+}
+
+bool MCServerMainWindow::connectServer_() {
+  QString address = textServerAddress->text();
+  quint16 port = textServerPort->text().toUShort();
+
+  if (!MCServer::instance()->listen(QHostAddress(address), port)) {
+    ILogger::Error() << QString("Could not listen the address %1 on the port %2.\n" \
+                                "%3 (%4).")
+                        .arg(address)
+                        .arg(port)
+                        .arg(MCServer::instance()->errorString())
+                        .arg(MCServer::instance()->serverError());
+    return false;
+  }
+
+  return true;
+}
+
+void MCServerMainWindow::disconnectServer_() {
+  MCServer::instance()->disconnect();
 }
