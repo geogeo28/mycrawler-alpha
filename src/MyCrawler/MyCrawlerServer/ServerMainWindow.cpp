@@ -18,12 +18,16 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QNetworkProxy>
+
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ServerMainWindow.h"
+#include "DialogPreferences.h"
 #include "ServerApplication.h"
 #include "ClientPeer.h"
+#include "ServerLogTextEdit.h"
 
 const char* SettingCurrentForm = "CurrentForm";
 
@@ -49,6 +53,10 @@ void MCServerMainWindow::setupWindow_() {
 }
 
 void MCServerMainWindow::setupMainToolBar_() {
+  // Connect buttons
+  QObject::connect(doMainToolBarPreferences, SIGNAL(triggered()), this, SLOT(on_doFilePreferences_triggered()));
+
+  // Set default page
   QString sActionName = MCApp->settings()->value(SettingCurrentForm, "doMainToolBarClients").toString();
   QAction* action = qFindChild<QAction*>(this, sActionName);
   if (action == NULL) {
@@ -70,11 +78,43 @@ void MCServerMainWindow::setupMenu_() {
 }
 
 void MCServerMainWindow::setupComponents_() {
+  // Components
+  m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
+  m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);
+
+  // Connect signals/slots
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
+  QObject::connect(MCServer::instance(), SIGNAL(stateChanged(MCServer::State)), this, SLOT(slotServerStateChanged(MCServer::State)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
   QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
   QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+}
+
+void MCServerMainWindow::loadSettingsServerConnection_() {
+  MCSettings->beginGroup("ServerConnectionConfiguration");
+    MCServer::instance()->setListenAddress(MCSettings->value("Address", "").toString());
+    MCServer::instance()->setListenPort(MCSettings->value("Port", 8080).toUInt());
+  MCSettings->endGroup();
+}
+
+void MCServerMainWindow::loadSettingsProxyConfiguration_() {
+  QNetworkProxy proxy(QNetworkProxy::NoProxy);
+  MCSettings->beginGroup("ProxyConfiguration");
+    if (MCSettings->value("Use", false).toBool() == true) {
+      proxy.setHostName(MCSettings->value("HostName").toString());
+      proxy.setPort(MCSettings->value("Port", "3128").toInt());
+      proxy.setUser(MCSettings->value("UserName").toString());
+      proxy.setPassword(QByteArray::fromBase64(MCSettings->value("UserPassword").toByteArray()));
+    }
+  MCSettings->endGroup();
+  IApplication::setProxy(proxy);
+}
+
+void MCServerMainWindow::loadSettings_() {
+  ILogger::Debug() << "Load settings.";
+  loadSettingsServerConnection_();
+  loadSettingsProxyConfiguration_();
 }
 
 void MCServerMainWindow::saveSettings_() {
@@ -84,7 +124,7 @@ void MCServerMainWindow::saveSettings_() {
 }
 
 void MCServerMainWindow::cleanAll_() {
-
+  if (!m_pProgressDialogCloseClients.isNull()) { delete m_pProgressDialogCloseClients; }
 }
 
 void MCServerMainWindow::closeWindow_() {
@@ -104,6 +144,12 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
     setupMainToolBar_();
     setupMenu_();
     setupComponents_();
+    loadSettings_();
+
+    // Auto connect ?
+    if (MCSettings->value("ServerConnectionConfiguration/AutoConnect", false).toBool() == true) {
+      on_doMainToolBarConnectDisconnect_triggered();
+    }
   }
   catch(...) {
     cleanAll_();
@@ -118,17 +164,11 @@ MCServerMainWindow::~MCServerMainWindow() {
   ILogger::Debug() << "Destroyed.";
 }
 
-void MCServerMainWindow::on_buttonServerListen_clicked() {
-  // TODO : Disconnect button and close all connections
-
-  QString address = textServerAddress->text();
-  quint16 port = textServerPort->text().toUShort();
-
-  ILogger::Trace() << QString("The server listening the address %1 on the port %2.")
-                      .arg(address)
-                      .arg(port);
-
-  MCServer::instance()->listen(QHostAddress(address), port);
+void MCServerMainWindow::on_doFilePreferences_triggered() {
+  MCDialogPreferences dlgPreferences(this);
+  if (dlgPreferences.exec() == QDialog::Accepted) {
+    loadSettings_();
+  }
 }
 
 void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
@@ -152,12 +192,7 @@ void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
 void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
   // Connect
   if (MCServer::instance()->isListening() == false) {
-    if (connectServer_() == true) {
-      doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
-      ILogger::Information() << QString("Listening the address %1 on the port %2...")
-                                .arg(MCServer::instance()->serverAddress().toString())
-                                .arg(MCServer::instance()->serverPort());
-    }
+    connectServer_();
   }
   // Disconnect
   else {
@@ -165,9 +200,9 @@ void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
     if (nClients > 0) {
       int button = QMessageBox::warning(
         this, QApplication::applicationName(),
-        QString("%1 client(s) are currently connected.\n" \
+        QString("%1 client(s) are currently connected.<br />" \
                 "Do you want to continue and close all connections ?")
-        .arg(nClients),
+                .arg(nClients),
         QMessageBox::Yes | QMessageBox::No
       );
 
@@ -176,13 +211,93 @@ void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
       }
     }
 
-    MCServer::instance()->close();
-    doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/UnconnectedIcon"));
+    disconnectServer_();
   }
 }
 
+void MCServerMainWindow::slotProgressClientFinished(MCClientThread* client) {
+  AssertCheckPtr(client);
+
+  m_pProgressDialogCloseClients->setValue(m_pProgressDialogCloseClients->value() + 1);
+}
+
 void MCServerMainWindow::slotServerError(MCServer::Error error) {
-  ILogger::Error() << MCServer::instance()->errorString();
+  int errcode = error;
+  if (error == MCServer::TcpSocketError) {
+    errcode = MCServer::instance()->serverError();
+  }
+
+  textServerLog->write(
+    MCServerLogTextEdit::ErrorIcon,
+    QString("%1 (%2).")
+      .arg(MCServer::instance()->errorString())
+      .arg(errcode),
+    "color: red; font-weight: bold,"
+  );
+}
+
+void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
+  QString message, style;
+
+  switch (state) {
+    // Listening
+    case MCServer::ListeningState:
+    {
+      // Log message
+      message = QString("Listening the address %1 on the port %2...")
+                .arg(MCServer::instance()->listenAddress().toString())
+                .arg(MCServer::instance()->listenPort());
+      style = "color: green; font-weight: bold;";
+
+      // Button connected
+      doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
+      break;
+    }
+
+    // Closing
+    case MCServer::ClosingState:
+    {
+      // Log message
+      message = "Closing all client connections...";
+      style = "color: blue; font-weight: bold;";
+
+      // Init progress dialog
+      int nClients = MCServer::instance()->countClients();
+      if (nClients > 0) {
+        m_pProgressDialogCloseClients->setMaximum(nClients);
+        m_pProgressDialogCloseClients->setValue(0);
+
+        QObject::connect(MCServer::instance(), SIGNAL(clientFinished(MCClientThread*)), this, SLOT(slotProgressClientFinished(MCClientThread*)));
+        m_pProgressDialogCloseClients->show();
+      }
+
+      // Disable Connect/Disconnect button
+      doMainToolBarConnectDisconnect->setEnabled(false);
+      break;
+    }
+
+    // Closed
+    case MCServer::ClosedState:
+    {
+      // Log message
+      message = "Connection closed.";
+      style = "color: red; font-weight: bold;";
+
+      // Set signal/slot connection to progress dialog
+      MCServer::instance()->disconnect(SIGNAL(clientFinished(MCClientThread*)), this, SLOT(slotProgressClientFinished(MCClientThread*)));
+      m_pProgressDialogCloseClients->close();
+
+      // Enable Connect/Disconnect button
+      doMainToolBarConnectDisconnect->setEnabled(true);
+      doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/UnconnectedIcon"));
+
+      break;
+    }
+
+    default:;
+  }
+
+  textServerLog->write(MCServerLogTextEdit::InformationIcon, message, style);
 }
 
 void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
@@ -191,33 +306,47 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
   QString remainder;
   if (error == MCClientThread::ClientPeerError) {
     const MCClientPeer* clientPeer = client->clientPeer();
-    remainder = QString("\nDetails : %1 (%2)")
+    remainder = QString("<br />Details : %1 (%2)")
                 .arg(clientPeer->errorString())
                 .arg(clientPeer->error());
   }
 
-  ILogger::Error() << QString("Error on the client %1 : %2 (%3)%4.")
-                      .arg(client->threadInfo().peerAddressAndPort())
-                      .arg(client->errorString())
-                      .arg(error)
-                      .arg(remainder);
+  textServerLog->write(
+    MCServerLogTextEdit::ErrorIcon,
+    QString("Error on the client %1 : %2 (%3)%4.")
+      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(client->errorString())
+      .arg(error)
+      .arg(remainder),
+    "color: red; font-weight: bold;"
+  );
 }
 
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
   AssertCheckPtr(client);
 
-  ILogger::Trace() << QString("Connection state changed to the client %1 : %2 (%3)")
-                      .arg(client->threadInfo().peerAddressAndPort())
-                      .arg(MCClientThread::connectionStateToString(state))
-                      .arg(state);
+  QString style;
+  if (state == MCClientThread::ConnectedState)        { style = "color: green; font-weight: bold;"; }
+  else if (state == MCClientThread::UnconnectedState) { style = "color: red; font-weight: bold;"; }
+
+  textServerLog->write(
+    MCServerLogTextEdit::InformationIcon,
+    QString("Client %1 : %2 (%3)")
+      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(MCClientThread::connectionStateToString(state))
+      .arg(state),
+    style
+  );
 }
 
 void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
-  ILogger::Error() << QString(
-      "The client %1 not responding (%2).\n" \
-      "Check your Internet connection.")
+  textServerLog->write(
+    MCServerLogTextEdit::ErrorIcon,
+    QString("The client %1 not responding (%2).")
       .arg(client->threadInfo().peerAddressAndPort())
-      .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen));
+      .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen)),
+    "color: red; font-weight: bold;"
+  );
 }
 
 void MCServerMainWindow::slotClientErrorProcessingPacket(
@@ -225,31 +354,53 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
   bool aborted
 )
 {
-  ILogger::Error() << QString("Error processing a packet of the client %1.\n" \
-                              "(Type = %2, Size = %3) %4 (%5) \n" \
-                              "%6")
-                      .arg(client->threadInfo().peerAddressAndPort())
-                      .arg(type)
-                      .arg(size)
-                      .arg(MCClientPeer::packetErrorToString(error))
-                      .arg(error)
-                      .arg(
-                        (aborted == true)?
-                        "To prevent of a DoS attack, the connection with the client was aborted.":
-                        "Trying recover the packet.");
+  textServerLog->write(
+    MCServerLogTextEdit::ErrorIcon,
+    QString("Error processing a packet of the client %1.<br />" \
+            "(Type = %2, Size = %3) %4 (%5)<br />" \
+            "%6")
+      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(type)
+      .arg(size)
+      .arg(MCClientPeer::packetErrorToString(error))
+      .arg(error)
+      .arg(
+      (aborted == true)?
+      "To prevent of a DoS attack, the connection with the client was aborted.":
+      "Trying recover the packet."),
+    "color: red; font-weight: bold;"
+  );
+}
+
+void MCServerMainWindow::closeEvent(QCloseEvent* event) {
+  disconnectServer_(); // Forces to disconnect all clients
+  event->accept();
 }
 
 bool MCServerMainWindow::connectServer_() {
-  QString address = textServerAddress->text();
-  quint16 port = textServerPort->text().toUShort();
+  if (MCServer::instance()->listenAddress().isNull()) {
+    QMessageBox::critical(
+      this, QApplication::applicationName(),
+      "Could not listen an invalid address.<br />" \
+      "Change the server address in Preferences Dialog.",
+      QMessageBox::Ok
+    );
 
-  if (!MCServer::instance()->listen(QHostAddress(address), port)) {
-    ILogger::Error() << QString("Could not listen the address %1 on the port %2.\n" \
-                                "%3 (%4).")
-                        .arg(address)
-                        .arg(port)
-                        .arg(MCServer::instance()->errorString())
-                        .arg(MCServer::instance()->serverError());
+    on_doFilePreferences_triggered();
+    return false;
+  }
+
+  if (!MCServer::instance()->listen()) {
+    textServerLog->write(
+      MCServerLogTextEdit::ErrorIcon,
+      QString("Could not listen the address %1 on the port %2.<br />" \
+              "%3 (%4).")
+        .arg(MCServer::instance()->listenAddress().toString())
+        .arg(MCServer::instance()->listenPort())
+        .arg(MCServer::instance()->errorString())
+        .arg(MCServer::instance()->serverError()),
+      "color: red; font-weight: bold;"
+    );
     return false;
   }
 
@@ -257,5 +408,6 @@ bool MCServerMainWindow::connectServer_() {
 }
 
 void MCServerMainWindow::disconnectServer_() {
-  MCServer::instance()->disconnect();
+  MCServer::instance()->close();
+  MCServer::instance()->waitForClosed();
 }

@@ -25,6 +25,7 @@
 #define SERVERMAINWINDOW_H
 
 #include <QtGui>
+#include <QPointer>
 
 #include "ui_ServerMainWindow.h"
 #include "Server.h"
@@ -44,7 +45,11 @@ private:
     void setupMenu_();
     void setupComponents_();
 
+    void loadSettingsServerConnection_();
+    void loadSettingsProxyConfiguration_();
+    void loadSettings_();
     void saveSettings_();
+
     void cleanAll_();
     void closeWindow_();
 
@@ -53,23 +58,32 @@ public:
     ~MCServerMainWindow();
 
 private slots:
-    void on_buttonServerListen_clicked();
+    void on_doFilePreferences_triggered();
     void on_mainToolBar_actionTriggered(QAction* action);
     void on_doMainToolBarConnectDisconnect_triggered();
 
 private slots:
+    void slotProgressClientFinished(MCClientThread* client);
+
     void slotServerError(MCServer::Error error);
+    void slotServerStateChanged(MCServer::State state);
+
     void slotClientError(MCClientThread* client, MCClientThread::Error error);
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
 
+protected:
+    void closeEvent(QCloseEvent* event);
+
 private:
+    //void serverLogMessage_(const QStringconst QString& message,
     bool connectServer_();
     void disconnectServer_();
 
 private:
     QAction* m_pActionCurrentForm;
+    QPointer<QProgressDialog> m_pProgressDialogCloseClients;
 };
 
 #endif // SERVERMAINWINDOW_H

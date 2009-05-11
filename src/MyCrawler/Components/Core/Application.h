@@ -28,6 +28,7 @@
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QPointer>
+#include <QNetworkProxy>
 
 #include "Config/Settings.h"
 
@@ -57,6 +58,10 @@ public:
     CSettings* settings() { return m_pSettings; }
 
     virtual void run() =0;
+
+public:
+    static void setProxy(const QNetworkProxy& proxy) { QNetworkProxy::setApplicationProxy(proxy); }
+    static QNetworkProxy proxy() { return QNetworkProxy::applicationProxy(); }
 
 private:
     QPointer<CLoggerConsole> m_pLoggerConsole;

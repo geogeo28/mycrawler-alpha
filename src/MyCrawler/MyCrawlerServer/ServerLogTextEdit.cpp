@@ -1,6 +1,4 @@
 /****************************************************************************
- * @(#) Client component. Application base class.
- *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -20,37 +18,35 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTAPPLICATION_H
-#define CLIENTAPPLICATION_H
+#include <QTime>
 
-#include <QPointer>
+#include "Debug/Logger.h"
+#include "ServerLogTextEdit.h"
 
-#include "Core/Application.h"
-#include "ClientMainWindow.h"
+MCServerLogTextEdit::MCServerLogTextEdit(QWidget* parent)
+  : QTextEdit(parent)
+{}
 
-class MCClientApplication : public IApplication
-{
-private:
-    void init_();
-    void cleanAll_();
+void MCServerLogTextEdit::write(Icon icon, const QString& message, const QString& style) {
+  QString img;
+  switch (icon) {
+    case ErrorIcon:
+      img = "<img src=\":/Log/ErrorIcon\" />&nbsp;";
+      break;
+    case InformationIcon:
+      img = "<img src=\":/Log/InformationIcon\" />&nbsp;";
+      break;
 
-public:
-    static MCClientApplication* instance();
-    static void destroy();
+    default:;
+  }
 
-    MCClientApplication(int &argc, char** argv);
-    ~MCClientApplication();
-    
-    MCClientMainWindow* mainWindow() { return m_pMainWindow; }
-
-    void run();
-
-private:
-    static MCClientApplication* s_instance;
-    QPointer<MCClientMainWindow> m_pMainWindow;
-};
-
-#define MCApp   	    MCClientApplication::instance()
-#define MCSettings    MCApp->settings()
-
-#endif // CLIENTAPPLICATION_H
+  moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+  insertHtml(
+    QString("<table><tr><td>[%1]&nbsp;%2<td><td style=\"%4\">%3</td></tr></table>")
+    .arg(QTime::currentTime().toString(Qt::ISODate))
+    .arg(img)
+    .arg(message)
+    .arg(style)
+  );
+  moveCursor(QTextCursor::End, QTextCursor::KeepAnchor);
+}

@@ -114,6 +114,7 @@ void MCClientThread::run() {
   if (clientPeer.state() != MCClientPeer::UnconnectedState) {
     clientPeer.disconnect();
   }
+
   m_pClientPeer = NULL;
 }
 

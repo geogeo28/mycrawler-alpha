@@ -50,6 +50,7 @@ private:
     QPointer<MCServerMainWindow> m_pMainWindow;
 };
 
-#define MCApp   MCServerApplication::instance()
+#define MCApp         MCServerApplication::instance()
+#define MCSettings    MCApp->settings()
 
 #endif // SERVERAPPLICATION_H
