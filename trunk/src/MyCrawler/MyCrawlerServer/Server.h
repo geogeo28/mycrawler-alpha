@@ -35,9 +35,16 @@ public:
     typedef enum {
       NoError,
       UnknownError,
-      SocketError,
-      ServerFullError
+      TcpSocketError,
+      ServerFullError,
+      ListenError
     } Error;
+
+    typedef enum {
+      ClosedState,
+      ListeningState,
+      ClosingState
+    } State;
 
 public:
     static MCServer* instance();
@@ -47,23 +54,39 @@ public:
     ~MCServer();
 
 public:
+    void setListenAddress(const QHostAddress& address) { m_listenAddress = address; }
+    void setListenAddress(const QString& address) { m_listenAddress = QHostAddress(address); }
+    quint16 listenPort() const { return m_u16ListenPort; }
+    void setListenPort(quint16 port) { m_u16ListenPort = port; }
+
+    State state() const { return m_enumState; }
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
     int maxConnections() const;
     void setMaxConnections(int n);
     bool canAcceptNewConnection() const;
+    const QHostAddress& listenAddress() const { return m_listenAddress; }
 
 public:
     // Override QTcpServer methods
-    bool listen(const QHostAddress& address = QHostAddress::Any, quint16 port = 0);
+    bool listen();
     void close();
+    bool isClosed() const { return state() == ClosedState; }
+    void waitForClosed() const;
 
     bool addClient(MCClientThread* client);
     void removeClient(MCClientThread* client);
     int countClients() const { return m_lstClientThreads.count(); }
 
+public:
+    static QString stateToString(State state);
+
 signals:
     void error(MCServer::Error error);
+    void stateChanged(MCServer::State state);
+    void closed();
+
+    void clientFinished(MCClientThread* client);
     void clientError(MCClientThread* client, MCClientThread::Error error);
     void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void clientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
@@ -71,6 +94,7 @@ signals:
 
 private slots:
     void clientDisconnected_();
+    void clientFinished_();
     void clientError_(MCClientThread::Error error) { emit clientError(senderClientThread_(), error); }
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state) { emit clientConnectionStateChanged(senderClientThread_(), state); }
     void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) { emit clientTimeout(senderClientThread_(), notifiedWhen); }
@@ -82,12 +106,18 @@ protected:
 private:
     inline MCClientThread* senderClientThread_() const { return qobject_cast<MCClientThread*>(sender()); }
     void setError_(Error error, bool signal = true);
+    void setState_(State state);
 
 private:
     static MCServer* s_instance;
 
+    State m_enumState;
+
     Error m_enumError;
     QString m_sError;
+
+    QHostAddress m_listenAddress;
+    quint16 m_u16ListenPort;
 
     QList<MCClientThread*> m_lstClientThreads;
 };

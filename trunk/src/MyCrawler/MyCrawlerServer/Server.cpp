@@ -18,6 +18,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QCoreApplication>
+
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
@@ -43,7 +45,10 @@ void MCServer::destroy() {
 }
 
 MCServer::MCServer(QObject* parent)
-  : QTcpServer(parent)
+  : QTcpServer(parent),
+    m_enumState(ClosedState),
+    m_listenAddress(QHostAddress::Any),
+    m_u16ListenPort(0)
 {
   ILogger::Debug() << "Construct.";
 
@@ -52,6 +57,7 @@ MCServer::MCServer(QObject* parent)
 
 MCServer::~MCServer() {
   MCServer::close();
+  waitForClosed();
   ILogger::Debug() << "Destroyed.";
 }
 
@@ -68,40 +74,61 @@ bool MCServer::canAcceptNewConnection() const {
   return (m_lstClientThreads.count() < maxConnections());
 }
 
-bool MCServer::listen(const QHostAddress& address, quint16 port) {
+bool MCServer::listen() {
   ILogger::Debug() << QString("Try to listening the address %1 on the port %2.")
-                      .arg(address.toString())
-                      .arg(port);
+                      .arg(listenAddress().toString())
+                      .arg(listenPort());
 
-  bool success = QTcpServer::listen(address, port);
-  if (success == false) {
-    setError_(SocketError, false);
+  if (state() == ClosingState) {
+    setError_(ListenError, false);
+    return false;
   }
+
+  bool success = QTcpServer::listen(listenAddress(), listenPort());
+  if (success == false) {
+    setError_(TcpSocketError, false);
+    return false;
+  }
+
+  setState_(ListeningState);
 
   return success;
 }
 
 void MCServer::close() {
+  if (isClosed()) { return; }
+
   #ifdef QT_DEBUG
     if (countClients() > 0) {
       ILogger::Debug() << "Disconnect all clients.";
     }
   #endif
 
-  QListIterator<MCClientThread*> it(m_lstClientThreads);
-  while (it.hasNext()) {
-    MCClientThread* client = it.next();
-
-    ILogger::Debug() << "Attempt to destroy the thread " << client << ".";
-    client->quit();
-    client->wait();
-    client->deleteLater();
+  setState_(ClosingState);
+  // Just close the connection
+  if (m_lstClientThreads.isEmpty()) {
+    QTcpServer::close();
+    setState_(ClosedState);
   }
-
-  m_lstClientThreads.clear();
-
-  QTcpServer::close();
+  // Force to disconnect all clients
+  else {
+    QListIterator<MCClientThread*> it(m_lstClientThreads);
+    while (it.hasNext()) {
+      MCClientThread* client = it.next();
+      removeClient(client);
+    }
+  }
 }
+
+void MCServer::waitForClosed() const {
+  if (isClosed()) { return; }
+
+  ILogger::Debug() << "Waiting to disconnect all client connections...";
+  while (!isClosed()) {
+    QCoreApplication::processEvents();
+  }
+}
+
 
 bool MCServer::addClient(MCClientThread* client) {
   if (canAcceptNewConnection() == false) {
@@ -116,20 +143,45 @@ bool MCServer::addClient(MCClientThread* client) {
 }
 
 void MCServer::removeClient(MCClientThread* client) {
-  ILogger::Debug() << "Remove the client " << client << ".";
-  m_lstClientThreads.removeOne(client);
+  AssertCheckPtr(client);
+
+  ILogger::Debug() << "Force to disconnect the client " << client << ".";
+  client->quit();
+}
+
+QString MCServer::stateToString(State state) {
+  switch (state) {
+    case ListeningState: return QT_TRANSLATE_NOOP(MCServer, "Listening");
+    case ClosingState:   return QT_TRANSLATE_NOOP(MCServer, "Closing");
+
+    default:
+      return QT_TRANSLATE_NOOP(MCServer, "Closed");
+  }
 }
 
 void MCServer::clientDisconnected_() {
   MCClientThread* client = senderClientThread_();
   AssertCheckPtr(client);
 
-  ILogger::Debug() << "The thread " << client << " is finished (client disconnected).";
-
+  ILogger::Debug() << "Prepare to finish the thread " << client << " (client disconnected).";
   client->quit();
-  client->wait();
-  removeClient(client);
+}
+
+void MCServer::clientFinished_() {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientFinished(client);
+
+  ILogger::Debug() << "The thread " << client << " is finished (Remove client from the server)";
+  m_lstClientThreads.removeOne(client);
   client->deleteLater();
+
+  if ((state() == ClosingState) && m_lstClientThreads.isEmpty()) {
+    ILogger::Debug() << "Close the server connection.";
+    QTcpServer::close();
+    setState_(ClosedState);
+  }
 }
 
 void MCServer::incomingConnection(int socketDescriptor) { 
@@ -158,6 +210,7 @@ void MCServer::incomingConnection(int socketDescriptor) {
   qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
 
+  QObject::connect(client, SIGNAL(finished()), this, SLOT(clientFinished_()));
   QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
@@ -178,11 +231,14 @@ void MCServer::setError_(Error error, bool signal) {
     case NoError:
       m_sError = QT_TRANSLATE_NOOP(MCServer, "No error");
       break;
-    case SocketError:
+    case TcpSocketError:
       m_sError = QTcpServer::errorString();
       break;
     case ServerFullError:
-      m_sError = QT_TRANSLATE_NOOP(MCServer, "Could not accept a new client because the server is full. You must increase the number of connections than the server can supported.");
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "Could not accept a new client because the server is full. You must increase the number of connections than the server can supported. Client refused.");
+      break;
+    case ListenError:
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "Listen is not allowed in Closing State.");
       break;
 
     default:
@@ -193,5 +249,22 @@ void MCServer::setError_(Error error, bool signal) {
 
   if (signal == true) {
     emit MCServer::error(m_enumError);
+  }
+}
+
+void MCServer::setState_(State state) {
+  // Do nothing if the connection state didn't changed
+  if (state == m_enumState) { return; }
+
+  ILogger::Debug() << QString("Connection state changed : %1 (%2).")
+                      .arg(stateToString(state))
+                      .arg(state);
+
+  m_enumState = state;
+
+  emit MCServer::stateChanged(state);
+
+  if (state == ClosedState) {
+    emit closed();
   }
 }

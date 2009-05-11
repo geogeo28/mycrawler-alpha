@@ -1,5 +1,6 @@
 /****************************************************************************
- * @(#) Client component. Application base class.
+ * @(#) MyCrawler server. Dialog preferences.
+ * GUI interface
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -20,37 +21,32 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTAPPLICATION_H
-#define CLIENTAPPLICATION_H
+#ifndef DIALOGPREFERENCES_H
+#define DIALOGPREFERENCES_H
 
-#include <QPointer>
+#include <QtGui>
 
-#include "Core/Application.h"
-#include "ClientMainWindow.h"
+#include "ui_DialogPreferences.h"
 
-class MCClientApplication : public IApplication
+class MCDialogPreferences : public QDialog,
+                            private Ui_DialogPreferences
 {
-private:
-    void init_();
-    void cleanAll_();
-
 public:
-    static MCClientApplication* instance();
-    static void destroy();
+    MCDialogPreferences(QWidget* parent = NULL);
 
-    MCClientApplication(int &argc, char** argv);
-    ~MCClientApplication();
-    
-    MCClientMainWindow* mainWindow() { return m_pMainWindow; }
-
-    void run();
+public slots:
+    int exec();
+    void accept();
 
 private:
-    static MCClientApplication* s_instance;
-    QPointer<MCClientMainWindow> m_pMainWindow;
+    void readServerConnectionConfiguration_();
+    void readProxyConfiguration_();
+    void writeServerConnectionConfiguration_();
+    void writeProxyConfiguration_();
+
+private:
+    void readSettings_();
+    void writeSettings_();
 };
 
-#define MCApp   	    MCClientApplication::instance()
-#define MCSettings    MCApp->settings()
-
-#endif // CLIENTAPPLICATION_H
+#endif // DIALOGPREFERENCES_H

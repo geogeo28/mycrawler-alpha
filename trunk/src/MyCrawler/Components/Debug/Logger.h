@@ -99,7 +99,7 @@ public:
  public:
     static void Log(LogLevel level, const char* format, ...);
     static CLoggerManipulator Log(LogLevel level) { return Log_(level, NULL); }
-    static CLoggerManipulator Debug_(const char* func, void* object)  {return Log_(DebugLevel, func, object); }
+    static CLoggerManipulator Debug_(const char* func, const void* object)  { return Log_(DebugLevel, func, object); }
     static CLoggerManipulator Trace()       { return Log_(TraceLevel); }
     static CLoggerManipulator Notice()      { return Log_(NoticeLevel); }
     static CLoggerManipulator Warning()     { return Log_(WarningLevel); }
@@ -120,7 +120,7 @@ protected:
     virtual void write(LogLevel level, const QString& message) { *this << "\n"; }
 
 private:
-    static CLoggerManipulator Log_(LogLevel level, const char* func = NULL, void* object = NULL);
+    static CLoggerManipulator Log_(LogLevel level, const char* func = NULL, const void* object = NULL);
 
 private:
     void write_();

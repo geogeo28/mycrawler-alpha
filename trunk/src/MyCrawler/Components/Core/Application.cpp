@@ -18,6 +18,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QDateTime>
+
 #include "Core/Application.h"
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
@@ -32,6 +34,9 @@ void IApplication::cleanAll_() {
 IApplication::IApplication(int &argc, char **argv)
   : QApplication(argc, argv)
 {
+  // Initialize random generator
+  qsrand(QDateTime::currentDateTime().toTime_t());
+
   #if defined(Q_WS_MAC)
     QApplication::setQuitOnLastWindowClosed(false);
   #else

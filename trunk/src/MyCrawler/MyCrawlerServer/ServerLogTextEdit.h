@@ -1,5 +1,6 @@
 /****************************************************************************
- * @(#) Client component. Application base class.
+ * @(#) MyCrawler server. Server log text edit.
+ * GUI interface
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -20,37 +21,26 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTAPPLICATION_H
-#define CLIENTAPPLICATION_H
+#ifndef SERVERLOGTEXTEDIT_H
+#define SERVERLOGTEXTEDIT_H
 
-#include <QPointer>
+#include <QTextEdit>
 
-#include "Core/Application.h"
-#include "ClientMainWindow.h"
-
-class MCClientApplication : public IApplication
+class MCServerLogTextEdit : public QTextEdit
 {
-private:
-    void init_();
-    void cleanAll_();
+public:
+    typedef enum {
+      NoIcon,
+      ErrorIcon,
+      InformationIcon
+    } Icon;
 
 public:
-    static MCClientApplication* instance();
-    static void destroy();
+    MCServerLogTextEdit(QWidget* parent = 0);
 
-    MCClientApplication(int &argc, char** argv);
-    ~MCClientApplication();
-    
-    MCClientMainWindow* mainWindow() { return m_pMainWindow; }
+    void write(Icon icon, const QString& message, const QString& style = QString());
 
-    void run();
-
-private:
-    static MCClientApplication* s_instance;
-    QPointer<MCClientMainWindow> m_pMainWindow;
+    QSize sizeHint() const { return baseSize(); }
 };
 
-#define MCApp   	    MCClientApplication::instance()
-#define MCSettings    MCApp->settings()
-
-#endif // CLIENTAPPLICATION_H
+#endif // SERVERLOGTEXTEDIT_H
