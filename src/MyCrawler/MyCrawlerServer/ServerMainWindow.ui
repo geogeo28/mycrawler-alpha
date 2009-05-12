@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabServerLog">
        <attribute name="title">
@@ -37,6 +37,9 @@
         </property>
         <item>
          <widget class="MCServerLogTextEdit" name="textServerLog">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
           <property name="undoRedoEnabled">
            <bool>false</bool>
           </property>
@@ -62,6 +65,55 @@ p, li { white-space: pre-wrap; }
        <attribute name="title">
         <string>Clients</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTreeWidget" name="treeWidgetClients">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="animated">
+           <bool>true</bool>
+          </property>
+          <attribute name="headerDefaultSectionSize">
+           <number>90</number>
+          </attribute>
+          <attribute name="headerDefaultSectionSize">
+           <number>90</number>
+          </attribute>
+          <column>
+           <property name="text">
+            <string>MAC address</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>IP address</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Username</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>State</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
