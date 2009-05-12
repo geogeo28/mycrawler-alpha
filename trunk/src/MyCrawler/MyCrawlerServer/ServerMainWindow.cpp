@@ -102,6 +102,7 @@ void MCServerMainWindow::loadSettingsProxyConfiguration_() {
   QNetworkProxy proxy(QNetworkProxy::NoProxy);
   MCSettings->beginGroup("ProxyConfiguration");
     if (MCSettings->value("Use", false).toBool() == true) {
+      proxy.setType(QNetworkProxy::HttpProxy);
       proxy.setHostName(MCSettings->value("HostName").toString());
       proxy.setPort(MCSettings->value("Port", "3128").toInt());
       proxy.setUser(MCSettings->value("UserName").toString());

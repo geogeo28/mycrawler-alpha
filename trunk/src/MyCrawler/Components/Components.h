@@ -36,6 +36,7 @@
   #include "Debug/Loggers/LoggerMsgBox.h"
   #include "Core/Application.h"
   #include "Config/Settings.h"
+  #include "Utilities/NetworkInfo.h"
 #endif
 
 #endif // COMPONENTS_H

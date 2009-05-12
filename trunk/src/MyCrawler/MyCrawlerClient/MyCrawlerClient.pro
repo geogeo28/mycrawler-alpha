@@ -19,6 +19,7 @@ OTHER_FILES += ../TODO.txt
 include(../Components/Debug.pri)
 include(../Components/Core.pri)
 include(../Components/Config.pri)
+include(../Components/Utilities.pri)
 include(../Components/Widgets.pri)
 include(../Shared/Shared.pri)
 include(Network.pri)
