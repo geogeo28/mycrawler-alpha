@@ -60,7 +60,6 @@ QString MCClientThread::connectionStateToString(ConnectionState state) {
     case AuthenticatingState : return QT_TRANSLATE_NOOP(MCClientThread, "Authenticating");
     case ConnectedState:       return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
     case ClosingState:         return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
-    case ListeningState:       return QT_TRANSLATE_NOOP(MCClientThread, "Listening");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientThread, "Unknown state");
