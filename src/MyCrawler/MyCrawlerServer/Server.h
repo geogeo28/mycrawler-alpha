@@ -62,8 +62,8 @@ public:
     State state() const { return m_enumState; }
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
-    int maxConnections() const;
-    void setMaxConnections(int n);
+    int maxConnections() const { return m_nMaxConnections; }
+    void setMaxConnections(int n) { m_nMaxConnections = n; }
     bool canAcceptNewConnection() const;
     const QHostAddress& listenAddress() const { return m_listenAddress; }
 
@@ -79,6 +79,7 @@ public:
     int countClients() const { return m_lstClientThreads.count(); }
 
 public:
+    static int defaultMaxConnections();
     static QString stateToString(State state);
 
 signals:
@@ -111,6 +112,7 @@ private:
 private:
     static MCServer* s_instance;
 
+    int m_nMaxConnections;
     State m_enumState;
 
     Error m_enumError;
