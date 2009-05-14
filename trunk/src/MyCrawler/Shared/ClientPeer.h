@@ -26,6 +26,8 @@
 #include <QtNetwork>
 #include <QByteArray>
 
+#include "Utilities/NetworkInfo.h"
+
 class MCClientPeer : public QTcpSocket
 {
     Q_OBJECT
@@ -39,15 +41,18 @@ public:
     } TimeoutNotify;
 
     typedef enum {
-      HandShakePacket,
-      KeepAlivePacket
+      KeepAliveAcknowledgmentPacket = 0xFFFF,
+      KeepAlivePacket = 0,
+      AuthenticationPacket
     } PacketType;
 
     typedef enum {
       PacketUnknownError,
       PacketSizeError,
       PacketTypeError,
-      HandShakePacketNotReceivedError
+      ProtocolIdError,
+      ProtocolVersionError,
+      AuthenticationError
     } PacketError;
 
 public:
@@ -80,7 +85,7 @@ signals:
 public slots:
     void connectionRefused();
     void disconnect(int msecs = 30000);
-    void sendHandShake();
+    void sendHandShake() { sendHandShakePacket_(); }
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -91,6 +96,10 @@ protected:
 
 private:
     void errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
+    void sendHandShakePacket_();
+    void sendAuthenticationPacket_();
+
+    CNetworkInfo processAuthenticationPacket_();
 
 private:
     void connecting_();
@@ -109,6 +118,7 @@ private:
     int m_idKeepAliveTimer;
     bool m_bInvalidateTimeout;
 
+    bool m_bProtocolChecked;
     bool m_bReceivedHandShake, m_bSentHandShake;
     quint32 m_u32PacketSize;
     quint16 m_u16PacketType;
