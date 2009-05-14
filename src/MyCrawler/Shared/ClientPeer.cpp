@@ -127,14 +127,6 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
   }
 }
 
-void MCClientPeer::connectionRefused() {
-  ILogger::Debug() << QString("%1:%2 : Connection refused.")
-                      .arg(peerAddress().toString()).arg(peerPort());
-
-  setSocketError(ConnectionRefusedError);
-  disconnectFromHost();
-}
-
 void MCClientPeer::disconnect(int msecs) {
   // Close the connection
   if (state() == MCClientPeer::ConnectingState) {
@@ -355,11 +347,6 @@ CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
   data >> hostName;
   data >> hostDomain;
 
-  ILogger::Trace() << bytesAvailable();
-  ILogger::Trace() << CNetworkInfo::hardwareAddressToString(hardwareAddress);
-  ILogger::Trace() << QHostAddress(ip).toString();
-  ILogger::Trace() << hostName << " " << hostDomain;
-
   return CNetworkInfo(
     QHostAddress(ip), QHostAddress(broadcast), QHostAddress(broadcast), (int)prefixLength,
     QString(), // Interface name
@@ -415,7 +402,8 @@ void MCClientPeer::processPacket_() {
       return;
     }
 
-    CNetworkInfo networkInfo = processAuthenticationPacket_();
+    m_networkInfo = processAuthenticationPacket_();
+    emit authenticated(m_networkInfo);
 
     m_bReceivedHandShake = true;
 

@@ -30,6 +30,8 @@
 
 #include "ClientPeer.h"
 
+class CNetworkInfo;
+
 class MCClientThreadInfo {
   public:
     MCClientThreadInfo(
@@ -47,10 +49,14 @@ class MCClientThreadInfo {
     void setPeerAddress(const QHostAddress& peerAddress) { m_peerAddress = peerAddress; }
     void setPeerPort(quint16 peerPort) { m_u16PeerPort = peerPort; }
 
+    const CNetworkInfo& networkInfo() const { return m_networkInfo; }
+    void setNetworkInfo(const CNetworkInfo& info) { m_networkInfo = info; }
+
   private:
     QString m_sPeerName;
     QHostAddress m_peerAddress;
     quint16 m_u16PeerPort;
+    CNetworkInfo m_networkInfo;
 };
 
 class MCClientThread : public QThread
@@ -69,9 +75,9 @@ public:
       UnconnectedState,
       HostLookupState,
       ConnectingState,
+      AuthenticatingState,
       ConnectedState,
-      ClosingState,
-      ListeningState
+      ClosingState
     } ConnectionState;
 
 public:
@@ -90,6 +96,7 @@ public:
 signals:
     void error(MCClientThread::Error error);
     void connectionStateChanged(MCClientThread::ConnectionState state);
+    void authenticated(const CNetworkInfo& info);
     void connected();
     void disconnected();
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
@@ -98,6 +105,7 @@ signals:
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
     void peerStateChanged_(QAbstractSocket::SocketState socketState);
+    void peerAuthenticated_(const CNetworkInfo& info);
 
 protected:
     void run();

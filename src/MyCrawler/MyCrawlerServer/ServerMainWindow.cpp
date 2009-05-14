@@ -248,7 +248,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       message = QString("Listening the address %1 on the port %2...")
                 .arg(MCServer::instance()->listenAddress().toString())
                 .arg(MCServer::instance()->listenPort());
-      style = "color: green; font-weight: bold;";
+      style = "color: green;";
 
       // Button connected
       doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
@@ -260,7 +260,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     {
       // Log message
       message = "Closing all client connections...";
-      style = "color: blue; font-weight: bold;";
+      style = "color: blue;";
 
       // Init progress dialog
       int nClients = MCServer::instance()->countClients();
@@ -282,7 +282,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     {
       // Log message
       message = "Connection closed.";
-      style = "color: red; font-weight: bold;";
+      style = "color: red;";
 
       // Set signal/slot connection to progress dialog
       MCServer::instance()->disconnect(SIGNAL(clientFinished(MCClientThread*)), this, SLOT(slotProgressClientFinished(MCClientThread*)));
@@ -298,7 +298,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     default:;
   }
 
-  textServerLog->write(MCServerLogTextEdit::InformationIcon, message, style);
+  textServerLog->write(MCServerLogTextEdit::InformationIcon, message, style + "font-weight: bold");
 }
 
 void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
@@ -327,8 +327,9 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
   AssertCheckPtr(client);
 
   QString style;
-  if (state == MCClientThread::ConnectedState)        { style = "color: green; font-weight: bold;"; }
-  else if (state == MCClientThread::UnconnectedState) { style = "color: red; font-weight: bold;"; }
+  if (state == MCClientThread::ConnectedState)           { style = "color: green;"; }
+  else if (state == MCClientThread::AuthenticatingState) { style = "color: blue;"; }
+  else if (state == MCClientThread::UnconnectedState)    { style = "color: red;"; }
 
   textServerLog->write(
     MCServerLogTextEdit::InformationIcon,
@@ -336,7 +337,7 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(MCClientThread::connectionStateToString(state))
       .arg(state),
-    style
+    style + "font-weight: bold"
   );
 }
 
