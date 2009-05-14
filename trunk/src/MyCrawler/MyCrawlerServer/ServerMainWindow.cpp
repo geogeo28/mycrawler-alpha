@@ -95,6 +95,8 @@ void MCServerMainWindow::loadSettingsServerConnection_() {
   MCSettings->beginGroup("ServerConnectionConfiguration");
     MCServer::instance()->setListenAddress(MCSettings->value("Address", "").toString());
     MCServer::instance()->setListenPort(MCSettings->value("Port", 8080).toUInt());
+
+    MCServer::instance()->setMaxConnections(MCSettings->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
   MCSettings->endGroup();
 }
 

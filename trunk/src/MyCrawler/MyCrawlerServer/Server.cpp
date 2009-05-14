@@ -25,9 +25,9 @@
 
 #include "Server.h"
 
-MCServer* MCServer::s_instance = NULL;
+const int DefaultMaxConnections = 5;
 
-int MaxConnections = 5;
+MCServer* MCServer::s_instance = NULL;
 
 MCServer* MCServer::instance() {
   if (s_instance == NULL) {
@@ -46,6 +46,7 @@ void MCServer::destroy() {
 
 MCServer::MCServer(QObject* parent)
   : QTcpServer(parent),
+    m_nMaxConnections(DefaultMaxConnections),
     m_enumState(ClosedState),
     m_listenAddress(QHostAddress::Any),
     m_u16ListenPort(0)
@@ -61,17 +62,8 @@ MCServer::~MCServer() {
   ILogger::Debug() << "Destroyed.";
 }
 
-int MCServer::maxConnections() const {
-  return MaxConnections;
-}
-
-void MCServer::setMaxConnections(int n) {
-  Assert(n > 0);
-  MaxConnections = n;
-}
-
 bool MCServer::canAcceptNewConnection() const {
-  return (m_lstClientThreads.count() < maxConnections());
+  return (m_lstClientThreads.count() < m_nMaxConnections);
 }
 
 bool MCServer::listen() {
@@ -148,6 +140,8 @@ void MCServer::removeClient(MCClientThread* client) {
   ILogger::Debug() << "Force to disconnect the client " << client << ".";
   client->quit();
 }
+
+int MCServer::defaultMaxConnections() { return DefaultMaxConnections; }
 
 QString MCServer::stateToString(State state) {
   switch (state) {

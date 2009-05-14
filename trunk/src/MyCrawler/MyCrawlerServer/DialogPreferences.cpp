@@ -44,6 +44,8 @@ void MCDialogPreferences::readServerConnectionConfiguration_() {
     textServerAddress->setText(MCSettings->value("Address", "").toString());
     spinBoxServerPort->setValue(MCSettings->value("Port", 8080).toUInt());
     checkBoxServerAutoConnect->setChecked(MCSettings->value("AutoConnect", false).toBool());
+
+    spinBoxServerNumberOfConnections->setValue(MCSettings->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
   MCSettings->endGroup();
 }
 
@@ -62,6 +64,8 @@ void MCDialogPreferences::writeServerConnectionConfiguration_() {
     MCSettings->setValue("Address", textServerAddress->text());
     MCSettings->setValue("Port", spinBoxServerPort->value());
     MCSettings->setValue("AutoConnect", checkBoxServerAutoConnect->isChecked());
+
+    MCSettings->setValue("MaxConnections", spinBoxServerNumberOfConnections->value());
   MCSettings->endGroup();
 }
 
