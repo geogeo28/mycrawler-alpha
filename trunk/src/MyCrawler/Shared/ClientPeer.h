@@ -69,6 +69,7 @@ public:
     static void setHandShakeTimeout(int sec) { s_nHandShakeTimeout = sec * 1000; }
     static void setKeepAliveInterval(int sec) { s_nKeepAliveInterval = sec * 1000; }
 
+    const CNetworkInfo& networkInfo() const { return m_networkInfo; }
     void sendPacket(PacketType type, const QByteArray& data = QByteArray());
 
 public:
@@ -81,9 +82,9 @@ signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void packetSent(MCClientPeer::PacketType type, quint32 size);
+    void authenticated(const CNetworkInfo& info);
 
 public slots:
-    void connectionRefused();
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
 
@@ -122,6 +123,8 @@ private:
     bool m_bReceivedHandShake, m_bSentHandShake;
     quint32 m_u32PacketSize;
     quint16 m_u16PacketType;
+
+    CNetworkInfo m_networkInfo;
 };
 
 #endif // CLIENTPEER_H

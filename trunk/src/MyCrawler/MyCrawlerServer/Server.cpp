@@ -193,7 +193,7 @@ void MCServer::incomingConnection(int socketDescriptor) {
 
     // Refuse connection
     if (client.setSocketDescriptor(socketDescriptor) == true) {
-      client.connectionRefused();
+      client.close();
     }
 
     setError_(ServerFullError, true);
