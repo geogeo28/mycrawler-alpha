@@ -27,13 +27,14 @@ Timeouts management :
 *********************   
 
 Timeouts are used to close a connection when the peer not responding.
-Here timeouts defined :
-During connecting state : Connect Timeout (60 seconds by default).
+Here are timeouts defined :
+- During the connecting state :
+  < Connect Timeout > (60 seconds by default).
 - When the user is connected to the host but no handshake message was 
 received : 
   < HandShake Timeout > (60 seconds by default)
 - When the user is connected to the host and a handshake message was 
-received : 
+received and the peer was identified : 
   < Peer Timeout > (120 seconds by default)
 - When the user received a request but it cannot be processed (attemps new
 message chunks): 
@@ -49,12 +50,28 @@ Keep-Alive notification :
 When the user is connected to the host and the user received a handshake
 message, a Keep-Alive interval is set. A Keep-Alive message is sent every
 30 seconds (by default). The host which receive a Keep-Alive message
-responds with a handshake message. 
+responds with a acknowledgment Keep-Alive.
+
+
+*******************
+HandShake message :
+*******************
+
+A handshake message initiates a connection between the client and the server.
+It's a special message structure :
+
+18 bytes (Protocol ID) : MyCrawler Protocol
+uint16 (Protocol Version) : 0x0100
+8 bytes (reserved) : 0x0000000000000000
 
 
 ******************
 Packet structure :
 ******************
+
+When the communication was established between the client and the server,
+standard messages are exchanged. Here is the basic structure : 
+
 uint32 : Size of the packet in bytes.
 uint16 : Type of packet
 ?      : Data
@@ -67,14 +84,37 @@ be set with the value 6.
 *****************
 Type of packets :
 ***************** 
-  0 = HandShake :
+  65535 = KeepAlive Acknowledgment :
 
-This message is used in order to etablish a connection between two
-entities. A connection is established when both entities received
-this message.
+This message is just sent after receiving a KeepAlive message. It's used
+to inform that a KeepAlive packet was received and that the entity is still
+alive.
+
   
-  
-  1 = Keep-Alive :
+  0 = Keep-Alive :
   
 Inform the host that the user attemps a notification. In other words, the host
-which receive a Keep-Alive message responds with a handshake message.
+which receive a Keep-Alive message responds with an acknowledgment.
+
+
+  1 = Authentication :
+
+In general, this message is encapsulate in a handshake packet. It contains some
+machine information such as the MAC address, the local IP, the host domain...
+of the entity which has emitted this message :
+
+uint64 : MAC address
+uint32 : Local IPv4
+uint32 : Broadcast IPv4
+uint32 : Netmask IPv4
+uint8 : Prefix length (number of bits set to 1 in the netmask).
+QString : Host name
+QString : Host domain
+
+
+Appendix A :
+************
+
+QString : 
+  quint32 (size of the string in bytes) : If the string is null : 0xFFFFFFFF, otherwise the string length in bytes
+  ? : The data in UTF-16  

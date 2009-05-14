@@ -1,0 +1,12 @@
+qDebug() << m_clientPeer.localAddress();
+
+QList<QNetworkInterface> li = QNetworkInterface::allInterfaces();
+foreach (QNetworkInterface i, li) {
+  foreach (QNetworkAddressEntry a, i.addressEntries()) {
+    if (a.ip()==m_clientPeer.localAddress()) {
+      qDebug() << i.hardwareAddress() << " " << a.ip() << " " << a.broadcast() << " " << a.netmask() << a.prefixLength();
+    }
+  }
+}
+
+qDebug() << QHostInfo::localHostName() << " " << QHostInfo::localDomainName();

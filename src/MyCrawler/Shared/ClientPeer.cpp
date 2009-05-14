@@ -29,12 +29,17 @@ int MCClientPeer::s_nConnectTimeout = 60 * 1000;
 int MCClientPeer::s_nHandShakeTimeout = 60 * 1000;
 int MCClientPeer::s_nKeepAliveInterval = 30 * 1000;
 
+static const char ProtocolId[] = "MyCrawler Protocol";
+static const char ProtocolIdSize = 18;
+static const quint16 ProtocolVersion = 0x0100;
+static const quint16 ProtocolHeaderSize = ProtocolIdSize + sizeof(ProtocolVersion) + 8;
 static const quint32 MinimalPacketSize = 6;
-static const char ProtocolId[] = "MyCrawler protocol";
 
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent),
-    m_idTimeoutTimer(0), m_idKeepAliveTimer(0), m_bInvalidateTimeout(false),
+    m_idTimeoutTimer(0),
+    m_idKeepAliveTimer(0), m_bInvalidateTimeout(false),
+    m_bProtocolChecked(false),
     m_bReceivedHandShake(false), m_bSentHandShake(false),
     m_u32PacketSize(0), m_u16PacketType(0)
 {
@@ -56,16 +61,19 @@ void MCClientPeer::sendPacket(PacketType type, const QByteArray& data) {
   // Prepate the packet
   QByteArray packet;
   QDataStream out(&packet, QIODevice::WriteOnly);
+  out.setVersion(QDataStream::Qt_4_5);
 
   quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
   out << (quint32)packetSize; // Size of the packet
   out << (quint16)type; // Type of the packet
-  if (!data.isEmpty()) {
-    out << data; // Data transported
-  }
 
-  // Send the packet
+  // Send packet header
   write(packet);
+
+  // Send packet data
+  if (data.isEmpty() == false) {
+    write(data);
+  }
 
   emit packetSent(type, packetSize);
 }
@@ -97,8 +105,9 @@ QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
 
 QString MCClientPeer::packetTypeToString(PacketType type) {
   switch (type) {
-    case HandShakePacket: return QT_TRANSLATE_NOOP(MCClientPeer, "Handshake");
-    case KeepAlivePacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
+    case KeepAliveAcknowledgmentPacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive (acknowledgment)");
+    case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
+    case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -107,9 +116,11 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
 
 QString MCClientPeer::packetErrorToString(PacketError error) {
   switch (error) {
-    case PacketSizeError:                  return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
-    case PacketTypeError:                  return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
-    case HandShakePacketNotReceivedError : return QT_TRANSLATE_NOOP(MCClientPeer, "Could not process the packet because no handshake message was received");
+    case PacketSizeError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
+    case PacketTypeError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+    case ProtocolIdError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
+    case ProtocolVersionError: return QT_TRANSLATE_NOOP(MCClientPeer, "Could not etablish a communication with the peer because the protocol version is different");
+    case AuthenticationError:  return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
@@ -140,18 +151,6 @@ void MCClientPeer::disconnect(int msecs) {
       waitForDisconnected(msecs);
     }
   }
-}
-
-void MCClientPeer::sendHandShake() {
-  m_bSentHandShake = true;
-
-  // Restart the timeout
-  if (m_idTimeoutTimer) {
-    killTimer(m_idTimeoutTimer);
-  }
-  m_idTimeoutTimer = startTimer(s_nTimeout);
-
-  sendPacket(HandShakePacket);
 }
 
 void MCClientPeer::connectionStateChanged_(QAbstractSocket::SocketState state) {
@@ -185,9 +184,40 @@ void MCClientPeer::connectionStateChanged_(QAbstractSocket::SocketState state) {
 }
 
 void MCClientPeer::processIncomingData_() {
-  ILogger::Debug() << "Ready read";
-
   m_bInvalidateTimeout = true;
+
+  // Process Handshake
+  if (m_bReceivedHandShake == false) {
+    // Check protocol
+    if (m_bProtocolChecked == false) {
+      // Check that we received enough data
+      if (bytesAvailable() < ProtocolHeaderSize) {
+        return;
+      }
+
+      // Check the protocol identification
+      QByteArray id = read(ProtocolIdSize);
+      if (id.startsWith(ProtocolId) == false) {
+        errorProcessingPacket_(ProtocolIdError, true);
+        return;
+      }
+
+      // Check the protocol version
+      QDataStream data(this);
+      data.setVersion(QDataStream::Qt_4_5);
+
+      quint16 ver; data >> ver;
+      if (ver != ProtocolVersion) {
+        errorProcessingPacket_(ProtocolVersionError, true);
+        return;
+      }
+
+      // Discard 8 reserved bytes
+      (void) read(8);
+
+      m_bProtocolChecked = true;
+    }
+  }
 
   do {
     // New packet
@@ -198,11 +228,13 @@ void MCClientPeer::processIncomingData_() {
       }
 
       // Get packet size and packet type
-      QDataStream dataStream(this);
-      dataStream >> m_u32PacketSize;
-      dataStream >> m_u16PacketType;
+      QDataStream data(this);
+      data.setVersion(QDataStream::Qt_4_5);
 
-      // Prevent DoS attack
+      data >> m_u32PacketSize;
+      data >> m_u16PacketType;
+
+      // Prevent of a DoS attack
       if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 200000)) {
         errorProcessingPacket_(PacketSizeError, true);
         return;
@@ -263,14 +295,91 @@ void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, bool 
   }
 }
 
+void MCClientPeer::sendHandShakePacket_() {
+  m_bSentHandShake = true;
+
+  // Peer timeout
+  if (m_idTimeoutTimer) {
+    killTimer(m_idTimeoutTimer);
+  }
+  m_idTimeoutTimer = startTimer(s_nTimeout);
+
+  QByteArray bytes;
+  QDataStream data(&bytes, QIODevice::WriteOnly);
+  data.setVersion(QDataStream::Qt_4_5);
+
+  // Protocol
+  data.writeRawData(ProtocolId, ProtocolIdSize);
+  data << ProtocolVersion;
+
+  // Write protocol data
+  write(bytes);
+  write(QByteArray(8, '\0')); // Reserved characters
+
+  // Write authentication
+  sendAuthenticationPacket_();
+}
+
+void MCClientPeer::sendAuthenticationPacket_() {
+  QByteArray bytes;
+  QDataStream data(&bytes, QIODevice::WriteOnly);
+  data.setVersion(QDataStream::Qt_4_5);
+
+  CNetworkInfo networkInfo = CNetworkInfo::fromInterfaceByIp(localAddress());
+  data << networkInfo.hardwareAddress();
+  data << networkInfo.ip().toIPv4Address();
+  data << networkInfo.broadcast().toIPv4Address();
+  data << networkInfo.netmask().toIPv4Address();
+  data << (quint8)networkInfo.prefixLength();
+  data << networkInfo.hostName();
+  data << networkInfo.hostDomain();
+
+  sendPacket(AuthenticationPacket, bytes);
+}
+
+CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
+  QDataStream data(this);
+  data.setVersion(QDataStream::Qt_4_5);
+
+  quint64 hardwareAddress;
+  quint32 ip, broadcast, netmask;
+  quint8 prefixLength;
+  QString hostName, hostDomain;
+
+  // Extract data
+  data >> hardwareAddress;
+  data >> ip;
+  data >> broadcast;
+  data >> netmask;
+  data >> prefixLength;
+  data >> hostName;
+  data >> hostDomain;
+
+  ILogger::Trace() << bytesAvailable();
+  ILogger::Trace() << CNetworkInfo::hardwareAddressToString(hardwareAddress);
+  ILogger::Trace() << QHostAddress(ip).toString();
+  ILogger::Trace() << hostName << " " << hostDomain;
+
+  return CNetworkInfo(
+    QHostAddress(ip), QHostAddress(broadcast), QHostAddress(broadcast), (int)prefixLength,
+    QString(), // Interface name
+    hardwareAddress, hostName, hostDomain
+  );
+}
+
 // Initialize all state variable
 void MCClientPeer::connecting_() {
   m_bInvalidateTimeout = false;
-  m_bReceivedHandShake = false;
   m_idTimeoutTimer = startTimer(s_nConnectTimeout);
 }
 
 void MCClientPeer::connected_() {
+  m_bProtocolChecked = false;
+  m_bReceivedHandShake = false;
+  m_bSentHandShake = false;
+  m_u16PacketType = 0;
+  m_u32PacketSize = 0;
+
   m_idTimeoutTimer = startTimer(s_nHandShakeTimeout);
 }
 
@@ -281,7 +390,11 @@ void MCClientPeer::closing_() {
 // Clean all state variable
 void MCClientPeer::disconnected_() {
   m_bInvalidateTimeout = false;
+  m_bProtocolChecked = false;
   m_bReceivedHandShake = false;
+  m_bSentHandShake = false;
+  m_u16PacketType = 0;
+  m_u32PacketSize = 0;
 
   if (m_idTimeoutTimer) { killTimer(m_idTimeoutTimer); }
   if (m_idKeepAliveTimer) { killTimer(m_idKeepAliveTimer); }
@@ -294,28 +407,40 @@ void MCClientPeer::processPacket_() {
                       .arg(packetTypeToString(packetType))
                       .arg(packetType);
 
-  // Could not process the packet because no handshake message was received.
-  if ((m_bReceivedHandShake == false) && (packetType != HandShakePacket)) {
-    errorProcessingPacket_(HandShakePacketNotReceivedError, true);
+  // HandShake packet not received
+  if (m_bReceivedHandShake == false) {
+    // Could not process the packet because no authentication message was received.
+    if ((m_bReceivedHandShake == false) && (packetType != AuthenticationPacket)) {
+      errorProcessingPacket_(AuthenticationError, true);
+      return;
+    }
+
+    CNetworkInfo networkInfo = processAuthenticationPacket_();
+
+    m_bReceivedHandShake = true;
+
+    // Initialize keep-alive timer
+    if (!m_idKeepAliveTimer) {
+      m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval);
+    }
+
+    if (m_bSentHandShake == false) {
+      sendHandShakePacket_();
+    }
+
     return;
   }
 
+  // Packet type
   switch (packetType) {
-    case HandShakePacket:
-      m_bReceivedHandShake = true;
-
-      // Initialize keep-alive timer
-      if (!m_idKeepAliveTimer) {
-        m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval);
-      }
-
-      if (m_bSentHandShake == false) {
-        sendHandShake();
-      }
+    // KeepAlive (demand)
+    case KeepAlivePacket:
+      m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval); // Restart KeepAlive timer
+      sendPacket(KeepAliveAcknowledgmentPacket);
       break;
 
-    case KeepAlivePacket:
-      sendHandShake();
+    // KeepAlive (acknowledgment)
+    case KeepAliveAcknowledgmentPacket:
       break;
 
     default:
