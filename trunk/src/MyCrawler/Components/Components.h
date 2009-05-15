@@ -37,6 +37,8 @@
   #include "Core/Application.h"
   #include "Config/Settings.h"
   #include "Utilities/NetworkInfo.h"
+  #include "Widgets/MyQTabWidget.h"
+  #include "Widgets/MyQTreeWidget.h"
 #endif
 
 #endif // COMPONENTS_H

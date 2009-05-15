@@ -24,17 +24,13 @@
 #ifndef CLIENTSTREEWIDGET_H
 #define CLIENTSTREEWIDGET_H
 
-#include <QtGui>
-#include <QContextMenuEvent>
-#include <QPointer>
+#include "Widgets/MyQTreeWidget.h"
 
-class MCClientsTreeWidget : public QTreeWidget
+class MCClientsTreeWidget : public MyQTreeWidget
 {
     Q_OBJECT
 
 private:
-    void setupHeader_();
-
     void loadSettings_();
     void saveSettings_();
 
@@ -45,19 +41,6 @@ public:
     ~MCClientsTreeWidget();
 
     void setup();
-
-private slots:
-    void slotShowColumn_(bool show);
-
-protected:
-    void contextMenuEvent(QContextMenuEvent* event);
-
-private:
-    void createContextMenu_();
-
-private:
-    QPointer<QMenu> m_pContextMenu;
-
 };
 
 #endif // CLIENTSTREEWIDGET_H

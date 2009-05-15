@@ -50,14 +50,6 @@ class CSettings : public QSettings
     static void setMethodWriteValue(MethodWriteValue methodWriteValue) {m_enumMethodWriteValue = methodWriteValue;}
     static MethodWriteValue methodWriteValue() {return m_enumMethodWriteValue;}
 
-    /*void saveLayout(const QWidget* widget, const QString& keyName = QString::null);
-    void saveLayout(const QMainWindow* window, const QString& keyName = QString::null);
-    void saveLayout(const QHeaderView* header, const QString& keyName = QString::null);
-
-    bool loadLayout(QWidget* widget, const QString& keyName = QString::null) const;
-    bool loadLayout(QMainWindow* window, const QString& keyName = QString::null) const;
-    bool loadLayout(QHeaderView* header, const QString& keyName = QString::null);*/
-
     template <class T> void saveLayout(const T* obj, const QString& keyName = QString());
     template <class T> bool loadLayout(T* obj, const QString& keyName = QString()) const;
 
