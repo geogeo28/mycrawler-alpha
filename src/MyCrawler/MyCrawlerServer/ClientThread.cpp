@@ -108,7 +108,7 @@ void MCClientThread::run() {
   // Event loop
   exec();
 
-  ILogger::Debug() << "Exit event loop.";
+  ILogger::Debug() << "Exit the event loop.";
 
   // Disconnection of the client peer volunteer (initiate by the client thread)
   if (clientPeer.state() != MCClientPeer::UnconnectedState) {

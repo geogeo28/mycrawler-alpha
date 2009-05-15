@@ -56,6 +56,7 @@ public:
 public:
     void setListenAddress(const QHostAddress& address) { m_listenAddress = address; }
     void setListenAddress(const QString& address) { m_listenAddress = QHostAddress(address); }
+    const QHostAddress& listenAddress() const { return m_listenAddress; }
     quint16 listenPort() const { return m_u16ListenPort; }
     void setListenPort(quint16 port) { m_u16ListenPort = port; }
 
@@ -65,7 +66,6 @@ public:
     int maxConnections() const { return m_nMaxConnections; }
     void setMaxConnections(int n) { m_nMaxConnections = n; }
     bool canAcceptNewConnection() const;
-    const QHostAddress& listenAddress() const { return m_listenAddress; }
 
 public:
     // Override QTcpServer methods
