@@ -41,7 +41,8 @@ QString MCClientThreadInfo::peerAddressAndPort() const {
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
       m_nSocketDescriptor(socketDescriptor),
-      m_enumConnectionState(UnconnectedState)
+      m_enumConnectionState(UnconnectedState),
+      m_bAuthenticated(false)
 {
   ILogger::Debug() << "Construct.";
 
@@ -152,6 +153,7 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
 }
 
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
+  m_bAuthenticated = true;
   m_threadInfo.setNetworkInfo(info);
   setConnectionState_(ConnectedState, true);
   emit authenticated(info);

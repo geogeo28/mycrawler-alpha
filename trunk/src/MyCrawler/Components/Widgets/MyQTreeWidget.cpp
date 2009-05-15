@@ -27,8 +27,11 @@
 #include "MyQTreeWidget.h"
 
 MyQTreeWidget::MyQTreeWidget(QWidget* parent)
-  : QTreeWidget(parent)
-{}
+  : QTreeWidget(parent),
+    m_nColumnSortedIndex(-1)
+{
+  QObject::connect(this->header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(slotSortIndicatorChanged_(int,Qt::SortOrder)));
+}
 
 MyQTreeWidget::~MyQTreeWidget()
 {}
@@ -99,13 +102,25 @@ void MyQTreeWidget::showColumnFromAction(bool show) {
   }
 }
 
+void MyQTreeWidget::slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order) {
+  // Sorting disabled
+  if ((m_nColumnSortedIndex == logicalIndex) && (order == Qt::AscendingOrder)) {
+    sortByColumn(-1, Qt::DescendingOrder);
+    m_nColumnSortedIndex = -1;
+
+    return;
+  }
+
+  m_nColumnSortedIndex = logicalIndex;
+}
+
 void MyQTreeWidget::setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns) {
   for (int i = 0; i < nColumns; ++i) {
     const MyQTreeWidgetHeaderItem& item = headers[i];
 
-    headerItem()->setText(i, item.name);
+    if (item.name != NULL) { headerItem()->setText(i, item.name); }
     if (item.icon != NULL) { headerItem()->setIcon(i, QIcon(item.icon)); }
-    if (item.width > -1) { setColumnWidth(i, item.width); }
+    if (item.width > -1)   { setColumnWidth(i, item.width); }
 
     setColumnHidden(i, item.hidden);
   }
@@ -139,8 +154,8 @@ void MyQTreeWidget::contextMenuEvent(QContextMenuEvent *event) {
   if (!m_pContextMenu.isNull()) {
     m_pContextMenu->exec(event->globalPos());
     event->accept();
+    return;
   }
-  else {
-    event->ignore();
-  }
+  
+  event->ignore();
 }

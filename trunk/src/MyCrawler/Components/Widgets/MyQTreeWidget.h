@@ -54,6 +54,9 @@ public:
 public slots:
     void showColumnFromAction(bool show);
 
+private slots:
+    void slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order);
+
 protected:
     void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
     QMenu* columnsMenu();
@@ -64,6 +67,7 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *event);
 
 private:
+    int m_nColumnSortedIndex;
     QPointer<QMenu> m_pContextMenu;
 };
 

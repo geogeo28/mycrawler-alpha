@@ -16,4 +16,10 @@
     <file alias="ErrorIcon" >icons/Log/Error.png</file>
     <file alias="InformationIcon" >icons/Log/Information.png</file>
   </qresource>
+  <qresource prefix="/Clients" >
+    <file alias="UnauthenticatedIcon" >icons/Clients/Unauthenticated.png</file>
+    <file alias="ConnectedLocalIcon" >icons/Clients/ConnectedLocal.png</file>
+    <file alias="ConnectedRemoteIcon" >icons/Clients/ConnectedRemote.png</file>
+    <file alias="UnconnectedIcon" >icons/Clients/Unconnected.png</file>
+  </qresource>
 </RCC>

@@ -24,11 +24,29 @@
 #ifndef CLIENTSTREEWIDGET_H
 #define CLIENTSTREEWIDGET_H
 
+#include <QList>
+
 #include "Widgets/MyQTreeWidget.h"
+#include "ClientThread.h"
 
 class MCClientsTreeWidget : public MyQTreeWidget
 {
     Q_OBJECT
+
+public:
+    enum {
+      ThreadIdColumn,
+      HardwareAddressColumn,
+      StateColumn,
+      PeerAddressColumn,
+      PeerPortColumn,
+      HostNameColumn,
+      HostDomainColumn,
+      IPColumn,
+      BroadcastColumn,
+      NetmaskColumn,
+      StatusColumn
+    };
 
 private:
     void loadSettings_();
@@ -41,6 +59,16 @@ public:
     ~MCClientsTreeWidget();
 
     void setup();
+
+public slots:
+    void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+
+private:
+    QTreeWidgetItem* newClientItem_();
+
+private:
+    QMap<MCClientThread*, QTreeWidgetItem*> m_lstClientsManaged;
+    QList<QTreeWidgetItem*> m_lstClientsUnmanaged;
 };
 
 #endif // CLIENTSTREEWIDGET_H
