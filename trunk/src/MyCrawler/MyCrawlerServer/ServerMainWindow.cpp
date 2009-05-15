@@ -78,6 +78,9 @@ void MCServerMainWindow::setupMenu_() {
 }
 
 void MCServerMainWindow::setupComponents_() {
+  // ClientsTreeWidget
+  treeWidgetClients->setup();
+
   // Components
   m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
   m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);

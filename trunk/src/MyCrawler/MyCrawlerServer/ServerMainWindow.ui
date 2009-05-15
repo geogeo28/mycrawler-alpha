@@ -70,7 +70,7 @@ p, li { white-space: pre-wrap; }
          <number>0</number>
         </property>
         <item>
-         <widget class="QTreeWidget" name="treeWidgetClients">
+         <widget class="MCClientsTreeWidget" name="treeWidgetClients">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -83,34 +83,12 @@ p, li { white-space: pre-wrap; }
           <attribute name="headerDefaultSectionSize">
            <number>90</number>
           </attribute>
-          <attribute name="headerDefaultSectionSize">
-           <number>90</number>
+          <attribute name="headerHighlightSections">
+           <bool>true</bool>
           </attribute>
-          <column>
-           <property name="text">
-            <string>MAC address</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>IP address</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Status</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Username</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>State</string>
-           </property>
-          </column>
+          <attribute name="headerHighlightSections">
+           <bool>true</bool>
+          </attribute>
          </widget>
         </item>
        </layout>
@@ -346,6 +324,11 @@ p, li { white-space: pre-wrap; }
    <class>MCServerLogTextEdit</class>
    <extends>QTextEdit</extends>
    <header>ServerLogTextEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCClientsTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>ClientsTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>
