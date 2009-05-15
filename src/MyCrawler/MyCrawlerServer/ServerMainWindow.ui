@@ -86,9 +86,6 @@ p, li { white-space: pre-wrap; }
           <attribute name="headerHighlightSections">
            <bool>true</bool>
           </attribute>
-          <attribute name="headerHighlightSections">
-           <bool>true</bool>
-          </attribute>
          </widget>
         </item>
        </layout>

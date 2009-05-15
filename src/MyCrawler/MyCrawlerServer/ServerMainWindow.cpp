@@ -77,10 +77,16 @@ void MCServerMainWindow::setupMenu_() {
   QObject::connect(doHelpAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 }
 
-void MCServerMainWindow::setupComponents_() {
-  // ClientsTreeWidget
-  treeWidgetClients->setup();
+void MCServerMainWindow::setupServerLogForm_() {
+  // Hide TabBar
+  tabWidgetForms->setTabBarHidden(true);
+}
 
+void MCServerMainWindow::setupClientsForm_() {
+  treeWidgetClients->setup();
+}
+
+void MCServerMainWindow::setupComponents_() {
   // Components
   m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
   m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);
@@ -149,6 +155,8 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
     setupWindow_();
     setupMainToolBar_();
     setupMenu_();
+    setupServerLogForm_();
+    setupClientsForm_();
     setupComponents_();
     loadSettings_();
 

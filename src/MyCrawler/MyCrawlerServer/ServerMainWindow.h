@@ -43,6 +43,8 @@ private:
     void setupWindow_();
     void setupMainToolBar_();
     void setupMenu_();
+    void setupServerLogForm_();
+    void setupClientsForm_();
     void setupComponents_();
 
     void loadSettingsServerConnection_();

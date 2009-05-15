@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) QTabWidget extended.
+ * @(#) QTreeWidget extended.
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -20,22 +20,51 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef MYQTABWIDGET_H
-#define MYQTABWIDGET_H
+#ifndef MYQTREEWIDGET_H
+#define MYQTREEWIDGET_H
 
 #include <QtGui>
+#include <QContextMenuEvent>
+#include <QPointer>
 
-class MyQTabWidget : public QTabWidget
+class QSettings;
+
+typedef struct {
+  const char* icon;
+  const char* name;
+  int width;
+  bool hidden;
+} MyQTreeWidgetHeaderItem;
+
+class MyQTreeWidget : public QTreeWidget
 {
+    Q_OBJECT
+
 public:
-    MyQTabWidget(QWidget* parent = 0)
-      : QTabWidget(parent)
-    {}
-    virtual ~MyQTabWidget() {}
+    MyQTreeWidget(QWidget* parent = NULL);
+    virtual ~MyQTreeWidget();
 
-    QSize sizeHint() const { return baseSize(); }
+    virtual void setup() =0;
 
-    void setTabBarHidden(bool hide) { tabBar()->setHidden(hide); }
+public:
+    QMenu* contextMenu() const { return m_pContextMenu; }
+    void saveLayout(QSettings* settings, const QString& keyName = QString());
+    void loadLayout(QSettings* settings, const QString& keyName = QString());
+
+public slots:
+    void showColumnFromAction(bool show);
+
+protected:
+    void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
+    QMenu* columnsMenu();
+
+    virtual void setupContextMenu();
+    virtual void setContextMenu(QMenu* menu) { m_pContextMenu = menu; }
+
+    virtual void contextMenuEvent(QContextMenuEvent *event);
+
+private:
+    QPointer<QMenu> m_pContextMenu;
 };
 
-#endif // MYQTABWIDGET_H
+#endif // MYQTREEWIDGET_H
