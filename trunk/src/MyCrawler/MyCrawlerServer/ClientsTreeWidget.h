@@ -63,6 +63,17 @@ public:
 public slots:
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
 
+private slots:
+    void on_forceToDisconnectClient_();
+    void on_removeClient_();
+
+protected:
+    void contextMenuEvent(QContextMenuEvent* event);
+
+private:
+    static void unsetClientItemValues_(QTreeWidgetItem* item);
+    static void setClientItemValues_(QTreeWidgetItem* item, MCClientThread* client);
+
 private:
     QTreeWidgetItem* newClientItem_();
 
