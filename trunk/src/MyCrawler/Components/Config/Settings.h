@@ -28,6 +28,7 @@
 
 class QMainWindow;
 class QWidget;
+class QHeaderView;
 
 class CSettings : public QSettings
 {
@@ -49,11 +50,16 @@ class CSettings : public QSettings
     static void setMethodWriteValue(MethodWriteValue methodWriteValue) {m_enumMethodWriteValue = methodWriteValue;}
     static MethodWriteValue methodWriteValue() {return m_enumMethodWriteValue;}
 
-    void saveLayout(const QWidget* widget);
-    void saveLayout(const QMainWindow* window);
+    /*void saveLayout(const QWidget* widget, const QString& keyName = QString::null);
+    void saveLayout(const QMainWindow* window, const QString& keyName = QString::null);
+    void saveLayout(const QHeaderView* header, const QString& keyName = QString::null);
 
-    bool loadLayout(QWidget* pwidget) const;
-    bool loadLayout(QMainWindow* window) const;
+    bool loadLayout(QWidget* widget, const QString& keyName = QString::null) const;
+    bool loadLayout(QMainWindow* window, const QString& keyName = QString::null) const;
+    bool loadLayout(QHeaderView* header, const QString& keyName = QString::null);*/
+
+    template <class T> void saveLayout(const T* obj, const QString& keyName = QString());
+    template <class T> bool loadLayout(T* obj, const QString& keyName = QString()) const;
 
   private:
     static bool readXmlFile_(QIODevice& device, SettingsMap& map);
@@ -62,5 +68,53 @@ class CSettings : public QSettings
   private:
     static MethodWriteValue m_enumMethodWriteValue;
 };
+
+template <class T>
+void CSettings::saveLayout(const T* obj, const QString& keyName) {
+  AssertCheckPtr(obj);
+
+  QString key = keyName;
+  if (key.isEmpty()) { key = obj->objectName(); }
+
+  // State
+  this->setValue(key + "/State", obj->saveState().toBase64());
+
+  // Geometry
+  const QWidget* widget = qobject_cast<const QWidget*>(obj);
+  if (widget != NULL) {
+    this->setValue(key + "/Geometry", widget->saveGeometry().toBase64());
+  }
+}
+
+template <class T>
+bool CSettings::loadLayout(T* obj, const QString& keyName) const {
+  AssertCheckPtr(obj);
+
+  QString key = keyName;
+  if (key.isEmpty()) { key = obj->objectName(); }
+
+  // State
+  QByteArray data = QByteArray::fromBase64(this->value(key + "/State").toByteArray());
+  if (data.isEmpty()) {
+    ILogger::Notice() << "The setting 'State' of the object layout '" << keyName << "' doesn't exist.";
+    return false;
+  }
+
+  obj->restoreState(data);
+
+  // Geometry
+  QWidget* widget = qobject_cast<QWidget*>(obj);
+  if (widget != NULL) {
+    data = QByteArray::fromBase64(this->value(key + "/Geometry").toByteArray());
+    if (data.isEmpty()) {
+      ILogger::Notice() <<  "The setting 'Geometry' of the widget layout '" << keyName << "' doesn't exist.";
+      return false;
+    }
+
+    widget->restoreGeometry(data);
+  }
+
+  return true;
+}
 
 #endif // SETTINGS_H
