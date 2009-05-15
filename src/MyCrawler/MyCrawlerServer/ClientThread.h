@@ -89,6 +89,7 @@ public:
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
     ConnectionState connectionState() const { return m_enumConnectionState; }
+    bool isAuthenticated() { return m_bAuthenticated; }
 
 public:
     static QString connectionStateToString(ConnectionState state);
@@ -125,6 +126,7 @@ private:
     int m_nSocketDescriptor;
     QPointer<MCClientPeer> m_pClientPeer;
     ConnectionState m_enumConnectionState;
+    bool m_bAuthenticated;
 };
 
 #endif // CLIENTTHREAD_H
