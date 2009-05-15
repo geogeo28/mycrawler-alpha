@@ -185,7 +185,7 @@ CSettings::CSettings(
 CSettings::~CSettings()
 {}
 
-void CSettings::saveLayout(const QWidget* widget) {
+/*void CSettings::saveLayout(const QWidget* widget) {
   AssertCheckPtr(widget);
 
   this->setValue(widget->objectName() + "/Geometry", widget->saveGeometry().toBase64());
@@ -228,4 +228,4 @@ bool CSettings::loadLayout(QMainWindow* window) const {
 
   window->restoreState(tmpArray);
   return true;
-}
+}*/
