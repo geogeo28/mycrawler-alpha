@@ -27,7 +27,7 @@
 #include "DialogPreferences.h"
 #include "ServerApplication.h"
 #include "ClientPeer.h"
-#include "ServerLogTextEdit.h"
+#include "ServerLogWidget.h"
 
 const char* SettingCurrentForm = "CurrentForm";
 
@@ -78,8 +78,7 @@ void MCServerMainWindow::setupMenu_() {
 }
 
 void MCServerMainWindow::setupServerLogForm_() {
-  // Hide TabBar
-  tabWidgetForms->setTabBarHidden(true);
+  treeWidgetServerLog->setup();
 }
 
 void MCServerMainWindow::setupClientsForm_() {
@@ -87,6 +86,9 @@ void MCServerMainWindow::setupClientsForm_() {
 }
 
 void MCServerMainWindow::setupComponents_() {
+  // Hide TabBar of TabWidgetForms
+  tabWidgetForms->setTabBarHidden(true);
+
   // Components
   m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
   m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);
@@ -241,17 +243,18 @@ void MCServerMainWindow::slotServerError(MCServer::Error error) {
     errcode = MCServer::instance()->serverError();
   }
 
-  textServerLog->write(
-    MCServerLogTextEdit::ErrorIcon,
+  treeWidgetServerLog->write(
+    MCServerLogWidget::ErrorIcon,
     QString("%1 (%2).")
       .arg(MCServer::instance()->errorString())
       .arg(errcode),
-    "color: red; font-weight: bold,"
+    Qt::red, QFont::Bold
   );
 }
 
 void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
-  QString message, style;
+  QString message;
+  QColor color = Qt::black;
 
   switch (state) {
     // Listening
@@ -261,7 +264,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       message = QString("Listening the address %1 on the port %2...")
                 .arg(MCServer::instance()->listenAddress().toString())
                 .arg(MCServer::instance()->listenPort());
-      style = "color: green;";
+      color = Qt::darkGreen;
 
       // Button connected
       doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
@@ -273,7 +276,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     {
       // Log message
       message = "Closing all client connections...";
-      style = "color: blue;";
+      color = Qt::blue;
 
       // Init progress dialog
       int nClients = MCServer::instance()->countClients();
@@ -295,7 +298,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     {
       // Log message
       message = "Connection closed.";
-      style = "color: red;";
+      color = Qt::red;
 
       // Set signal/slot connection to progress dialog
       MCServer::instance()->disconnect(SIGNAL(clientFinished(MCClientThread*)), this, SLOT(slotProgressClientFinished(MCClientThread*)));
@@ -311,7 +314,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     default:;
   }
 
-  textServerLog->write(MCServerLogTextEdit::InformationIcon, message, style + "font-weight: bold");
+  treeWidgetServerLog->write(MCServerLogWidget::InformationIcon, message, color, QFont::Bold);
 }
 
 void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
@@ -320,47 +323,47 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
   QString remainder;
   if (error == MCClientThread::ClientPeerError) {
     const MCClientPeer* clientPeer = client->clientPeer();
-    remainder = QString("<br />Details : %1 (%2)")
+    remainder = QString("\nDetails : %1 (%2)")
                 .arg(clientPeer->errorString())
                 .arg(clientPeer->error());
   }
 
-  textServerLog->write(
-    MCServerLogTextEdit::ErrorIcon,
+  treeWidgetServerLog->write(
+    MCServerLogWidget::ErrorIcon,
     QString("Error on the client %1 : %2 (%3)%4.")
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(client->errorString())
       .arg(error)
       .arg(remainder),
-    "color: red; font-weight: bold;"
+    Qt::red, QFont::Bold
   );
 }
 
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
   AssertCheckPtr(client);
 
-  QString style;
-  if (state == MCClientThread::ConnectedState)           { style = "color: green;"; }
-  else if (state == MCClientThread::AuthenticatingState) { style = "color: blue;"; }
-  else if (state == MCClientThread::UnconnectedState)    { style = "color: red;"; }
+  QColor color = Qt::black;
+  if (state == MCClientThread::ConnectedState)           { color = Qt::darkGreen; }
+  else if (state == MCClientThread::AuthenticatingState) { color = Qt::blue; }
+  else if (state == MCClientThread::UnconnectedState)    { color = Qt::red; }
 
-  textServerLog->write(
-    MCServerLogTextEdit::InformationIcon,
+  treeWidgetServerLog->write(
+    MCServerLogWidget::InformationIcon,
     QString("Client %1 : %2 (%3)")
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(MCClientThread::connectionStateToString(state))
       .arg(state),
-    style + "font-weight: bold"
+    color, QFont::Bold
   );
 }
 
 void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
-  textServerLog->write(
-    MCServerLogTextEdit::ErrorIcon,
+  treeWidgetServerLog->write(
+    MCServerLogWidget::ErrorIcon,
     QString("The client %1 not responding (%2).")
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen)),
-    "color: red; font-weight: bold;"
+    Qt::red, QFont::Bold
   );
 }
 
@@ -369,10 +372,10 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
   bool aborted
 )
 {
-  textServerLog->write(
-    MCServerLogTextEdit::ErrorIcon,
-    QString("Error processing a packet of the client %1.<br />" \
-            "(Type = %2, Size = %3) %4 (%5)<br />" \
+  treeWidgetServerLog->write(
+    MCServerLogWidget::ErrorIcon,
+    QString("Error processing a packet of the client %1.\n" \
+            "(Type = %2, Size = %3) %4 (%5)\n" \
             "%6")
       .arg(client->threadInfo().peerAddressAndPort())
       .arg(type)
@@ -383,7 +386,7 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
       (aborted == true)?
       "To prevent of a DoS attack, the connection with the client was aborted.":
       "Trying recover the packet."),
-    "color: red; font-weight: bold;"
+    Qt::red, QFont::Bold
   );
 }
 
@@ -406,15 +409,15 @@ bool MCServerMainWindow::connectServer_() {
   }
 
   if (!MCServer::instance()->listen()) {
-    textServerLog->write(
-      MCServerLogTextEdit::ErrorIcon,
-      QString("Could not listen the address %1 on the port %2.<br />" \
+    treeWidgetServerLog->write(
+      MCServerLogWidget::ErrorIcon,
+      QString("Could not listen the address %1 on the port %2.\n" \
               "%3 (%4).")
         .arg(MCServer::instance()->listenAddress().toString())
         .arg(MCServer::instance()->listenPort())
         .arg(MCServer::instance()->errorString())
         .arg(MCServer::instance()->serverError()),
-      "color: red; font-weight: bold;"
+      Qt::red, QFont::Bold
     );
     return false;
   }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) MyCrawler server. Server log text edit.
+ * @(#) MyCrawler server. Server log widget.
  * GUI interface
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
@@ -21,12 +21,12 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef SERVERLOGTEXTEDIT_H
-#define SERVERLOGTEXTEDIT_H
+#ifndef SERVERLOGWIDGET_H
+#define SERVERLOGWIDGET_H
 
-#include <QTextEdit>
+#include <QTreeWidget>
 
-class MCServerLogTextEdit : public QTextEdit
+class MCServerLogWidget : public QTreeWidget
 {
 public:
     typedef enum {
@@ -35,12 +35,20 @@ public:
       InformationIcon
     } Icon;
 
+    enum {
+      DateColumn,
+      MessageColumn
+    };
+
 public:
-    MCServerLogTextEdit(QWidget* parent = 0);
+    MCServerLogWidget(QWidget* parent = 0);
 
-    void write(Icon icon, const QString& message, const QString& style = QString());
+    void setup();
 
-    QSize sizeHint() const { return baseSize(); }
+    void write(Icon icon, const QString& message, const QColor& color = Qt::black, QFont::Weight fontWeight = QFont::Normal);
+
+protected:
+    QStyleOptionViewItem viewOptions() const;
 };
 
-#endif // SERVERLOGTEXTEDIT_H
+#endif // SERVERLOGWIDGET_H
