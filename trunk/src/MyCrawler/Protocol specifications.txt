@@ -1,5 +1,7 @@
-Protocol specifications :
--------------------------
+Protocol specifications v1.0:
+-----------------------------
+Author : ANNEHEIM Geoffrey (geoffrey.anneheim@gmail.com)
+
 
 *************************
 Communication Exchanges :
@@ -103,13 +105,7 @@ In general, this message is encapsulate in a handshake packet. It contains some
 machine information such as the MAC address, the local IP, the host domain...
 of the entity which has emitted this message :
 
-uint64 : MAC address
-uint32 : Local IPv4
-uint32 : Broadcast IPv4
-uint32 : Netmask IPv4
-uint8 : Prefix length (number of bits set to 1 in the netmask).
-QString : Host name
-QString : Host domain
+See methods of serialization of the class CNetworkInfo.
 
 
 Appendix A :
