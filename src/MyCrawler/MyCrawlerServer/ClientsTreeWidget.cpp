@@ -41,11 +41,11 @@ static const int ColumnsHeaderCount = 11;
 static const int ColumnSortedIndex = -1;
 
 void MCClientsTreeWidget::loadSettings_() {
-  loadLayout(MCSettings, "MCClientsTreeWidget");
+  MCSettings->loadLayout<QTreeWidget>(this, "MCClientsTreeWidget");
 }
 
 void MCClientsTreeWidget::saveSettings_() {
-  saveLayout(MCSettings, "MCClientsTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(this, "MCClientsTreeWidget");
 }
 
 void MCClientsTreeWidget::cleanAll_() {
@@ -91,7 +91,7 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged(MCClientThread* clien
     QTreeWidgetItem* item = m_lstClientsManaged.value(client);
     AssertCheckPtr(item);
 
-    quint64 hardwareAddress = client->threadInfo().networkInfo().hardwareAddress();
+    quint64 hardwareAddress = client->clientInfo().hardwareAddress();
 
     switch (state) {
       /*************************
@@ -227,23 +227,23 @@ void MCClientsTreeWidget::unsetClientItemValues_(QTreeWidgetItem* item) {
   item->setData(HardwareAddressColumn, Qt::UserRole, (quint64)0);
 
   item->setText(ThreadIdColumn,    QString());
-  item->setText(PeerAddressColumn, "0.0.0.0");
-  item->setText(PeerPortColumn,    "0");
+  item->setText(PeerAddressColumn, QString());
+  item->setText(PeerPortColumn,    QString());
 }
 
 void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientThread* client) {
   AssertCheckPtr(item);
   AssertCheckPtr(client);
 
-  const CNetworkInfo& networkInfo = client->threadInfo().networkInfo();
+  const CNetworkInfo& networkInfo = client->clientInfo();
 
   item->setData(ThreadIdColumn,        Qt::UserRole, QVariant::fromValue(client));
   item->setData(HardwareAddressColumn, Qt::UserRole, networkInfo.hardwareAddress());
 
   item->setText(ThreadIdColumn,        "0x" + QString::number((int)client, 16));
   item->setText(HardwareAddressColumn, networkInfo.hardwareAddressString());
-  item->setText(PeerAddressColumn,     client->threadInfo().peerAddress().toString());
-  item->setText(PeerPortColumn,        QString::number(client->threadInfo().peerPort()));
+  item->setText(PeerAddressColumn,     client->peerAddress().toString());
+  item->setText(PeerPortColumn,        QString::number(client->peerPort()));
   item->setText(HostNameColumn,        networkInfo.hostName());
   item->setText(HostDomainColumn,      networkInfo.hostDomain());
   item->setText(IPColumn,              networkInfo.ip().toString());

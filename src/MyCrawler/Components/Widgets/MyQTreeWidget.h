@@ -48,8 +48,6 @@ public:
 
 public:
     QMenu* contextMenu() const { return m_pContextMenu; }
-    void saveLayout(QSettings* settings, const QString& keyName = QString());
-    void loadLayout(QSettings* settings, const QString& keyName = QString());
 
 public slots:
     void showColumnFromAction(bool show);

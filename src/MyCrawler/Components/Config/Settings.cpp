@@ -21,17 +21,25 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 #include <QStringList>
-#include <QMainWindow>
-#include <QWidget>
-#include <QMessageBox>
 
 #include "Config/Settings.h"
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
-CSettings::MethodWriteValue CSettings::m_enumMethodWriteValue = CSettings::AllValues;
+CSettings::MethodWriteValue CSettings::s_enumMethodWriteValue = CSettings::AllValues;
 
 const CSettings::Format CSettings::XmlFormat = CSettings::registerFormat("xml", CSettings::readXmlFile_, CSettings::writeXmlFile_);
+
+CSettings::CSettings(
+  const QString& fileName, const QString& folderName,
+  Scope scope,
+  QObject* parent
+)
+  : QSettings(XmlFormat, scope, folderName, fileName, parent)
+{}
+
+CSettings::~CSettings()
+{}
 
 bool CSettings::readXmlFile_(QIODevice& device, SettingsMap& map) {
   QXmlStreamReader xmlReader(&device);
@@ -173,59 +181,3 @@ bool CSettings::writeXmlFile_(QIODevice& device, const SettingsMap& map) {
 
   return true;
 }
-
-CSettings::CSettings(
-  const QString& fileName, const QString& folderName,
-  Scope scope,
-  QObject* parent
-)
-  : QSettings(XmlFormat, scope, folderName, fileName, parent)
-{}
-
-CSettings::~CSettings()
-{}
-
-/*void CSettings::saveLayout(const QWidget* widget) {
-  AssertCheckPtr(widget);
-
-  this->setValue(widget->objectName() + "/Geometry", widget->saveGeometry().toBase64());
-}
-
-bool CSettings::loadLayout(QWidget* widget) const {
-  AssertCheckPtr(widget);
-
-  QByteArray tmpArray;
-  tmpArray = QByteArray::fromBase64(this->value(widget->objectName() + "/Geometry").toByteArray());
-  if (tmpArray.isEmpty()) {
-    ILogger::Notice() <<  "The setting 'Geometry' of the widget layout '" << widget->objectName() << "' doesn't exist.";
-    return false;
-  }
-
-  widget->restoreGeometry(tmpArray);
-  return true;
-}
-
-void CSettings::saveLayout(const QMainWindow* window) {
-  AssertCheckPtr(window);
-
-  this->saveLayout(qobject_cast<const QWidget*>(window));
-  this->setValue(window->objectName() + "/State", window->saveState().toBase64());
-}
-
-bool CSettings::loadLayout(QMainWindow* window) const {
-  AssertCheckPtr(window);
-
-  if (!this->loadLayout(qobject_cast<QWidget*>(window))) {
-    return false;
-  }
-
-  QByteArray tmpArray;
-  tmpArray = QByteArray::fromBase64(this->value(window->objectName() + "/State").toByteArray());
-  if (tmpArray.isEmpty()) {
-    ILogger::Notice() << "The setting 'State' of the main window layout'" << window->objectName() << "' doesn't exist.";
-    return false;
-  }
-
-  window->restoreState(tmpArray);
-  return true;
-}*/

@@ -42,8 +42,15 @@ public:
       MessageColumn
     };
 
+private:
+    void loadSettings_();
+    void saveSettings_();
+
+    void cleanAll_();
+
 public:
     MCServerLogWidget(QWidget* parent = 0);
+    ~MCServerLogWidget();
 
     void setup();
 

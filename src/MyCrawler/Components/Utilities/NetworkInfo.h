@@ -31,12 +31,27 @@ class CNetworkInfo
 public:
     CNetworkInfo();
     CNetworkInfo(
+      const QString& peerName, const QHostAddress& peerAddress, quint16 peerPort,
+      const QHostAddress& ip, const QHostAddress& broadcast, const QHostAddress& netmask, int prefixLength,
+      const QString& humanReadableName = QString(), quint64 hardwareAddress = 0x0,
+      const QString& hostName = QString::null, const QString& hostDomain = QString::null
+    );
+
+    CNetworkInfo(
       const QHostAddress& ip, const QHostAddress& broadcast, const QHostAddress& netmask, int prefixLength,
       const QString& humanReadableName = QString(), quint64 hardwareAddress = 0x00,
       const QString& hostName = QString::null, const QString& hostDomain = QString::null
     );
 
     bool isValid() const { return m_bValid; }
+
+    QString peerName() const { return m_sPeerName; }
+    void setPeerName(const QString& peerName) { m_sPeerName = peerName; }
+    QHostAddress peerAddress() const { return m_peerAddress; }
+    void setPeerAddress(const QHostAddress& peerAddress) { m_peerAddress = peerAddress; }
+    quint16 peerPort() const { return m_u16PeerPort; }
+    void setPeerPort(quint16 port) { m_u16PeerPort = port; }
+    QString peerAddressAndPort() const { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
 
     QHostAddress ip() const { return m_ip; }
     QHostAddress broadcast() const { return m_broadcast; }
@@ -57,6 +72,11 @@ public:
 
 private:
     bool m_bValid;
+
+    QString m_sPeerName;
+    QHostAddress m_peerAddress;
+    quint16 m_u16PeerPort;
+
     QHostAddress m_ip;
     QHostAddress m_broadcast;
     QHostAddress m_netmask;

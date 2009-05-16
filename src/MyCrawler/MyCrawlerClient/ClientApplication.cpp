@@ -67,6 +67,7 @@ MCClientApplication::MCClientApplication(int &argc, char** argv)
   CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
   CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
   installSettings("settings");
+  MCSettings->setLayoutPrefixKey("WidgetsLayouts");
 
   init_();
 
