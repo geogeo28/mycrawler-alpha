@@ -25,6 +25,7 @@
 
 #include <QString>
 #include <QHostAddress>
+#include <QDataStream>
 
 class CNetworkInfo
 {
@@ -66,6 +67,10 @@ public:
     QString hardwareAddressString() const {return m_sHardwareAddress; }
 
 public:
+    void write(QDataStream& out) const;
+    void read(QDataStream& in);
+
+public:
     static CNetworkInfo fromInterfaceByIp(const QHostAddress& address);
     static quint64 fromHardwareAddressString(const QString& hardwareAddress, bool* ok = NULL);
     static QString hardwareAddressToString(quint64 hardwareAddress);
@@ -88,7 +93,9 @@ private:
 
     QString m_sHostName;
     QString m_sHostDomain;
-
 };
+
+QDataStream& operator<<(QDataStream& out, const CNetworkInfo& networkInfo);
+QDataStream& operator>>(QDataStream& in, CNetworkInfo& networkInfo);
 
 #endif // NETWORKINFO_H

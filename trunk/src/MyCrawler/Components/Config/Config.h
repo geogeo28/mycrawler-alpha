@@ -50,4 +50,7 @@
 #define _MYCRAWLER_CLIENT_VERSION_REVISION_      0
 #define _MYCRAWLER_CLIENT_VERSION_    xstr(_MYCRAWLER_CLIENT_VERSION_MAJOR_)"."xstr(_MYCRAWLER_CLIENT_VERSION_MINOR_)"."xstr(_MYCRAWLER_CLIENT_VERSION_REVISION_)
 
+// Specific definitions
+#define SerializationVersion  QDataStream::Qt_4_5
+
 #endif // CONFIG_H

@@ -75,6 +75,43 @@ CNetworkInfo::CNetworkInfo(
   m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(hardwareAddress);
 }
 
+void CNetworkInfo::write(QDataStream& out) const {
+  out << peerName();
+  out << peerAddress();
+  out << peerPort();
+
+  out << ip();
+  out << broadcast();
+  out << netmask();
+  out << prefixLength();
+
+  out << hostName();
+  out << hostDomain();
+
+  out << humanReadableName();
+  out << hardwareAddress();
+}
+
+void CNetworkInfo::read(QDataStream& in) {
+  in >> m_sPeerName;
+  in >> m_peerAddress;
+  in >> m_u16PeerPort;
+
+  in >> m_ip;
+  in >> m_broadcast;
+  in >> m_netmask;
+  in >> m_nPrefixLength;
+
+  in >> m_sHostName;
+  in >> m_sHostDomain;
+
+  in >> m_sHumanReadableName;
+  in >> m_u64HardwareAddress;
+
+  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
+  m_bValid = true;
+}
+
 CNetworkInfo CNetworkInfo::fromInterfaceByIp(const QHostAddress& address) {
   foreach (QNetworkInterface interface, QNetworkInterface::allInterfaces()) {
     foreach (QNetworkAddressEntry entry, interface.addressEntries()) {
@@ -119,4 +156,14 @@ QString CNetworkInfo::hardwareAddressToString(quint64 hardwareAddress) {
   }
 
   return s;
+}
+
+QDataStream& operator<<(QDataStream& out, const CNetworkInfo& networkInfo) {
+  networkInfo.write(out);
+  return out;
+}
+
+QDataStream& operator>>(QDataStream& in, CNetworkInfo& networkInfo) {
+  networkInfo.read(in);
+  return in;
 }
