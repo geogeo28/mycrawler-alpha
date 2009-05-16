@@ -1,10 +1,10 @@
 HEADERS += ServerMainWindow.h \
     DialogPreferences.h \
-    ServerLogTextEdit.h \
+    ServerLogWidget.h \
     ClientsTreeWidget.h
 SOURCES += ServerMainWindow.cpp \
     DialogPreferences.cpp \
-    ServerLogTextEdit.cpp \
+    ServerLogWidget.cpp \
     ClientsTreeWidget.cpp
 FORMS += ServerMainWindow.ui \
     DialogPreferences.ui
