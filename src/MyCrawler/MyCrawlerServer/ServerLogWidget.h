@@ -28,6 +28,8 @@
 
 class MCServerLogWidget : public QTreeWidget
 {
+    Q_OBJECT
+
 public:
     typedef enum {
       NoIcon,
@@ -46,6 +48,9 @@ public:
     void setup();
 
     void write(Icon icon, const QString& message, const QColor& color = Qt::black, QFont::Weight fontWeight = QFont::Normal);
+
+public slots:
+    void copyToClipboard();
 
 protected:
     QStyleOptionViewItem viewOptions() const;

@@ -23,6 +23,8 @@
 #include "Debug/Logger.h"
 #include "ServerLogWidget.h"
 
+#include "ServerApplication.h"
+
 MCServerLogWidget::MCServerLogWidget(QWidget* parent)
   : QTreeWidget(parent)
 {}
@@ -46,7 +48,6 @@ void MCServerLogWidget::write(Icon icon, const QString& message, const QColor& c
   QTreeWidgetItem* item = new QTreeWidgetItem(this);  
 
   item->setText(DateColumn, QTime::currentTime().toString());
-  item->setTextAlignment(DateColumn, Qt::AlignTop);
 
   QFont font;
   font.setWeight(fontWeight);
@@ -57,9 +58,22 @@ void MCServerLogWidget::write(Icon icon, const QString& message, const QColor& c
   item->setText(MessageColumn, message);
 }
 
+void MCServerLogWidget::copyToClipboard() {
+  int nItems = topLevelItemCount();
+  if (nItems == 0) { return; }
+
+  QString s;
+  for (int i = 0; i < nItems; ++i) {
+    const QTreeWidgetItem* item = topLevelItem(i);
+    s += item->text(DateColumn) + " " + item->text(MessageColumn) + "\n";
+  }
+
+  MCApp->clipboard()->setText(s, QClipboard::Clipboard);
+}
+
 QStyleOptionViewItem MCServerLogWidget::viewOptions() const {
   QStyleOptionViewItem option = QAbstractItemView::viewOptions();
   option.decorationAlignment = Qt::AlignTop;
-  //option.displayAlignment = Qt::AlignLeft | Qt::AlignTop;
+  option.displayAlignment = Qt::AlignLeft | Qt::AlignTop;
   return option;
 }

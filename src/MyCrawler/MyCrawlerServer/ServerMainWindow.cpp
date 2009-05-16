@@ -79,6 +79,7 @@ void MCServerMainWindow::setupMenu_() {
 
 void MCServerMainWindow::setupServerLogForm_() {
   treeWidgetServerLog->setup();
+  QObject::connect(buttonServerLogCopy, SIGNAL(clicked()), treeWidgetServerLog, SLOT(copyToClipboard()));
 }
 
 void MCServerMainWindow::setupClientsForm_() {
