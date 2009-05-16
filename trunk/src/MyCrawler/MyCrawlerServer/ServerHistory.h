@@ -1,6 +1,5 @@
 /****************************************************************************
- * @(#) MyCrawler client. Main window.
- * GUI interface
+ * @(#) Server history.
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
@@ -21,41 +20,31 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTMAINWINDOW_H
-#define CLIENTMAINWINDOW_H
+#ifndef SERVERHISTORY_H
+#define SERVERHISTORY_H
 
-#include <QtGui>
+#include <QMap>
 
-#include "ui_ClientMainWindow.h"
-#include "ClientPeer.h"
+#include "Utilities/NetworkInfo.h"
 
-class MCClientMainWindow : public QMainWindow,
-                           private Ui_MCClientMainWindow
+class MCServerHistory
 {
-    Q_OBJECT
-
 private:
-    void setupWindow_();
-    void setupComponents_();
-
+    void init_();
     void cleanAll_();
-    void closeWindow_();
 
 public:
-    MCClientMainWindow(QWidget *parent = NULL);
-    ~MCClientMainWindow();
+    static MCServerHistory* instance();
+    static void destroy();
 
-public slots:
-    void on_buttonClientConnect_clicked();
-
-private slots:
-    void slotClientError(QAbstractSocket::SocketError error);
-    void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state); 
+protected:
+    MCServerHistory();
+    ~MCServerHistory();
 
 private:
-    bool m_bClientConnected;
+    static MCServerHistory* s_instance;
+
+    QMap<quint64, CNetworkInfo> m_lstClients;
 };
 
-#endif // CLIENTMAINWINDOW_H
+#endif // SERVERHISTORY_H

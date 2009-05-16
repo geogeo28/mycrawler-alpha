@@ -74,6 +74,8 @@ void MCServerLogWidget::write(Icon icon, const QString& message, const QColor& c
   item->setTextColor(MessageColumn, color);
   item->setFont(MessageColumn, font);
   item->setText(MessageColumn, message);
+
+  scrollToItem(item, QAbstractItemView::EnsureVisible);
 }
 
 void MCServerLogWidget::copyToClipboard() {

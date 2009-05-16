@@ -71,9 +71,10 @@ private slots:
     void slotServerStateChanged(MCServer::State state);
 
     void slotClientError(MCClientThread* client, MCClientThread::Error error);
-    void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void slotClientConnectionRefused(MCClientThread* client, const QString& reason);
+    void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
 
 protected:
     void closeEvent(QCloseEvent* event);

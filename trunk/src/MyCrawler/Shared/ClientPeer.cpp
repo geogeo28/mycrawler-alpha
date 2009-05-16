@@ -128,6 +128,13 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
   }
 }
 
+void MCClientPeer::refuseConnection(const QString& reason) {
+  ILogger::Debug() << "The connection was aborted (reason = " << reason << ").";
+
+  // TODO : Send an error message
+  abort();
+}
+
 void MCClientPeer::disconnect(int msecs) {
   // Close the connection
   if (state() == MCClientPeer::ConnectingState) {
@@ -319,40 +326,23 @@ void MCClientPeer::sendAuthenticationPacket_() {
   data.setVersion(SerializationVersion);
 
   CNetworkInfo networkInfo = CNetworkInfo::fromInterfaceByIp(localAddress());
-  data << networkInfo.hardwareAddress();
-  data << networkInfo.ip().toIPv4Address();
-  data << networkInfo.broadcast().toIPv4Address();
-  data << networkInfo.netmask().toIPv4Address();
-  data << (quint8)networkInfo.prefixLength();
-  data << networkInfo.hostName();
-  data << networkInfo.hostDomain();
+  networkInfo.setPeerName(peerName());
+  networkInfo.setPeerAddress(peerAddress());
+  networkInfo.setPeerPort(peerPort());
+
+  data << networkInfo;
 
   sendPacket(AuthenticationPacket, bytes);
 }
 
-CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
+CNetworkInfo MCClientPeer::processAuthenticationPacket() {
   QDataStream data(this);
   data.setVersion(SerializationVersion);
 
-  quint64 hardwareAddress;
-  quint32 ip, broadcast, netmask;
-  quint8 prefixLength;
-  QString hostName, hostDomain;
+  CNetworkInfo networkInfo;
+  data >> networkInfo;
 
-  // Extract data
-  data >> hardwareAddress;
-  data >> ip;
-  data >> broadcast;
-  data >> netmask;
-  data >> prefixLength;
-  data >> hostName;
-  data >> hostDomain;
-
-  return CNetworkInfo(
-    QHostAddress(ip), QHostAddress(broadcast), QHostAddress(broadcast), (int)prefixLength,
-    QString(), // Interface name
-    hardwareAddress, hostName, hostDomain
-  );
+  return networkInfo;
 }
 
 // Initialize all state variable

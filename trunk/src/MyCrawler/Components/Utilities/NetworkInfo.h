@@ -29,6 +29,9 @@
 
 class CNetworkInfo
 {
+private:
+    void init_();
+
 public:
     CNetworkInfo();
     CNetworkInfo(
@@ -55,6 +58,7 @@ public:
     QString peerAddressAndPort() const { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
 
     QHostAddress ip() const { return m_ip; }
+    QHostAddress gateway() const { return m_gateway; }
     QHostAddress broadcast() const { return m_broadcast; }
     QHostAddress netmask() const { return m_netmask; }
     int prefixLength() const { return m_nPrefixLength; }
@@ -74,6 +78,7 @@ public:
     static CNetworkInfo fromInterfaceByIp(const QHostAddress& address);
     static quint64 fromHardwareAddressString(const QString& hardwareAddress, bool* ok = NULL);
     static QString hardwareAddressToString(quint64 hardwareAddress);
+    static quint32 gatewayFromBroadcastAndNetmask(quint32 broadcast, quint32 netmask);
 
 private:
     bool m_bValid;
@@ -83,6 +88,7 @@ private:
     quint16 m_u16PeerPort;
 
     QHostAddress m_ip;
+    QHostAddress m_gateway;
     QHostAddress m_broadcast;
     QHostAddress m_netmask;
     int m_nPrefixLength;

@@ -18,12 +18,24 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <cstdio>
 #include <QStringList>
 #include <QHostInfo>
 #include <QNetworkInterface>
 #include <QNetworkAddressEntry>
 
 #include "NetworkInfo.h"
+
+void CNetworkInfo::init_() {
+  if (m_sHostName.isNull())   { m_sHostName = QHostInfo::localHostName(); }
+  if (m_sHostDomain.isNull()) { m_sHostDomain = QHostInfo::localDomainName(); }
+
+  m_gateway = QHostAddress(
+    CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address())
+  );
+
+  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
+}
 
 CNetworkInfo::CNetworkInfo()
   : m_bValid(false),
@@ -41,17 +53,10 @@ CNetworkInfo::CNetworkInfo(
   : m_bValid(true),
     m_sPeerName(peerName), m_peerAddress(peerAddress), m_u16PeerPort(peerPort),
     m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
-    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress)
+    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress),
+    m_sHostName(hostName), m_sHostDomain(hostDomain)
 {
-  m_sHostName = (hostName.isNull())?
-                QHostInfo::localHostName():
-                hostName;
-
-  m_sHostDomain = (hostDomain.isNull())?
-                  QHostInfo::localDomainName():
-                  hostDomain;
-
-  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(hardwareAddress);
+  init_();
 }
 
 CNetworkInfo::CNetworkInfo(
@@ -62,17 +67,10 @@ CNetworkInfo::CNetworkInfo(
   : m_bValid(true),
     m_u16PeerPort(0),
     m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
-    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress)
+    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress),
+    m_sHostName(hostName), m_sHostDomain(hostDomain)
 {
-  m_sHostName = (hostName.isNull())?
-                QHostInfo::localHostName():
-                hostName;
-
-  m_sHostDomain = (hostDomain.isNull())?
-                  QHostInfo::localDomainName():
-                  hostDomain;
-
-  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(hardwareAddress);
+  init_();
 }
 
 void CNetworkInfo::write(QDataStream& out) const {
@@ -129,7 +127,7 @@ CNetworkInfo CNetworkInfo::fromInterfaceByIp(const QHostAddress& address) {
 }
 
 quint64 CNetworkInfo::fromHardwareAddressString(const QString& hardwareAddress, bool* ok) {
-  quint64 macAdr = 0x00;
+  quint64 macAdr = 0x0;
   QStringList lstDigits = hardwareAddress.split(":");
   foreach (const QString& sDigit, lstDigits) {
     bool r;
@@ -148,14 +146,29 @@ quint64 CNetworkInfo::fromHardwareAddressString(const QString& hardwareAddress, 
 }
 
 QString CNetworkInfo::hardwareAddressToString(quint64 hardwareAddress) {
+  static char buffer[2 + 1];
+
   QString s;
   for (int  i = 0; i < 8; ++i) {
-    s += QString::number((int)((hardwareAddress & 0xFF00000000000000ULL) >> 48)).toUpper();
+    sprintf(buffer, "%02X", (int)((hardwareAddress & 0xFF00000000000000ULL) >> 56));
+    s += QString::fromAscii(buffer);
     hardwareAddress <<= 8;
     if (i != 7) { s += ":"; }
   }
 
   return s;
+}
+
+quint32 CNetworkInfo::gatewayFromBroadcastAndNetmask(quint32 broadcast, quint32 netmask) {
+  // Set 1 were the netmask contains 0
+  for (int i = 0; i < 4; ++i) {
+    int left = (i * 8);
+    if ((netmask & (0xFF << left)) == 0) {
+      netmask |= (1 << left);
+    }
+  }
+
+  return (broadcast & netmask);
 }
 
 QDataStream& operator<<(QDataStream& out, const CNetworkInfo& networkInfo) {

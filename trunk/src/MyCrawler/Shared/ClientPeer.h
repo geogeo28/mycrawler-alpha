@@ -81,10 +81,11 @@ public:
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void packetSent(MCClientPeer::PacketType type, quint32 size);
     void authenticated(const CNetworkInfo& info);
+    void packetSent(MCClientPeer::PacketType type, quint32 size);
 
 public slots:
+    void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
 

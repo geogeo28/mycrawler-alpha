@@ -1,7 +1,4 @@
 /****************************************************************************
- * @(#) MyCrawler client. Main window.
- * GUI interface
- *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
  * Contact: geoffrey.anneheim@gmail.com / julien.portejoie@gmail.com
  *
@@ -21,41 +18,38 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTMAINWINDOW_H
-#define CLIENTMAINWINDOW_H
+#include "ServerHistory.h"
 
-#include <QtGui>
+MCServerHistory* MCServerHistory::s_instance = NULL;
 
-#include "ui_ClientMainWindow.h"
-#include "ClientPeer.h"
+MCServerHistory* MCServerHistory::instance() {
+  if (s_instance == NULL) {
+    s_instance = new MCServerHistory();
+  }
 
-class MCClientMainWindow : public QMainWindow,
-                           private Ui_MCClientMainWindow
+  return s_instance;
+}
+
+void MCServerHistory::destroy() {
+  if (s_instance != NULL) {
+    delete s_instance;
+    s_instance = NULL;
+  }
+}
+
+void MCServerHistory::init_() {
+
+}
+
+void MCServerHistory::cleanAll_() {
+
+}
+
+MCServerHistory::MCServerHistory()
 {
-    Q_OBJECT
+  init_();
+}
 
-private:
-    void setupWindow_();
-    void setupComponents_();
-
-    void cleanAll_();
-    void closeWindow_();
-
-public:
-    MCClientMainWindow(QWidget *parent = NULL);
-    ~MCClientMainWindow();
-
-public slots:
-    void on_buttonClientConnect_clicked();
-
-private slots:
-    void slotClientError(QAbstractSocket::SocketError error);
-    void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state); 
-
-private:
-    bool m_bClientConnected;
-};
-
-#endif // CLIENTMAINWINDOW_H
+MCServerHistory::~MCServerHistory() {
+  cleanAll_();
+}
