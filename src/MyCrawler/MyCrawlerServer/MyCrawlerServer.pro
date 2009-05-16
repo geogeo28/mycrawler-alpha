@@ -12,11 +12,9 @@ INCLUDEPATH += ../Components/
 INCLUDEPATH += ../Shared/
 PRECOMPILED_HEADER = Components.h
 HEADERS += ServerApplication.h \
-    ../Components/Components.h \
-    ServerHistory.h
+    ../Components/Components.h
 SOURCES += main.cpp \
-    ServerApplication.cpp \
-    ServerHistory.cpp
+    ServerApplication.cpp
 OTHER_FILES += ../TODO.txt
 include(../Components/Debug.pri)
 include(../Components/Core.pri)

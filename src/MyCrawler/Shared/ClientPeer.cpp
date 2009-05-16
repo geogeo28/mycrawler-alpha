@@ -20,6 +20,7 @@
 
 #include <QDataStream>
 
+#include "Config/Config.h"
 #include "Debug/Logger.h"
 
 #include "ClientPeer.h"
@@ -61,7 +62,7 @@ void MCClientPeer::sendPacket(PacketType type, const QByteArray& data) {
   // Prepate the packet
   QByteArray packet;
   QDataStream out(&packet, QIODevice::WriteOnly);
-  out.setVersion(QDataStream::Qt_4_5);
+  out.setVersion(SerializationVersion);
 
   quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
   out << (quint32)packetSize; // Size of the packet
@@ -196,7 +197,7 @@ void MCClientPeer::processIncomingData_() {
 
       // Check the protocol version
       QDataStream data(this);
-      data.setVersion(QDataStream::Qt_4_5);
+      data.setVersion(SerializationVersion);
 
       quint16 ver; data >> ver;
       if (ver != ProtocolVersion) {
@@ -221,7 +222,7 @@ void MCClientPeer::processIncomingData_() {
 
       // Get packet size and packet type
       QDataStream data(this);
-      data.setVersion(QDataStream::Qt_4_5);
+      data.setVersion(SerializationVersion);
 
       data >> m_u32PacketSize;
       data >> m_u16PacketType;
@@ -298,7 +299,7 @@ void MCClientPeer::sendHandShakePacket_() {
 
   QByteArray bytes;
   QDataStream data(&bytes, QIODevice::WriteOnly);
-  data.setVersion(QDataStream::Qt_4_5);
+  data.setVersion(SerializationVersion);
 
   // Protocol
   data.writeRawData(ProtocolId, ProtocolIdSize);
@@ -315,7 +316,7 @@ void MCClientPeer::sendHandShakePacket_() {
 void MCClientPeer::sendAuthenticationPacket_() {
   QByteArray bytes;
   QDataStream data(&bytes, QIODevice::WriteOnly);
-  data.setVersion(QDataStream::Qt_4_5);
+  data.setVersion(SerializationVersion);
 
   CNetworkInfo networkInfo = CNetworkInfo::fromInterfaceByIp(localAddress());
   data << networkInfo.hardwareAddress();
@@ -331,7 +332,7 @@ void MCClientPeer::sendAuthenticationPacket_() {
 
 CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
   QDataStream data(this);
-  data.setVersion(QDataStream::Qt_4_5);
+  data.setVersion(SerializationVersion);
 
   quint64 hardwareAddress;
   quint32 ip, broadcast, netmask;
