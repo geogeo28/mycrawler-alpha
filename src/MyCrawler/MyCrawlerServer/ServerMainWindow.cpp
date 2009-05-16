@@ -189,11 +189,11 @@ void MCServerMainWindow::on_doFilePreferences_triggered() {
 }
 
 void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
-  QVariant mcFormIndex = action->property("mcFormIndex");
-  if (mcFormIndex.isValid()) {
+  QVariant formIndex = action->property("FormIndex");
+  if (formIndex.isValid()) {
     // New action clicked
     if (action != m_pActionCurrentForm) {
-      tabWidgetForms->setCurrentIndex(mcFormIndex.toInt());
+      tabWidgetForms->setCurrentIndex(formIndex.toInt());
 
       // Uncheck the preview action
       if (m_pActionCurrentForm != NULL) {

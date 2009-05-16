@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>532</width>
-    <height>478</height>
+    <width>555</width>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -174,7 +174,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>532</width>
+     <width>555</width>
      <height>21</height>
     </rect>
    </property>
@@ -270,7 +270,7 @@
    <property name="toolTip">
     <string>Show server log</string>
    </property>
-   <property name="mcFormIndex" stdset="0">
+   <property name="FormIndex" stdset="0">
     <number>0</number>
    </property>
   </action>
@@ -288,7 +288,7 @@
    <property name="toolTip">
     <string>View clients list</string>
    </property>
-   <property name="mcFormIndex" stdset="0">
+   <property name="FormIndex" stdset="0">
     <number>1</number>
    </property>
   </action>
