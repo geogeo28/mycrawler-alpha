@@ -39,7 +39,7 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  if (!MCApp->settings()->loadLayout(this)) {
+  if (!MCApp->settings()->loadLayout(this, "MCServerMainWindow")) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -135,7 +135,7 @@ void MCServerMainWindow::loadSettings_() {
 void MCServerMainWindow::saveSettings_() {
   ILogger::Debug() << "Save settings.";
   MCApp->settings()->setValue(SettingCurrentForm, m_pActionCurrentForm->objectName());
-  MCApp->settings()->saveLayout(this); // Window layout
+  MCApp->settings()->saveLayout(this, "MCServerMainWindow"); // Window layout
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -257,7 +257,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
   QString message;
   QColor color = Qt::black;
 
-  switch (state) {
+  switch (state) {      
     // Listening
     case MCServer::ListeningState:
     {
@@ -269,6 +269,8 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
 
       // Button connected
       doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/ConnectedIcon"));
+      doMainToolBarConnectDisconnect->setIconText("Disconnect");
+      doMainToolBarConnectDisconnect->setText("Disconnect");
       break;
     }
 
@@ -290,7 +292,10 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       }
 
       // Disable Connect/Disconnect button
+      doMainToolBarConnectDisconnect->setIconText("Closing...");
+      doMainToolBarConnectDisconnect->setText("Closing...");
       doMainToolBarConnectDisconnect->setEnabled(false);
+
       break;
     }
 
@@ -308,6 +313,8 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       // Enable Connect/Disconnect button
       doMainToolBarConnectDisconnect->setEnabled(true);
       doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/UnconnectedIcon"));
+      doMainToolBarConnectDisconnect->setIconText("Connect");
+      doMainToolBarConnectDisconnect->setText("Connect");
 
       break;
     }
@@ -332,7 +339,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
   treeWidgetServerLog->write(
     MCServerLogWidget::ErrorIcon,
     QString("Error on the client %1 : %2 (%3)%4.")
-      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(client->peerAddressAndPort())
       .arg(client->errorString())
       .arg(error)
       .arg(remainder),
@@ -351,7 +358,7 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
   treeWidgetServerLog->write(
     MCServerLogWidget::InformationIcon,
     QString("Client %1 : %2 (%3)")
-      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(client->peerAddressAndPort())
       .arg(MCClientThread::connectionStateToString(state))
       .arg(state),
     color, QFont::Bold
@@ -362,7 +369,7 @@ void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer:
   treeWidgetServerLog->write(
     MCServerLogWidget::ErrorIcon,
     QString("The client %1 not responding (%2).")
-      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(client->peerAddressAndPort())
       .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen)),
     Qt::red, QFont::Bold
   );
@@ -378,7 +385,7 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
     QString("Error processing a packet of the client %1.\n" \
             "(Type = %2, Size = %3) %4 (%5)\n" \
             "%6")
-      .arg(client->threadInfo().peerAddressAndPort())
+      .arg(client->peerAddressAndPort())
       .arg(type)
       .arg(size)
       .arg(MCClientPeer::packetErrorToString(error))

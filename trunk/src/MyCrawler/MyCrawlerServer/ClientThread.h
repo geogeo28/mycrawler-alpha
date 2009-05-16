@@ -28,36 +28,9 @@
 #include <QPointer>
 #include <QHostAddress>
 
+#include "Utilities/NetworkInfo.h"
+
 #include "ClientPeer.h"
-
-class CNetworkInfo;
-
-class MCClientThreadInfo {
-  public:
-    MCClientThreadInfo(
-      const QString& peerName = QString(),
-      const QHostAddress& peerAddress = QHostAddress(),
-      quint16 peerPort = 0
-    );
-
-    const QString& peerName() const { return m_sPeerName; }
-    const QHostAddress& peerAddress() const { return m_peerAddress; }
-    quint16 peerPort() const { return m_u16PeerPort;}
-    QString peerAddressAndPort() const;
-
-    void setPeerName(const QString& peerName) { m_sPeerName = peerName; }
-    void setPeerAddress(const QHostAddress& peerAddress) { m_peerAddress = peerAddress; }
-    void setPeerPort(quint16 peerPort) { m_u16PeerPort = peerPort; }
-
-    const CNetworkInfo& networkInfo() const { return m_networkInfo; }
-    void setNetworkInfo(const CNetworkInfo& info) { m_networkInfo = info; }
-
-  private:
-    QString m_sPeerName;
-    QHostAddress m_peerAddress;
-    quint16 m_u16PeerPort;
-    CNetworkInfo m_networkInfo;
-};
 
 class MCClientThread : public QThread
 {
@@ -85,7 +58,13 @@ public:
     ~MCClientThread();
 
     const MCClientPeer* clientPeer() { return m_pClientPeer; }
-    const MCClientThreadInfo& threadInfo() const { return m_threadInfo; }
+
+    QString peerName() const { return m_sPeerName; }
+    QHostAddress peerAddress() const { return m_peerAddress; }
+    quint16 peerPort() const { return m_u16PeerPort; }
+    QString peerAddressAndPort() const { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
+    const CNetworkInfo& clientInfo() const { return m_clientInfo; }
+
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
     ConnectionState connectionState() const { return m_enumConnectionState; }
@@ -118,13 +97,17 @@ private:
 private:
     QMutex m_mutex;
 
-    MCClientThreadInfo m_threadInfo;
-
     Error m_enumError;
     QString m_sError;
 
     int m_nSocketDescriptor;
     QPointer<MCClientPeer> m_pClientPeer;
+
+    QString m_sPeerName;
+    QHostAddress m_peerAddress;
+    quint16 m_u16PeerPort;
+    CNetworkInfo m_clientInfo;
+
     ConnectionState m_enumConnectionState;
     bool m_bAuthenticated;
 };

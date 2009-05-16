@@ -15,7 +15,7 @@
    <string>ServerMainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout">
     <property name="spacing">
      <number>6</number>
     </property>
@@ -31,7 +31,7 @@
        <attribute name="title">
         <string>ServerLog</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout">
         <property name="margin">
          <number>0</number>
         </property>
@@ -75,9 +75,9 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
+         <layout class="QHBoxLayout">
           <item>
-           <spacer name="horizontalSpacer">
+           <spacer>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -97,7 +97,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonServerLogClean">
+           <widget class="QPushButton" name="buttonServerLogClear">
             <property name="text">
              <string>Clean</string>
             </property>
@@ -111,7 +111,7 @@
        <attribute name="title">
         <string>Clients</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout">
         <property name="margin">
          <number>0</number>
         </property>
@@ -211,7 +211,7 @@
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -224,6 +224,9 @@
      <width>64</width>
      <height>64</height>
     </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -250,7 +253,10 @@
     </iconset>
    </property>
    <property name="text">
-    <string>ConnectDisconnect</string>
+    <string>Connect</string>
+   </property>
+   <property name="iconText">
+    <string>Connect</string>
    </property>
    <property name="toolTip">
     <string>Connect / Disconnect</string>
@@ -265,7 +271,10 @@
      <normaloff>:/MainToolBar/ServerLogIcon</normaloff>:/MainToolBar/ServerLogIcon</iconset>
    </property>
    <property name="text">
-    <string>ServerLog</string>
+    <string>Server Log</string>
+   </property>
+   <property name="iconText">
+    <string>Server Log</string>
    </property>
    <property name="toolTip">
     <string>Show server log</string>
@@ -310,7 +319,10 @@
      <normaloff>:/MainToolBar/PreferencesIcon</normaloff>:/MainToolBar/PreferencesIcon</iconset>
    </property>
    <property name="text">
-    <string>actionPreferences</string>
+    <string>Preferences</string>
+   </property>
+   <property name="iconText">
+    <string>Preferences</string>
    </property>
    <property name="toolTip">
     <string>Preferences dialog</string>
@@ -456,7 +468,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonServerLogClean</sender>
+   <sender>buttonServerLogClear</sender>
    <signal>clicked()</signal>
    <receiver>treeWidgetServerLog</receiver>
    <slot>clear()</slot>

@@ -25,15 +25,33 @@
 
 #include "ServerApplication.h"
 
+void MCServerLogWidget::loadSettings_() {
+  MCSettings->loadLayout<QTreeWidget>(this, "MCServerLogWidget");
+}
+
+void MCServerLogWidget::saveSettings_() {
+  MCSettings->saveLayout<QTreeWidget>(this, "MCServerLogWidget");
+}
+
+void MCServerLogWidget::cleanAll_() {
+
+}
+
 MCServerLogWidget::MCServerLogWidget(QWidget* parent)
   : QTreeWidget(parent)
 {}
 
+MCServerLogWidget::~MCServerLogWidget() {
+  saveSettings_();
+  cleanAll_();
+}
+
 void MCServerLogWidget::setup() {
   headerItem()->setText(DateColumn,    "Date");
   headerItem()->setText(MessageColumn, "Message");  
+  setColumnWidth(DateColumn, 120);
 
-  setColumnWidth(DateColumn, 65);
+  loadSettings_();
 }
 
 void MCServerLogWidget::write(Icon icon, const QString& message, const QColor& color, QFont::Weight fontWeight) {
@@ -47,7 +65,7 @@ void MCServerLogWidget::write(Icon icon, const QString& message, const QColor& c
 
   QTreeWidgetItem* item = new QTreeWidgetItem(this);  
 
-  item->setText(DateColumn, QTime::currentTime().toString());
+  item->setText(DateColumn, QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate));
 
   QFont font;
   font.setWeight(fontWeight);

@@ -24,23 +24,10 @@
 
 #include "ClientThread.h"
 
-MCClientThreadInfo::MCClientThreadInfo(
-  const QString& peerName,
-  const QHostAddress& peerAddress,
-  quint16 peerPort
-)
-  : m_sPeerName(peerName), m_peerAddress(peerAddress), m_u16PeerPort(peerPort)
-{}
-
-QString MCClientThreadInfo::peerAddressAndPort() const {
-  return QString("%1:%2")
-         .arg(peerAddress().toString())
-         .arg(peerPort());
-}
-
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
       m_nSocketDescriptor(socketDescriptor),
+      m_u16PeerPort(0),
       m_enumConnectionState(UnconnectedState),
       m_bAuthenticated(false)
 {
@@ -96,14 +83,14 @@ void MCClientThread::run() {
     return;
   }
 
-  // Set thread' information if doesn't valid
-  m_threadInfo.setPeerName(clientPeer.peerName());
-  m_threadInfo.setPeerAddress(clientPeer.peerAddress());
-  m_threadInfo.setPeerPort(clientPeer.peerPort());
+  // Set client's information
+  m_sPeerName = m_pClientPeer->peerName();
+  m_peerAddress = m_pClientPeer->peerAddress();
+  m_u16PeerPort = m_pClientPeer->peerPort();
 
   ILogger::Debug() << currentThread()
                    << QString(" - %2 : Execute the event loop.")
-                      .arg(threadInfo().peerAddressAndPort());
+                      .arg(peerAddressAndPort());
   m_mutex.unlock();
 
   // Event loop
@@ -126,9 +113,9 @@ void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
 void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
   QMutexLocker locker(&m_mutex);  
 
+  // Translate socket state to MCClientThread::connectionState
   ConnectionState state = InvalidState;
 
-  // Translate socket state to MCClientThread::connectionState
   switch (socketState) {
     case QAbstractSocket::UnconnectedState:
       state = UnconnectedState;
@@ -154,7 +141,8 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
 
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
   m_bAuthenticated = true;
-  m_threadInfo.setNetworkInfo(info);
+
+  m_clientInfo = info;
   setConnectionState_(ConnectedState, true);
   emit authenticated(info);
 }
@@ -185,7 +173,7 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
   if (state == m_enumConnectionState) { return; }
 
   ILogger::Debug() << QString("%1 : Connection state changed : %2 (%3).")
-                      .arg(threadInfo().peerAddressAndPort())
+                      .arg(peerAddressAndPort())
                       .arg(MCClientThread::connectionStateToString(state))
                       .arg(state);
 

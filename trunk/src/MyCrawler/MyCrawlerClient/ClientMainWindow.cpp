@@ -34,7 +34,7 @@ void MCClientMainWindow::setupWindow_() {
   setWindowTitle(MCClientApplication::applicationName() + " v" + _MYCRAWLER_CLIENT_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  if (!MCApp->settings()->loadLayout(this)) {
+  if (!MCApp->settings()->loadLayout(this, "MCClientMainWindow")) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -60,7 +60,7 @@ void MCClientMainWindow::cleanAll_() {
 
 void MCClientMainWindow::closeWindow_() {
   ILogger::Debug() << "Save the setting window layout.";
-  MCApp->settings()->saveLayout(this);
+  MCApp->settings()->saveLayout(this, "MCClientMainWindow");
 }
 
 MCClientMainWindow::MCClientMainWindow(QWidget *parent)

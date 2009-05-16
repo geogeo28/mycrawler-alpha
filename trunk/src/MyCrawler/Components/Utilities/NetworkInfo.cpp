@@ -26,8 +26,33 @@
 #include "NetworkInfo.h"
 
 CNetworkInfo::CNetworkInfo()
-  : m_bValid(false)
+  : m_bValid(false),
+    m_u16PeerPort(0),
+    m_nPrefixLength(-1),
+    m_u64HardwareAddress(0x0)
 {}
+
+CNetworkInfo::CNetworkInfo(
+  const QString& peerName, const QHostAddress& peerAddress, quint16 peerPort,
+  const QHostAddress& ip, const QHostAddress& broadcast, const QHostAddress& netmask, int prefixLength,
+  const QString& humanReadableName, quint64 hardwareAddress,
+  const QString& hostName, const QString& hostDomain
+)
+  : m_bValid(true),
+    m_sPeerName(peerName), m_peerAddress(peerAddress), m_u16PeerPort(peerPort),
+    m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
+    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress)
+{
+  m_sHostName = (hostName.isNull())?
+                QHostInfo::localHostName():
+                hostName;
+
+  m_sHostDomain = (hostDomain.isNull())?
+                  QHostInfo::localDomainName():
+                  hostDomain;
+
+  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(hardwareAddress);
+}
 
 CNetworkInfo::CNetworkInfo(
   const QHostAddress& ip, const QHostAddress& broadcast, const QHostAddress& netmask, int prefixLength,
@@ -35,6 +60,7 @@ CNetworkInfo::CNetworkInfo(
   const QString& hostName, const QString& hostDomain
 )
   : m_bValid(true),
+    m_u16PeerPort(0),
     m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
     m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress)
 {

@@ -70,6 +70,7 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
   CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
   CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
   installSettings("settings");
+  MCSettings->setLayoutPrefixKey("WidgetsLayouts");
 
   // Load resources
   ILogger::Debug() << "Load resources.";

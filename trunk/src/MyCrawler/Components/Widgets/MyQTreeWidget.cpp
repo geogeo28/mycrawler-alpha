@@ -36,57 +36,6 @@ MyQTreeWidget::MyQTreeWidget(QWidget* parent)
 MyQTreeWidget::~MyQTreeWidget()
 {}
 
-void MyQTreeWidget::saveLayout(QSettings* settings, const QString& keyName) {
-  AssertCheckPtr(settings);
-
-  QString key = keyName;
-  if (key.isEmpty()) { key = this->objectName(); }
-
-  settings->beginGroup(key);
-    // Columns
-    settings->beginReadArray("Columns");
-      for (int i = 0; i < columnCount(); ++i) {
-        settings->setArrayIndex(i);
-
-        settings->setValue("Hidden", isColumnHidden(i));
-        settings->setValue("Width", columnWidth(i));
-
-        settings->setValue("Position", header()->visualIndex(i));
-      }
-    settings->endArray();
-    settings->setValue("ColumnSortedIndex", header()->sortIndicatorSection());
-    settings->setValue("ColumnSortedOrder", header()->sortIndicatorOrder());
-  settings->endGroup();
-}
-
-void MyQTreeWidget::loadLayout(QSettings* settings, const QString& keyName) {
-  AssertCheckPtr(settings);
-
-  QString key = keyName;
-  if (key.isEmpty()) { key = this->objectName(); }
-
-  settings->beginGroup(key);
-    // Columns
-    settings->beginReadArray("Columns");
-      for (int i = 0; i < columnCount(); ++i) {
-        settings->setArrayIndex(i);
-
-        setColumnHidden(i, settings->value("Hidden", isColumnHidden(i)).toBool());
-        setColumnWidth(i, settings->value("Width", columnWidth(i)).toInt());
-
-        int visualIndex = settings->value("Position", i).toInt();
-        if (visualIndex != i) {
-          header()->swapSections(header()->visualIndex(i), visualIndex);
-        }
-      }
-    settings->endArray();
-    sortByColumn(
-      settings->value("ColumnSortedIndex", header()->sortIndicatorSection()).toInt(),
-      (Qt::SortOrder)settings->value("ColumnSortedOrder", header()->sortIndicatorOrder()).toInt()
-    );
-  settings->endGroup();
-}
-
 void MyQTreeWidget::showColumnFromAction(bool show) {
   QAction* action = qobject_cast<QAction*>(sender());
   AssertCheckPtr(action);
