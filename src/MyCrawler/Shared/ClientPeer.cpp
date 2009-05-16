@@ -335,7 +335,7 @@ void MCClientPeer::sendAuthenticationPacket_() {
   sendPacket(AuthenticationPacket, bytes);
 }
 
-CNetworkInfo MCClientPeer::processAuthenticationPacket() {
+CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
   QDataStream data(this);
   data.setVersion(SerializationVersion);
 
