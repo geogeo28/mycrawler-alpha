@@ -53,10 +53,9 @@ void MyQTreeWidget::saveLayout(QSettings* settings, const QString& keyName) {
 
         settings->setValue("Position", header()->visualIndex(i));
       }
-
-      settings->setValue("ColumnSortedIndex", header()->sortIndicatorSection());
-      settings->setValue("ColumnSortedOrder", header()->sortIndicatorOrder());
     settings->endArray();
+    settings->setValue("ColumnSortedIndex", header()->sortIndicatorSection());
+    settings->setValue("ColumnSortedOrder", header()->sortIndicatorOrder());
   settings->endGroup();
 }
 
@@ -65,7 +64,6 @@ void MyQTreeWidget::loadLayout(QSettings* settings, const QString& keyName) {
 
   QString key = keyName;
   if (key.isEmpty()) { key = this->objectName(); }
-
 
   settings->beginGroup(key);
     // Columns
@@ -81,12 +79,11 @@ void MyQTreeWidget::loadLayout(QSettings* settings, const QString& keyName) {
           header()->swapSections(header()->visualIndex(i), visualIndex);
         }
       }
-
-      sortByColumn(
-        settings->value("ColumnSortedIndex", header()->sortIndicatorSection()).toInt(),
-        (Qt::SortOrder)settings->value("ColumnSortedOrder", header()->sortIndicatorOrder()).toInt()
-      );
     settings->endArray();
+    sortByColumn(
+      settings->value("ColumnSortedIndex", header()->sortIndicatorSection()).toInt(),
+      (Qt::SortOrder)settings->value("ColumnSortedOrder", header()->sortIndicatorOrder()).toInt()
+    );
   settings->endGroup();
 }
 

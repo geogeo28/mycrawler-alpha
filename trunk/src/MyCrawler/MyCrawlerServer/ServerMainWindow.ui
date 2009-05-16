@@ -74,6 +74,37 @@
           </column>
          </widget>
         </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonServerLogCopy">
+            <property name="text">
+             <string>Copy To Clipboard</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonServerLogClean">
+            <property name="text">
+             <string>Clean</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tabClients">
@@ -421,6 +452,22 @@
     <hint type="destinationlabel">
      <x>265</x>
      <y>468</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonServerLogClean</sender>
+   <signal>clicked()</signal>
+   <receiver>treeWidgetServerLog</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>499</x>
+     <y>436</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>333</y>
     </hint>
    </hints>
   </connection>
