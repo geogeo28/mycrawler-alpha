@@ -98,9 +98,10 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(stateChanged(MCServer::State)), this, SLOT(slotServerStateChanged(MCServer::State)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
-  QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
   QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
   QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientConnectionRefused(MCClientThread*,QString)), this, SLOT(slotClientConnectionRefused(MCClientThread*,QString)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
 }
 
 void MCServerMainWindow::loadSettingsServerConnection_() {
@@ -347,24 +348,6 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
   );
 }
 
-void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
-  AssertCheckPtr(client);
-
-  QColor color = Qt::black;
-  if (state == MCClientThread::ConnectedState)           { color = Qt::darkGreen; }
-  else if (state == MCClientThread::AuthenticatingState) { color = Qt::blue; }
-  else if (state == MCClientThread::UnconnectedState)    { color = Qt::red; }
-
-  treeWidgetServerLog->write(
-    MCServerLogWidget::InformationIcon,
-    QString("Client %1 : %2 (%3)")
-      .arg(client->peerAddressAndPort())
-      .arg(MCClientThread::connectionStateToString(state))
-      .arg(state),
-    color, QFont::Bold
-  );
-}
-
 void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
   treeWidgetServerLog->write(
     MCServerLogWidget::ErrorIcon,
@@ -395,6 +378,37 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
       "To prevent of a DoS attack, the connection with the client was aborted.":
       "Trying recover the packet."),
     Qt::red, QFont::Bold
+  );
+}
+
+void MCServerMainWindow::slotClientConnectionRefused(MCClientThread* client, const QString& reason) {
+  AssertCheckPtr(client);
+
+  QString message = QString("The connection with the client %1 was refused.")
+                    .arg(client->peerAddressAndPort());
+
+  if (!reason.isEmpty()) {
+    message += "\nReason : " + reason + ".";
+  }
+
+  treeWidgetServerLog->write(MCServerLogWidget::ErrorIcon, message, Qt::red, QFont::Bold);
+}
+
+void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
+  AssertCheckPtr(client);
+
+  QColor color = Qt::black;
+  if (state == MCClientThread::ConnectedState)           { color = Qt::darkGreen; }
+  else if (state == MCClientThread::AuthenticatingState) { color = Qt::blue; }
+  else if (state == MCClientThread::UnconnectedState)    { color = Qt::red; }
+
+  treeWidgetServerLog->write(
+    MCServerLogWidget::InformationIcon,
+    QString("Client %1 : %2 (%3)")
+      .arg(client->peerAddressAndPort())
+      .arg(MCClientThread::connectionStateToString(state))
+      .arg(state),
+    color, QFont::Bold
   );
 }
 

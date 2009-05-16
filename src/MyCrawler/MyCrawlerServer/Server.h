@@ -24,6 +24,7 @@
 #define SERVER_H
 
 #include <QtNetwork>
+#include <QMap>
 
 #include "ClientThread.h"
 
@@ -78,6 +79,8 @@ public:
     void removeClient(MCClientThread* client);
     int countClients() const { return m_lstClientThreads.count(); }
 
+    bool isRegisteredHardwareAddress(quint64 hardwareAddress) const;
+
 public:
     static int defaultMaxConnections();
     static QString stateToString(State state);
@@ -87,19 +90,20 @@ signals:
     void stateChanged(MCServer::State state);
     void closed();
 
-    void clientFinished(MCClientThread* client);
     void clientError(MCClientThread* client, MCClientThread::Error error);
-    void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void clientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
     void clientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void clientConnectionRefused(MCClientThread* client, const QString& reason);
+    void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+    void clientFinished(MCClientThread* client);
 
 private slots:
-    void clientDisconnected_();
-    void clientFinished_();
     void clientError_(MCClientThread::Error error) { emit clientError(senderClientThread_(), error); }
-    void clientConnectionStateChanged_(MCClientThread::ConnectionState state) { emit clientConnectionStateChanged(senderClientThread_(), state); }
     void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) { emit clientTimeout(senderClientThread_(), notifiedWhen); }
     void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) { emit clientErrorProcessingPacket(senderClientThread_(), error, type, size, aborted); }
+    void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
+    void clientDisconnected_();
+    void clientFinished_();
 
 protected:
     void incomingConnection(int socketDescriptor);
@@ -108,6 +112,9 @@ private:
     inline MCClientThread* senderClientThread_() const { return qobject_cast<MCClientThread*>(sender()); }
     void setError_(Error error, bool signal = true);
     void setState_(State state);
+    void refuseClientConnection_(MCClientThread* client, const QString& reason = QString());
+    void registerHardwareAddress_(quint64 hardwareAddress, MCClientThread* client);
+    void removeHardwareAddress_(quint64 hardwareAddress);
 
 private:
     static MCServer* s_instance;
@@ -122,6 +129,7 @@ private:
     quint16 m_u16ListenPort;
 
     QList<MCClientThread*> m_lstClientThreads;
+    QMap<quint64, MCClientThread*> m_lstAssocHAddrClient;
 };
 
 #endif // SERVER_H

@@ -52,11 +52,11 @@ public:
 
 signals:
     void error(QAbstractSocket::SocketError error);
+    void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void connectionStateChanged(QAbstractSocket::SocketState state);
     void connected();
     void disconnected();
-    void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
 
 public slots:
     void disconnect(int msecs = 30000);

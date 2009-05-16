@@ -33,11 +33,12 @@ static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
   (MyQTreeWidgetHeaderItem){NULL, "Host name",    -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Host domain",  -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "IP",           -1, true},
+  (MyQTreeWidgetHeaderItem){NULL, "Gateway",      -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Broadcast",    -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Netmask",      -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Status",       -1, false}
 };
-static const int ColumnsHeaderCount = 11;
+static const int ColumnsHeaderCount = 12;
 static const int ColumnSortedIndex = -1;
 
 void MCClientsTreeWidget::loadSettings_() {
@@ -150,8 +151,8 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged(MCClientThread* clien
       {
         m_lstClientsManaged.remove(client);
 
-        // Local computer, delete item
-        if (hardwareAddress == 0) {
+        // Local computer, delete item or connection refused
+        if ((hardwareAddress == 0) || (client->isConnectionRefused() == true)) {
           delete item;
         }
         // Remote computer, unmanaged item
@@ -162,6 +163,8 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged(MCClientThread* clien
           item->setText(StateColumn, "Unconnected");
 
           item->setText(StatusColumn, "Unconnected");
+
+          unsetClientItemValues_(item);
         }
       }
       break;
@@ -241,12 +244,13 @@ void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientTh
   item->setData(HardwareAddressColumn, Qt::UserRole, networkInfo.hardwareAddress());
 
   item->setText(ThreadIdColumn,        "0x" + QString::number((int)client, 16));
-  item->setText(HardwareAddressColumn, networkInfo.hardwareAddressString());
+  item->setText(HardwareAddressColumn, (networkInfo.hardwareAddress() == 0x0)?QString():networkInfo.hardwareAddressString());
   item->setText(PeerAddressColumn,     client->peerAddress().toString());
   item->setText(PeerPortColumn,        QString::number(client->peerPort()));
   item->setText(HostNameColumn,        networkInfo.hostName());
   item->setText(HostDomainColumn,      networkInfo.hostDomain());
   item->setText(IPColumn,              networkInfo.ip().toString());
+  item->setText(GatewayColumn,         networkInfo.gateway().toString());
   item->setText(BroadcastColumn,       networkInfo.broadcast().toString());
   item->setText(NetmaskColumn,         networkInfo.netmask().toString());
 }

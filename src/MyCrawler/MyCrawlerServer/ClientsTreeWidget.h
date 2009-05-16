@@ -43,6 +43,7 @@ public:
       HostNameColumn,
       HostDomainColumn,
       IPColumn,
+      GatewayColumn,
       BroadcastColumn,
       NetmaskColumn,
       StatusColumn

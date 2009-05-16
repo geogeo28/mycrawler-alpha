@@ -141,7 +141,13 @@ void MCServer::removeClient(MCClientThread* client) {
   client->quit();
 }
 
-int MCServer::defaultMaxConnections() { return DefaultMaxConnections; }
+bool MCServer::isRegisteredHardwareAddress(quint64 hardwareAddress) const {
+  return (m_lstAssocHAddrClient.constFind(hardwareAddress) != m_lstAssocHAddrClient.constEnd());
+}
+
+int MCServer::defaultMaxConnections() {
+  return DefaultMaxConnections;
+}
 
 QString MCServer::stateToString(State state) {
   switch (state) {
@@ -151,6 +157,51 @@ QString MCServer::stateToString(State state) {
     default:
       return QT_TRANSLATE_NOOP(MCServer, "Closed");
   }
+}
+
+void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState state) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  quint64 hAddr = client->clientInfo().hardwareAddress();
+
+  switch (state) {
+    /**********
+     Connected
+     **********/
+    case MCClientThread::ConnectedState:
+    {
+      // Check if the client is already connected to the server (two instances forbidden)
+      if (hAddr != 0x0) {  // It's not a remote connection
+        // User already connected to the server
+        if (isRegisteredHardwareAddress(hAddr) == true) {
+          // TODO : Send an error message
+          refuseClientConnection_(client, "User already connected");
+          return;
+        }
+
+        // Register the MAC address in the server
+        registerHardwareAddress_(hAddr, client);
+      }
+    }
+    break;
+
+    /************
+     Unconnected
+     ************/
+    case MCClientThread::UnconnectedState:
+    {
+      // Remove the MAC addresse in the server
+      if (hAddr != 0x0) {
+        removeHardwareAddress_(hAddr);
+      }
+    }
+    break;
+
+    default:;
+  }
+
+  emit clientConnectionStateChanged(senderClientThread_(), state);
 }
 
 void MCServer::clientDisconnected_() {
@@ -199,17 +250,17 @@ void MCServer::incomingConnection(int socketDescriptor) {
 
   // Setup signals/slots connections
   qRegisterMetaType<MCClientThread::Error>("MCClientThread::Error");
-  qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
   qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
   qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
+  qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
 
-  QObject::connect(client, SIGNAL(finished()), this, SLOT(clientFinished_()));
-  QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
-  QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
   QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
   QObject::connect(client, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(clientErrorProcessingPacket_(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
+  QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
+  QObject::connect(client, SIGNAL(finished()), this, SLOT(clientFinished_()));
 
   // Add the client in the server
   addClient(client);
@@ -261,4 +312,17 @@ void MCServer::setState_(State state) {
   if (state == ClosedState) {
     emit closed();
   }
+}
+
+void MCServer::refuseClientConnection_(MCClientThread* client, const QString& reason) {
+  emit clientConnectionRefused(client, reason);
+  client->refuseConnection(reason);
+}
+
+void MCServer::registerHardwareAddress_(quint64 hardwareAddress, MCClientThread* client) {
+  m_lstAssocHAddrClient.insert(hardwareAddress, client);
+}
+
+void MCServer::removeHardwareAddress_(quint64 hardwareAddress) {
+  m_lstAssocHAddrClient.remove(hardwareAddress);
 }

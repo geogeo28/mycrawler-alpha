@@ -69,18 +69,22 @@ public:
     QString errorString() const { return m_sError; }
     ConnectionState connectionState() const { return m_enumConnectionState; }
     bool isAuthenticated() { return m_bAuthenticated; }
+    bool isConnectionRefused() { return m_bConnectionRefused; }
 
 public:
     static QString connectionStateToString(ConnectionState state);
 
 signals:
     void error(MCClientThread::Error error);
-    void connectionStateChanged(MCClientThread::ConnectionState state);
-    void authenticated(const CNetworkInfo& info);
-    void connected();
-    void disconnected();
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void connectionStateChanged(MCClientThread::ConnectionState state);
+    void connected();
+    void disconnected();
+    void authenticated(const CNetworkInfo& info);
+
+public slots:
+    void refuseConnection(const QString& reason = QString());
 
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
@@ -89,6 +93,9 @@ private slots:
 
 protected:
     void run();
+
+signals:
+    void callPeerRefuseConnection_(const QString& reason);
 
 private:
     void setError_(Error error, bool signal = true);
@@ -110,6 +117,8 @@ private:
 
     ConnectionState m_enumConnectionState;
     bool m_bAuthenticated;
+
+    bool m_bConnectionRefused;
 };
 
 #endif // CLIENTTHREAD_H

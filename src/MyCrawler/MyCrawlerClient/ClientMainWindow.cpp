@@ -129,23 +129,6 @@ void MCClientMainWindow::slotClientError(QAbstractSocket::SocketError error) {
   ILogger::Error() << MCClient::instance()->errorString();
 }
 
-void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::SocketState state) {
-  ILogger::Trace() << QString("Connection state changed : %1 (%2)")
-                      .arg(MCClientPeer::stateToString(state))
-                      .arg(state);
-
-  // Client connected
-  if (state == QAbstractSocket::ConnectedState) {
-    buttonClientConnect->setText("Disconnect");
-    m_bClientConnected = true;
-  }
-  // Client disconnected
-  else if (state == QAbstractSocket::UnconnectedState) {
-    buttonClientConnect->setText("Connect");
-    m_bClientConnected = false;
-  }
-}
-
 void MCClientMainWindow::slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen) {
   ILogger::Error() << QString(
       "The server not responding (%1).\n" \
@@ -164,5 +147,23 @@ void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketErr
                       .arg(
                         (aborted == true)?
                         "To prevent of a DoS attack, the connection was aborted.":
-                        "Trying recover the packet.");
+                        "Trying recover the packet."
+                      );
+}
+
+void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::SocketState state) {
+  ILogger::Trace() << QString("Connection state changed : %1 (%2)")
+                      .arg(MCClientPeer::stateToString(state))
+                      .arg(state);
+
+  // Client connected
+  if (state == QAbstractSocket::ConnectedState) {
+    buttonClientConnect->setText("Disconnect");
+    m_bClientConnected = true;
+  }
+  // Client disconnected
+  else if (state == QAbstractSocket::UnconnectedState) {
+    buttonClientConnect->setText("Connect");
+    m_bClientConnected = false;
+  }
 }
