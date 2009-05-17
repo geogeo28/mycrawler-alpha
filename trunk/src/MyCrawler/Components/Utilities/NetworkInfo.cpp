@@ -106,7 +106,11 @@ void CNetworkInfo::read(QDataStream& in) {
   in >> m_sHumanReadableName;
   in >> m_u64HardwareAddress;
 
+  m_gateway = QHostAddress(
+    CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address())
+  );
   m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
+
   m_bValid = true;
 }
 
