@@ -27,6 +27,7 @@
 #include <QMap>
 
 #include "ClientThread.h"
+#include "ServerTableIP.h"
 
 class MCServer : public QTcpServer
 {
@@ -79,7 +80,7 @@ public:
     void removeClient(MCClientThread* client);
     int countClients() const { return m_lstClientThreads.count(); }
 
-    bool isRegisteredHardwareAddress(quint64 hardwareAddress) const;
+    bool isHardwareAddressRegistered(quint64 hardwareAddress) const { return m_lstClientsIP.isHardwareAddressRegistered(hardwareAddress); }
 
 public:
     static int defaultMaxConnections();
@@ -113,10 +114,10 @@ private:
     void setError_(Error error, bool signal = true);
     void setState_(State state);
     void refuseClientConnection_(MCClientThread* client, const QString& reason = QString());
-    void registerHardwareAddress_(quint64 hardwareAddress, MCClientThread* client);
-    void removeHardwareAddress_(quint64 hardwareAddress);
 
 private:
+    typedef QSet<MCClientThread*> ClientThreadsList;
+
     static MCServer* s_instance;
 
     int m_nMaxConnections;
@@ -128,8 +129,8 @@ private:
     QHostAddress m_listenAddress;
     quint16 m_u16ListenPort;
 
-    QList<MCClientThread*> m_lstClientThreads;
-    QMap<quint64, MCClientThread*> m_lstAssocHAddrClient;
+    ClientThreadsList m_lstClientThreads;
+    MCServerTableIP m_lstClientsIP;
 };
 
 #endif // SERVER_H

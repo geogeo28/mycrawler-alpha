@@ -57,19 +57,22 @@ public:
     MCClientThread(int socketDescriptor, QObject* parent = NULL);
     ~MCClientThread();
 
-    const MCClientPeer* clientPeer() { return m_pClientPeer; }
+    const MCClientPeer* clientPeer() { QMutexLocker locker(&mutex); return m_pClientPeer; }
 
-    QString peerName() const { return m_sPeerName; }
-    QHostAddress peerAddress() const { return m_peerAddress; }
-    quint16 peerPort() const { return m_u16PeerPort; }
-    QString peerAddressAndPort() const { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
-    const CNetworkInfo& clientInfo() const { return m_clientInfo; }
+    QString peerName() { QMutexLocker locker(&mutex); return m_sPeerName; }
+    QHostAddress peerAddress() { QMutexLocker locker(&mutex); return m_peerAddress; }
+    quint16 peerPort() { QMutexLocker locker(&mutex); return m_u16PeerPort; }
+    QString peerAddressAndPort() { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
+    const CNetworkInfo& clientInfo() { QMutexLocker locker(&mutex); return m_clientInfo; }
 
-    Error error() const { return m_enumError; }
-    QString errorString() const { return m_sError; }
-    ConnectionState connectionState() const { return m_enumConnectionState; }
-    bool isAuthenticated() { return m_bAuthenticated; }
-    bool isConnectionRefused() { return m_bConnectionRefused; }
+    bool isLocalClient() { return (peerAddress() == QHostAddress::LocalHost); }
+    bool isRemoteClient() { return !isLocalClient(); }
+
+    Error error() { QMutexLocker locker(&mutex); return m_enumError; }
+    QString errorString() { QMutexLocker locker(&mutex); return m_sError; }
+    ConnectionState connectionState() { QMutexLocker locker(&mutex); return m_enumConnectionState; }
+    bool isAuthenticated() { QMutexLocker locker(&mutex); return m_bAuthenticated; }
+    bool isConnectionRefused() { QMutexLocker locker(&mutex); return m_bConnectionRefused; }
 
 public:
     static QString connectionStateToString(ConnectionState state);
@@ -102,7 +105,7 @@ private:
     void setConnectionState_(ConnectionState state, bool signal);
 
 private:
-    QMutex m_mutex;
+    mutable QMutex mutex;
 
     Error m_enumError;
     QString m_sError;

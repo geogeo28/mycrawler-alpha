@@ -30,9 +30,10 @@ void CNetworkInfo::init_() {
   if (m_sHostName.isNull())   { m_sHostName = QHostInfo::localHostName(); }
   if (m_sHostDomain.isNull()) { m_sHostDomain = QHostInfo::localDomainName(); }
 
-  m_gateway = QHostAddress(
-    CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address())
-  );
+  quint32 gateway = CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address());
+  if (gateway != 0x00) {
+    m_gateway = QHostAddress(gateway);
+  }
 
   m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
 }
@@ -106,9 +107,10 @@ void CNetworkInfo::read(QDataStream& in) {
   in >> m_sHumanReadableName;
   in >> m_u64HardwareAddress;
 
-  m_gateway = QHostAddress(
-    CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address())
-  );
+  quint32 gateway = CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address());
+  if (gateway == 0x00) { m_gateway = QHostAddress(); }
+  else { m_gateway = QHostAddress(gateway); }
+
   m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
 
   m_bValid = true;

@@ -104,10 +104,9 @@ void MCServer::close() {
   }
   // Force to disconnect all clients
   else {
-    QListIterator<MCClientThread*> it(m_lstClientThreads);
-    while (it.hasNext()) {
-      MCClientThread* client = it.next();
-      removeClient(client);
+    ClientThreadsList::Iterator it = m_lstClientThreads.begin();
+    for (; it != m_lstClientThreads.end(); ++it) {
+      removeClient(*it);
     }
   }
 }
@@ -141,10 +140,6 @@ void MCServer::removeClient(MCClientThread* client) {
   client->quit();
 }
 
-bool MCServer::isRegisteredHardwareAddress(quint64 hardwareAddress) const {
-  return (m_lstAssocHAddrClient.constFind(hardwareAddress) != m_lstAssocHAddrClient.constEnd());
-}
-
 int MCServer::defaultMaxConnections() {
   return DefaultMaxConnections;
 }
@@ -163,26 +158,35 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
   MCClientThread* client = senderClientThread_();
   AssertCheckPtr(client);
 
-  quint64 hAddr = client->clientInfo().hardwareAddress();
-
   switch (state) {
     /**********
      Connected
      **********/
     case MCClientThread::ConnectedState:
     {
-      // Check if the client is already connected to the server (two instances forbidden)
-      if (hAddr != 0x0) {  // It's not a remote connection
-        // User already connected to the server
-        if (isRegisteredHardwareAddress(hAddr) == true) {
+      quint64 hAddr = client->clientInfo().hardwareAddress();
+
+      // Remote connection
+      if (hAddr != 0x0) {
+        // Check if the client is already connected to the server (two instances forbidden)
+        if (isHardwareAddressRegistered(hAddr) == true) {
           // TODO : Send an error message
           refuseClientConnection_(client, "User already connected");
           return;
         }
-
-        // Register the MAC address in the server
-        registerHardwareAddress_(hAddr, client);
       }
+      // Local client
+      else {
+        // It's not a Localhost IP
+        if (client->isLocalClient() == false) {
+          // TODO : Send an error message
+          refuseClientConnection_(client, "A MAC address attribued to a local client isn't possible");
+          return;
+        }
+      }
+
+      // Register client IP
+      m_lstClientsIP.addClient(client);
     }
     break;
 
@@ -191,9 +195,9 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
      ************/
     case MCClientThread::UnconnectedState:
     {
-      // Remove the MAC addresse in the server
-      if (hAddr != 0x0) {
-        removeHardwareAddress_(hAddr);
+      // Remove client IP
+      if (client->isConnectionRefused() == false) {
+        m_lstClientsIP.removeClient(client);
       }
     }
     break;
@@ -219,7 +223,7 @@ void MCServer::clientFinished_() {
   emit clientFinished(client);
 
   ILogger::Debug() << "The thread " << client << " is finished (Remove client from the server)";
-  m_lstClientThreads.removeOne(client);
+  m_lstClientThreads.remove(client);
   client->deleteLater();
 
   if ((state() == ClosingState) && m_lstClientThreads.isEmpty()) {
@@ -232,7 +236,7 @@ void MCServer::clientFinished_() {
 void MCServer::incomingConnection(int socketDescriptor) { 
   ILogger::Trace() << "Server : New incoming connection.";
 
-  // The new client cannot be accepted
+  // New client cannot be accepted
   if (canAcceptNewConnection() == false) {
     MCClientPeer client;
 
@@ -317,12 +321,4 @@ void MCServer::setState_(State state) {
 void MCServer::refuseClientConnection_(MCClientThread* client, const QString& reason) {
   emit clientConnectionRefused(client, reason);
   client->refuseConnection(reason);
-}
-
-void MCServer::registerHardwareAddress_(quint64 hardwareAddress, MCClientThread* client) {
-  m_lstAssocHAddrClient.insert(hardwareAddress, client);
-}
-
-void MCServer::removeHardwareAddress_(quint64 hardwareAddress) {
-  m_lstAssocHAddrClient.remove(hardwareAddress);
 }
