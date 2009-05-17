@@ -21,6 +21,11 @@ X Bug : Cannot show a message box in the logger CLoggerMsgBox from a thread with
 (2009-05-17 Rev 112) - Detect multi connections with the same MAC address (remote client).
 - Send an error message to the host if the method 'refuseConnection()' is call in the class MCClientPeer.
 - Remove the pointer 'm_pClient' and the method 'clientPeer()' in the class MCClientThread because it's thread-unsafe.
+- Bug (Major) : When a computer plays the role of server with an Internet connection and another computer with the same Internet connection
+plays the role of client, the server sees the client authenticating and disconnected states with the error 'The remote host closed the
+connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
+occurred too.
+- Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the log must be possible. Add a context menu.
 
 
 MyCrawlerServer :
