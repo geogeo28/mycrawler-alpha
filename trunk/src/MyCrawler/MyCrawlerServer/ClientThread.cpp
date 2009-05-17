@@ -56,7 +56,7 @@ QString MCClientThread::connectionStateToString(ConnectionState state) {
 }
 
 void MCClientThread::run() {
-  m_mutex.lock();
+  mutex.lock();
 
   ILogger::Debug() << currentThread() << " : Running...";
 
@@ -85,6 +85,7 @@ void MCClientThread::run() {
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
     setError_(MCClientThread::ClientPeerError, true);
     clientPeer.close();
+    mutex.unlock();
     return;
   }
 
@@ -93,14 +94,16 @@ void MCClientThread::run() {
   m_peerAddress = m_pClientPeer->peerAddress();
   m_u16PeerPort = m_pClientPeer->peerPort();
 
+  mutex.unlock();
+
   ILogger::Debug() << currentThread()
                    << QString(" - %2 : Execute the event loop.")
                       .arg(peerAddressAndPort());
-  m_mutex.unlock();
 
   // Event loop
   exec();
 
+  mutex.lock();
   ILogger::Debug() << "Exit the event loop.";
 
   // Disconnection of the client peer volunteer (initiate by the client thread)
@@ -109,6 +112,7 @@ void MCClientThread::run() {
   }
 
   m_pClientPeer = NULL;
+  mutex.unlock();
 }
 
 void MCClientThread::refuseConnection(const QString& reason) {
@@ -117,13 +121,10 @@ void MCClientThread::refuseConnection(const QString& reason) {
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
-  QMutexLocker locker(&m_mutex);
   setError_(ClientPeerError, true);
 }
 
 void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
-  QMutexLocker locker(&m_mutex);
-
   // Translate socket state to MCClientThread::connectionState
   ConnectionState state = InvalidState;
 
@@ -179,7 +180,7 @@ void MCClientThread::setError_(Error error, bool signal) {
   }
 }
 
-void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
+void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {  
   // Do nothing if the connection state didn't changed
   if (state == m_enumConnectionState) { return; }
 
