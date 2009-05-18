@@ -34,6 +34,9 @@ class QIODevice;
 
 class ILogger;
 
+/*!
+  \note Locks the mutex of ILogger passed in argument until the instance is destroyed.
+ */
 class CLoggerManipulator
 {
   friend class ILogger;
@@ -74,37 +77,36 @@ private:
     void init_();
 
 public:
-    static ILogger* instance();
-    static void attachLogger(ILogger* logger);
-    static void detachLogger(ILogger* logger);
+    static void attachLogger(ILogger* logger); // thread-safe
+    static void detachLogger(ILogger* logger); // thread-safe
 
-    template <class T> ILogger& operator<<(const T& text);
-    void flush();
+    template <class T> ILogger& operator<<(const T& text); // thread-safe
+    void flush(); // thread-safe
     QString* string() { return m_textStream.string(); }
     QIODevice* device() { return m_textStream.device(); }
 
-    CLoggerManipulator log();
-    CLoggerManipulator log(LogLevel level);
-    void write(const char* format, ...);
-    void write(LogLevel level, const char* format, ...);
+    CLoggerManipulator log(); // thread-safe
+    CLoggerManipulator log(LogLevel level); // thread-safe
+    void write(const char* format, ...); // thread-safe
+    void write(LogLevel level, const char* format, ...); // thread-safe
 
-    int levels() const { return m_nRegisteredLevels; }
-    bool writeDateTime() const {return m_bWriteDateTime; }
-    bool writeLevel() const { return m_bWriteLevel; }
-    bool flushStream() const { return m_bFlushStream; }
-    void setWriteDateTime(bool status) { m_bWriteDateTime = status; }
-    void setWriteLevel(bool status) { m_bWriteLevel = status; }
-    void setFlushStream(bool status) { m_bFlushStream = status; }
+    int levels() const { QMutexLocker locker(&mutex); return m_nRegisteredLevels; } // thread-safe
+    bool writeDateTime() const { QMutexLocker locker(&mutex); return m_bWriteDateTime; } // thread-safe
+    bool writeLevel() const { QMutexLocker locker(&mutex); return m_bWriteLevel; } // thread-safe
+    bool flushStream() const { QMutexLocker locker(&mutex); return m_bFlushStream; } // thread-safe
+    void setWriteDateTime(bool status) { QMutexLocker locker(&mutex); m_bWriteDateTime = status; } // thread-safe
+    void setWriteLevel(bool status) { QMutexLocker locker(&mutex); m_bWriteLevel = status; } // thread-safe
+    void setFlushStream(bool status) { QMutexLocker locker(&mutex); m_bFlushStream = status; } // thread-safe
 
  public:
-    static void Log(LogLevel level, const char* format, ...);
-    static CLoggerManipulator Log(LogLevel level) { return Log_(level, NULL); }
-    static CLoggerManipulator Debug_(const char* func, const void* object)  { return Log_(DebugLevel, func, object); }
-    static CLoggerManipulator Trace()       { return Log_(TraceLevel); }
-    static CLoggerManipulator Notice()      { return Log_(NoticeLevel); }
-    static CLoggerManipulator Warning()     { return Log_(WarningLevel); }
-    static CLoggerManipulator Error()       { return Log_(ErrorLevel); }
-    static CLoggerManipulator Information() { return Log_(InformationLevel); }
+    static void Log(LogLevel level, const char* format, ...); // thread-safe
+    static CLoggerManipulator Log(LogLevel level) { QMutexLocker locker(&s_mutex); return Log_(level, NULL); } // thread-safe
+    static CLoggerManipulator Debug_(const char* func, const void* object)  { QMutexLocker locker(&s_mutex); return Log_(DebugLevel, func, object); } // thread-safe
+    static CLoggerManipulator Trace()       { QMutexLocker locker(&s_mutex); return Log_(TraceLevel); } // thread-safe
+    static CLoggerManipulator Notice()      { QMutexLocker locker(&s_mutex); return Log_(NoticeLevel); } // thread-safe
+    static CLoggerManipulator Warning()     { QMutexLocker locker(&s_mutex); return Log_(WarningLevel); } // thread-safe
+    static CLoggerManipulator Error()       { QMutexLocker locker(&s_mutex); return Log_(ErrorLevel); } // thread-safe
+    static CLoggerManipulator Information() { QMutexLocker locker(&s_mutex); return Log_(InformationLevel); } // thread-safe
 
 protected:
     static QString currentTime();
@@ -112,8 +114,8 @@ protected:
     static QString logLevelToString(LogLevel level);
 
 protected:
-    ILogger(int level, QObject* parent = NULL);
-    virtual ~ILogger();
+    ILogger(int level, QObject* parent = NULL); // thread-safe
+    virtual ~ILogger(); // thread-safe
 
     void setDevice(QIODevice* device);
     void setString(QString* string);
@@ -130,8 +132,10 @@ private:
     static QMultiMap<int, ILogger*> s_loggersCollection;
 
 private:
+    static QMutex s_mutex;
+    mutable QMutex mutex;
+
     QTextStream m_textStream;
-    QMutex m_mutex;
     int m_nRegisteredLevels;
     bool m_bWriteDateTime;
     bool m_bWriteLevel;
@@ -141,9 +145,8 @@ private:
 // Thread-safe writing operation
 template <class T>
 ILogger& ILogger::operator<<(const T& text) {
-  m_mutex.lock();
+  QMutexLocker locker(&mutex);
   m_textStream << text;
-  m_mutex.unlock();
 
   return *this;
 }

@@ -31,16 +31,16 @@ CLoggerManipulator::CLoggerManipulator(int level, QList<ILogger*> lstLoggers)
   : m_enumWriteLevel(level), m_lstLoggers(lstLoggers)
 {
   foreach (ILogger* logger, lstLoggers) {
-    logger->m_mutex.lock();
+    logger->mutex.lock();
   }
 }
 
 CLoggerManipulator::CLoggerManipulator(int level, ILogger* logger)
   : m_enumWriteLevel(level)
 {
-  AssertCheckPtr(logger);
+  logger->mutex.lock();
 
-  logger->m_mutex.lock();
+  AssertCheckPtr(logger);
   m_lstLoggers.push_back(logger);
 }
 
@@ -56,11 +56,12 @@ CLoggerManipulator::~CLoggerManipulator() {
       logger->flush();
     }
 
-    logger->m_mutex.unlock();
+    logger->mutex.unlock();
   }
 }
 
 
+QMutex ILogger::s_mutex;
 QMultiMap<int, ILogger*> ILogger::s_loggersCollection = QMultiMap<int, ILogger*>();
 
 void ILogger::init_() {
@@ -71,18 +72,24 @@ void ILogger::init_() {
 
 ILogger::ILogger(int level, QObject* parent)
   : QObject(parent),
-    m_mutex(QMutex::Recursive),
+    mutex(QMutex::Recursive),
     m_nRegisteredLevels(level)
 {
+  QMutexLocker locker(&mutex);
+
   init_();
 }
 
 ILogger::~ILogger()
 {
+  QMutexLocker locker(&mutex);
+
   ILogger::detachLogger(this);
 }
 
 void ILogger::attachLogger(ILogger* logger) {
+  QMutexLocker locker(&s_mutex);
+
   AssertCheckPtr(logger);
 
   int levels = logger->levels();
@@ -96,6 +103,8 @@ void ILogger::attachLogger(ILogger* logger) {
 }
 
 void ILogger::detachLogger(ILogger* logger) {
+  QMutexLocker locker(&s_mutex);
+
   AssertCheckPtr(logger);
 
   QMutableMapIterator<int, ILogger*> it(s_loggersCollection);
@@ -106,24 +115,29 @@ void ILogger::detachLogger(ILogger* logger) {
   }
 }
 
-// Thread-safe flush TextStream
 void ILogger::flush() {  
-  m_mutex.lock();
+  QMutexLocker locker(&mutex);
+
   m_textStream.flush();
-  m_mutex.unlock();
 }
 
 CLoggerManipulator ILogger::log() {
+  QMutexLocker locker(&mutex);
+
   write_();
   return CLoggerManipulator(NoLevel, this);
 }
 
 CLoggerManipulator ILogger::log(LogLevel level) {
+  QMutexLocker locker(&mutex);
+
   write_(level);
   return CLoggerManipulator(level, this);
 }
 
 void ILogger::write(const char* format, ...) {
+  QMutexLocker locker(&mutex);
+
   va_list params;
   va_start(params, format);
   log() << QString().vsprintf(format, params);
@@ -131,6 +145,8 @@ void ILogger::write(const char* format, ...) {
 }
 
 void ILogger::write(LogLevel level, const char* format, ...) {
+  QMutexLocker locker(&mutex);
+
   va_list params;
   va_start(params, format);
   log(level) << QString().vsprintf(format, params);
@@ -138,6 +154,8 @@ void ILogger::write(LogLevel level, const char* format, ...) {
 }
 
 void ILogger::Log(LogLevel level, const char* format, ...) {
+  QMutexLocker locker(&s_mutex);
+
   va_list params;
   va_start(params, format);
   ILogger::Log_(level, NULL) << QString().vsprintf(format, params);
@@ -165,17 +183,13 @@ QString ILogger::logLevelToString(LogLevel level) {
 void ILogger::setDevice(QIODevice* device) {
   AssertCheckPtr(device);
 
-  m_mutex.lock();
   m_textStream.setDevice(device);
-  m_mutex.unlock();
 }
 
 void ILogger::setString(QString* string) {
   AssertCheckPtr(string);
 
-  m_mutex.lock();
   m_textStream.setString(string);
-  m_mutex.unlock();
 }
 
 CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, const void* object) {
