@@ -245,7 +245,6 @@ void MCClientsTreeWidget::unsetClientItemValues_(QTreeWidgetItem* item) {
   item->setData(ThreadIdColumn,    Qt::UserRole, QVariant::fromValue((MCClientThread*)0));
 
   item->setText(ThreadIdColumn,    QString());
-  item->setText(PeerAddressColumn, QString());
   item->setText(PeerPortColumn,    QString());
 }
 

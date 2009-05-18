@@ -33,7 +33,7 @@ class CLoggerDebug : public AbstractLoggerFile
 public:
     CLoggerDebug(
       const QString& file = "debug.log", WriteMode mode = AppendMode, QObject* parent = NULL
-    ) throw(CException);
+    ) throw(CFileException);
     ~CLoggerDebug();
 };
 
