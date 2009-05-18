@@ -96,6 +96,8 @@ signals:
     void clientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void clientConnectionRefused(MCClientThread* client, const QString& reason);
     void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+    void clientConnected(MCClientThread* client, bool unknownClientInTheServerHistory);
+    void clientDisconnected(MCClientThread* client);
     void clientFinished(MCClientThread* client);
 
 private slots:

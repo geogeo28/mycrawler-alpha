@@ -62,11 +62,11 @@ public:
     QString peerName() { QMutexLocker locker(&mutex); return m_sPeerName; }
     QHostAddress peerAddress() { QMutexLocker locker(&mutex); return m_peerAddress; }
     quint16 peerPort() { QMutexLocker locker(&mutex); return m_u16PeerPort; }
-    QString peerAddressAndPort() { return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
+    QString peerAddressAndPort() { QMutexLocker locker(&mutex); return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); }
     const CNetworkInfo& clientInfo() { QMutexLocker locker(&mutex); return m_clientInfo; }
 
-    bool isLocalClient() { return (peerAddress() == QHostAddress::LocalHost); }
-    bool isRemoteClient() { return !isLocalClient(); }
+    bool isLocalClient() { QMutexLocker locker(&mutex); return (peerAddress() == QHostAddress::LocalHost); }
+    bool isRemoteClient() { QMutexLocker locker(&mutex); return !isLocalClient(); }
 
     Error error() { QMutexLocker locker(&mutex); return m_enumError; }
     QString errorString() { QMutexLocker locker(&mutex); return m_sError; }

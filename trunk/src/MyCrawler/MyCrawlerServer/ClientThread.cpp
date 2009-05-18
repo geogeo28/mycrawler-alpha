@@ -26,6 +26,7 @@
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
+      mutex(QMutex::Recursive),
       m_nSocketDescriptor(socketDescriptor),
       m_u16PeerPort(0),
       m_enumConnectionState(UnconnectedState),
@@ -116,15 +117,21 @@ void MCClientThread::run() {
 }
 
 void MCClientThread::refuseConnection(const QString& reason) {
+  QMutexLocker locker(&mutex);
+
   m_bConnectionRefused = true;
   emit callPeerRefuseConnection_(reason);
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
+  QMutexLocker locker(&mutex);
+
   setError_(ClientPeerError, true);
 }
 
 void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
+  QMutexLocker locker(&mutex);
+
   // Translate socket state to MCClientThread::connectionState
   ConnectionState state = InvalidState;
 
@@ -152,6 +159,8 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
 }
 
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
+  QMutexLocker locker(&mutex);
+
   m_bAuthenticated = true;
 
   m_clientInfo = info;
