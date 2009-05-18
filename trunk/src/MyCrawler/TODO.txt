@@ -27,6 +27,10 @@ plays the role of client, the server sees the client authenticating and disconne
 connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
 occurred too.
 - Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the log must be possible. Add a context menu.
+- Added a new type of exception (CFileException).
+- Avoid to use a mutex in the slots of MCClientThread.
+- Clean-up the code in MCClientsTreeWidgets (factorize the code).
+- Use a setting in the Preferences Dialog for save/or not the server history.
 
 
 MyCrawlerServer :
