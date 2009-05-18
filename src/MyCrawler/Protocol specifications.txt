@@ -60,7 +60,7 @@ HandShake message :
 *******************
 
 A handshake message initiates a connection between the client and the server.
-It's a special message structure :
+It has a special message structure :
 
 18 bytes (Protocol ID) : MyCrawler Protocol
 uint16 (Protocol Version) : 0x0100
