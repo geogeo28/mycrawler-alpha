@@ -47,7 +47,7 @@ private:
 protected:
     AbstractLoggerFile(
       int level, const QString& file, WriteMode mode = OverwriteMode, QObject* parent = NULL
-    ) throw(CException);
+    ) throw(CFileException);
     virtual ~AbstractLoggerFile();
 
 private:
@@ -61,7 +61,7 @@ class CLoggerFile : public AbstractLoggerFile
 public:
     CLoggerFile(
       int level = ILogger::AllLevels, const QString& file = "output.log", WriteMode mode = OverwriteMode, QObject* parent = NULL
-    ) throw(CException);
+    ) throw(CFileException);
     ~CLoggerFile();
 };
 

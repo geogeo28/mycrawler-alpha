@@ -30,7 +30,7 @@ void AbstractLoggerFile::cleanAll_() {
 
 }
 
-AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CException)
+AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CFileException)
   : ILogger(level, parent)
 { 
   // Set the open mode of the file
@@ -42,9 +42,7 @@ AbstractLoggerFile::AbstractLoggerFile(int level, const QString& file, WriteMode
 
     // Could not open the file (throw an exception)
     if (!m_pFile->open(openMode)) {
-      ThrowException(
-        QString("Could not open the file '%1' to log messages.").arg(file), m_pFile->errorString()
-      );
+      ThrowFileAccessException(file, m_pFile->errorString());
     }
 
     // Attach the device to the Text Stream of the logger
@@ -60,7 +58,7 @@ AbstractLoggerFile::~AbstractLoggerFile() {
   cleanAll_();
 }
 
-CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CException)
+CLoggerFile::CLoggerFile(int level, const QString& file, WriteMode mode, QObject* parent) throw(CFileException)
   : AbstractLoggerFile(level, file, mode, parent)
 {
   *this << "  ======================================================================================\n"

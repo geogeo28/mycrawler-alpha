@@ -57,8 +57,8 @@ public:
     void write(QDataStream& out) const;
     void read(QDataStream& in);
 
-    void save(const QString& fileName) const throw(CException);
-    void load(const QString& fileName) throw(CException);
+    void save(const QString& fileName) const throw(CFileException);
+    void load(const QString& fileName) throw(CFileException);
 
 private:
     static MCServerHistory* s_instance;

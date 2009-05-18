@@ -115,18 +115,14 @@ void MCServerHistory::read(QDataStream& in) {
   in >> m_lstClients;
 }
 
-void MCServerHistory::save(const QString& fileName) const throw(CException) {
+void MCServerHistory::save(const QString& fileName) const throw(CFileException) {
   QFile file;
   file.setFileName(fileName);
   bool succeed = file.open(QFile::WriteOnly);
 
   // Cannot open the file
   if (succeed == false) {
-    ThrowException(
-      QString("Could not create the file '%1'.").arg(fileName),
-      file.errorString()
-    );
-    return;
+    ThrowFileAccessException(fileName, file.errorString());
   }
 
   QByteArray data;
@@ -140,29 +136,20 @@ void MCServerHistory::save(const QString& fileName) const throw(CException) {
   file.write(data);
 }
 
-void MCServerHistory::load(const QString& fileName) throw(CException) {
+void MCServerHistory::load(const QString& fileName) throw(CFileException) {
   QFile file;
   file.setFileName(fileName);
   bool succeed = file.open(QFile::ReadOnly);
 
   // Cannot open the file
   if (succeed == false) {
-    ThrowException(
-      QString("Could not open the file '%1'.").arg(fileName),
-      file.errorString()
-    );
-    return;
+    ThrowFileAccessException(fileName, file.errorString());
   }
 
   // Read magic
   QByteArray magic = file.read(HistoryFileMagicSize);
   if (magic.startsWith(HistoryFileMagic) == false) {
-    ThrowException(
-      QString("Could not open the file '%1'.").arg(fileName),
-      "Invalid magic descriptor."
-    );
-
-    return;
+    ThrowFileFormatException(fileName, "Invalid magic descriptor.");
   }
 
   // Prepare to read content
@@ -172,11 +159,7 @@ void MCServerHistory::load(const QString& fileName) throw(CException) {
   // Check version
   quint16 version; in >> version;
   if (version != HistoryFileVersion) {
-    ThrowException(
-      QString("Could not open the file '%1'.").arg(fileName),
-      "Version not supported."
-    );
-
+    ThrowFileFormatException(fileName, "Version not supported.");
     return;
   }
 

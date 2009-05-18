@@ -26,7 +26,11 @@
 #include <exception>
 #include <QString>
 
-#define ThrowException(m, r)     throw CException(m, r, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define ThrowException(m, r)           throw CException(m, r, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+
+#define ThrowFileException(f, m, r)    throw CFileException(f, m, r, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define ThrowFileAccessException(f, r) throw CFileAccessException(f, r, __PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define ThrowFileFormatException(f, r) throw CFileFormatException(f, r, __PRETTY_FUNCTION__, __FILE__, __LINE__)
 
 class CException : public std::exception
 {
@@ -76,5 +80,36 @@ struct CAssertException : public CException
 #endif
 
 #define AssertCheckPtr(p) Assert(p != NULL)
+
+struct CFileException : public CException
+{
+  QString type() const { return QString("CFileException"); }
+
+  CFileException(const QString& fileName, const QString& message, const QString& remainder, const char* func, const char* file, int line)
+    : CException(
+        QString("Unable to perform an operation on the file '%1'. %2").arg(fileName).arg(message),
+        remainder,
+        func, file, line
+      )
+  {}
+};
+
+struct CFileAccessException : public CFileException
+{
+  QString type() const { return QString("CFileAccessException"); }
+
+  CFileAccessException(const QString& fileName, const QString& remainder, const char* func, const char* file, int line)
+    : CFileException(fileName, "The process cannot access to the file.", remainder, func, file, line)
+  {}
+};
+
+struct CFileFormatException : public CFileException
+{
+  QString type() const { return QString("CFileFormatException"); }
+
+  CFileFormatException(const QString& fileName, const QString& remainder, const char* func, const char* file, int line)
+    : CFileException(fileName, "File format not supported.", remainder, func, file, line)
+  {}
+};
 
 #endif

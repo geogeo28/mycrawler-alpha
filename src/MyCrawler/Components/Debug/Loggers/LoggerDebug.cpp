@@ -20,7 +20,7 @@
 
 #include "Debug/Loggers/LoggerDebug.h"
 
-CLoggerDebug::CLoggerDebug(const QString& file, WriteMode mode, QObject* parent) throw(CException)
+CLoggerDebug::CLoggerDebug(const QString& file, WriteMode mode, QObject* parent) throw(CFileException)
   : AbstractLoggerFile(ILogger::DebugLevel, file, mode, parent)
 {
   setWriteLevel(false);
