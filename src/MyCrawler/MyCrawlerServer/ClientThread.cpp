@@ -58,8 +58,7 @@ QString MCClientThread::connectionStateToString(ConnectionState state) {
 
 void MCClientThread::run() {
   mutex.lock();
-
-  ILogger::Debug() << currentThread() << " : Running...";
+  ILogger::Debug() << "Running...";
 
   MCClientPeer clientPeer;
   m_pClientPeer = &clientPeer;
@@ -95,11 +94,10 @@ void MCClientThread::run() {
   m_peerAddress = m_pClientPeer->peerAddress();
   m_u16PeerPort = m_pClientPeer->peerPort();
 
-  mutex.unlock();
-
   ILogger::Debug() << currentThread()
                    << QString(" - %2 : Execute the event loop.")
                       .arg(peerAddressAndPort());
+  mutex.unlock();
 
   // Event loop
   exec();
@@ -117,20 +115,20 @@ void MCClientThread::run() {
 }
 
 void MCClientThread::refuseConnection(const QString& reason) {
-  QMutexLocker locker(&mutex);
-
+  mutex.lock();
   m_bConnectionRefused = true;
+  mutex.unlock();
+
   emit callPeerRefuseConnection_(reason);
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
   QMutexLocker locker(&mutex);
-
   setError_(ClientPeerError, true);
 }
 
 void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState) {
-  QMutexLocker locker(&mutex);
+  mutex.lock();
 
   // Translate socket state to MCClientThread::connectionState
   ConnectionState state = InvalidState;
@@ -154,21 +152,25 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
     default:;
   }
 
+  mutex.unlock();
+
   // Emit signal state changed
   setConnectionState_(state, true);
 }
 
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
-  QMutexLocker locker(&mutex);
-
+  mutex.lock();
   m_bAuthenticated = true;
-
   m_clientInfo = info;
+  mutex.unlock();
+
   setConnectionState_(ConnectedState, true);
   emit authenticated(info);
 }
 
 void MCClientThread::setError_(Error error, bool signal) {
+  mutex.lock();
+
   m_enumError = error;
 
   switch (error) {
@@ -185,13 +187,22 @@ void MCClientThread::setError_(Error error, bool signal) {
   }
 
   if (signal == true) {
+    mutex.unlock();
     emit MCClientThread::error(m_enumError);
+    return;
   }
+
+  mutex.unlock();
 }
 
 void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {  
+  mutex.lock();
+
   // Do nothing if the connection state didn't changed
-  if (state == m_enumConnectionState) { return; }
+  if (state == m_enumConnectionState) {
+    mutex.unlock();
+    return;
+  }
 
   ILogger::Debug() << QString("%1 : Connection state changed : %2 (%3).")
                       .arg(peerAddressAndPort())
@@ -202,7 +213,9 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
 
   // Emit signal if set
   if (signal == true) {
+    mutex.unlock();
     emit MCClientThread::connectionStateChanged(state);
+    mutex.lock();
   }
 
   // Connected and disconnected
@@ -210,17 +223,27 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
     // Connected
     case ConnectedState:
     {
-      if (signal == true) { emit connected(); }
-      break;
+      if (signal == true) {
+        mutex.unlock();
+        emit connected();
+        return;
+      }
     }
+    break;
 
     // Unconnected
     case UnconnectedState:
     {
-      if (signal == true) { emit disconnected(); }
-      break;
+      if (signal == true) {
+        mutex.unlock();
+        emit disconnected();
+        return;
+      }
     }
+    break;
 
     default:;
   }
+
+  mutex.unlock();
 }

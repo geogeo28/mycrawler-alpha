@@ -82,7 +82,10 @@ void MCServerHistory::addClient(const CNetworkInfo& networkInfo) {
 void MCServerHistory::addClient(MCClientThread* client) {
   AssertCheckPtr(client);
 
+  client->lockMutex();
   CNetworkInfo networkInfo(client->clientInfo());
+  client->unlockMutex();
+
   networkInfo.setPeerName(client->peerName());
   networkInfo.setPeerAddress(client->peerAddress());
   networkInfo.setPeerPort(client->peerPort());
@@ -100,7 +103,7 @@ void MCServerHistory::removeClient(quint64 hardwareAddress) {
 void MCServerHistory::removeClient(MCClientThread* client) {
   AssertCheckPtr(client);
 
-  removeClient(client->clientInfo().hardwareAddress());
+  removeClient(client->hardwareAddress());
 }
 
 QList<CNetworkInfo> MCServerHistory::allClients() const {

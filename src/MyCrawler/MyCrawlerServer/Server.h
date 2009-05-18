@@ -29,6 +29,15 @@
 #include "ClientThread.h"
 #include "ServerTableIP.h"
 
+/*!
+  \note An instance of MCClientThread is created in the private method 'incomingConnection'.
+  This instance is deleted after the signal 'clientFinished' is emitted.
+  In other words, the parameter 'client*' of all signals is thread-safe if you connect
+  signals to slots in Direct Connection mode. If you use a Queue Connection, don't forget to
+  lock the mutex.
+
+
+ */
 class MCServer : public QTcpServer
 {
     Q_OBJECT
