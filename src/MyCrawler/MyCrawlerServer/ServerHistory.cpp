@@ -18,7 +18,19 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QFile>
+#include <QByteArray>
+#include <QDataStream>
+
+#include "Config/Config.h"
+#include "Debug/Exception.h"
+
 #include "ServerHistory.h"
+#include "ClientThread.h"
+
+static const char* HistoryFileMagic = "MyCrawlerServerHistory";
+static const quint16 HistoryFileMagicSize = 22;
+static const quint16 HistoryFileVersion = 0x0100;
 
 MCServerHistory* MCServerHistory::s_instance = NULL;
 
@@ -52,4 +64,131 @@ MCServerHistory::MCServerHistory()
 
 MCServerHistory::~MCServerHistory() {
   cleanAll_();
+}
+
+bool MCServerHistory::isHardwareAddressRegistered(quint64 hardwareAddress) const {
+  return m_lstClients.contains(hardwareAddress);
+}
+
+void MCServerHistory::addClient(const CNetworkInfo& networkInfo) {  
+  quint64 hardwareAddress = networkInfo.hardwareAddress();
+
+  Assert(hardwareAddress != 0x0);
+  Assert(isHardwareAddressRegistered(hardwareAddress) == false);
+
+  m_lstClients.insert(hardwareAddress, networkInfo);
+}
+
+void MCServerHistory::addClient(MCClientThread* client) {
+  AssertCheckPtr(client);
+
+  CNetworkInfo networkInfo(client->clientInfo());
+  networkInfo.setPeerName(client->peerName());
+  networkInfo.setPeerAddress(client->peerAddress());
+  networkInfo.setPeerPort(client->peerPort());
+
+  addClient(networkInfo);
+}
+
+void MCServerHistory::removeClient(quint64 hardwareAddress) {
+  Assert(hardwareAddress != 0x0);
+  Assert(isHardwareAddressRegistered(hardwareAddress) == true);
+
+  m_lstClients.remove(hardwareAddress);
+}
+
+void MCServerHistory::removeClient(MCClientThread* client) {
+  AssertCheckPtr(client);
+
+  removeClient(client->clientInfo().hardwareAddress());
+}
+
+QList<CNetworkInfo> MCServerHistory::allClients() const {
+  return m_lstClients.values();
+}
+
+void MCServerHistory::write(QDataStream& out) const {
+  out << m_lstClients;
+}
+
+void MCServerHistory::read(QDataStream& in) {
+  in >> m_lstClients;
+}
+
+void MCServerHistory::save(const QString& fileName) const throw(CException) {
+  QFile file;
+  file.setFileName(fileName);
+  bool succeed = file.open(QFile::WriteOnly);
+
+  // Cannot open the file
+  if (succeed == false) {
+    ThrowException(
+      QString("Could not create the file '%1'.").arg(fileName),
+      file.errorString()
+    );
+    return;
+  }
+
+  QByteArray data;
+  QDataStream out(&data, QIODevice::WriteOnly);
+  out.setVersion(SerializationVersion);
+
+  out.writeRawData(HistoryFileMagic, HistoryFileMagicSize);
+  out << HistoryFileVersion;
+  this->write(out);
+
+  file.write(data);
+}
+
+void MCServerHistory::load(const QString& fileName) throw(CException) {
+  QFile file;
+  file.setFileName(fileName);
+  bool succeed = file.open(QFile::ReadOnly);
+
+  // Cannot open the file
+  if (succeed == false) {
+    ThrowException(
+      QString("Could not open the file '%1'.").arg(fileName),
+      file.errorString()
+    );
+    return;
+  }
+
+  // Read magic
+  QByteArray magic = file.read(HistoryFileMagicSize);
+  if (magic.startsWith(HistoryFileMagic) == false) {
+    ThrowException(
+      QString("Could not open the file '%1'.").arg(fileName),
+      "Invalid magic descriptor."
+    );
+
+    return;
+  }
+
+  // Prepare to read content
+  QDataStream in(&file);
+  in.setVersion(SerializationVersion);
+
+  // Check version
+  quint16 version; in >> version;
+  if (version != HistoryFileVersion) {
+    ThrowException(
+      QString("Could not open the file '%1'.").arg(fileName),
+      "Version not supported."
+    );
+
+    return;
+  }
+
+  this->read(in);
+}
+
+QDataStream& operator<<(QDataStream& out, const MCServerHistory& history) {
+  history.write(out);
+  return out;
+}
+
+QDataStream& operator>>(QDataStream& in, MCServerHistory& history) {
+  history.read(in);
+  return in;
 }

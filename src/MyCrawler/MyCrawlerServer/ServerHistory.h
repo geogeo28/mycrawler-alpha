@@ -24,11 +24,15 @@
 #define SERVERHISTORY_H
 
 #include <QMap>
+#include <QDataStream>
 
+#include "Debug/Exception.h"
 #include "Utilities/NetworkInfo.h"
 
+class MCClientThread;
+
 class MCServerHistory
-{
+{  
 private:
     void init_();
     void cleanAll_();
@@ -41,10 +45,30 @@ protected:
     MCServerHistory();
     ~MCServerHistory();
 
+public:
+    bool isHardwareAddressRegistered(quint64 hardwareAddress) const;
+    void addClient(const CNetworkInfo& networkInfo);
+    void addClient(MCClientThread* client);
+    void removeClient(quint64 hardwareAddress);
+    void removeClient(MCClientThread* client);
+    QList<CNetworkInfo> allClients() const;
+
+public:
+    void write(QDataStream& out) const;
+    void read(QDataStream& in);
+
+    void save(const QString& fileName) const throw(CException);
+    void load(const QString& fileName) throw(CException);
+
 private:
     static MCServerHistory* s_instance;
 
-    QMap<quint64, CNetworkInfo> m_lstClients;
+    typedef QMap<quint64, CNetworkInfo> ClientsNetworkInfoList;
+
+    ClientsNetworkInfoList m_lstClients;
 };
+
+QDataStream& operator<<(QDataStream& out, const MCServerHistory& history);
+QDataStream& operator>>(QDataStream& in, MCServerHistory& history);
 
 #endif // SERVERHISTORY_H

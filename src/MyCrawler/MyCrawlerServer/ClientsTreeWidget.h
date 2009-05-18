@@ -27,6 +27,8 @@
 #include <QList>
 
 #include "Widgets/MyQTreeWidget.h"
+#include "Utilities/NetworkInfo.h"
+
 #include "ClientThread.h"
 
 class MCClientsTreeWidget : public MyQTreeWidget
@@ -61,8 +63,10 @@ public:
 
     void setup();
 
-public slots:
-    void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
+private slots:
+    void slotClientConnectionStateChanged_(MCClientThread* client, MCClientThread::ConnectionState state);
+    void slotClientConnected_(MCClientThread* client, bool unknownClientInTheServerHistory);
+    void slotClientDisconnected_(MCClientThread* client);
 
 private slots:
     void on_forceToDisconnectClient_();
@@ -77,10 +81,15 @@ private:
 
 private:
     QTreeWidgetItem* newClientItem_();
+    void newClientItemFromNetworkInfo_(const CNetworkInfo& networkInfo);
+
 
 private:
-    QMap<MCClientThread*, QTreeWidgetItem*> m_lstClientsManaged;
-    QList<QTreeWidgetItem*> m_lstClientsUnmanaged;
+    typedef QMap<MCClientThread*, QTreeWidgetItem*> ClientsManagedList;
+    typedef QMap<quint64, QTreeWidgetItem*> ItemsRefByHAddrList;
+
+    ClientsManagedList m_lstClientsManaged;
+    ItemsRefByHAddrList m_lstItemsRefByHAddr;
 };
 
 #endif // CLIENTSTREEWIDGET_H

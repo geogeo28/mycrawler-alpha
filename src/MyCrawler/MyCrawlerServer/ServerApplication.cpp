@@ -18,12 +18,15 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QFileInfo>
+
 #include "Config/Config.h"
 #include "Config/Settings.h"
 #include "Debug/Logger.h"
 
 #include "ServerApplication.h"
 #include "Server.h"
+#include "ServerHistory.h"
 #include "ServerMainWindow.h"
 
 MCServerApplication* MCServerApplication::s_instance = NULL;
@@ -40,11 +43,21 @@ void MCServerApplication::destroy() {
 }
 
 void MCServerApplication::init_() {
+  // Open server history file
+  QFileInfo file("history.dat");
+  if (file.exists()) {
+    MCServerHistory::instance()->load("history.dat");
+  }
+
   m_pMainWindow = new MCServerMainWindow();
 }
 
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
+
+  MCServerHistory::instance()->save("history.dat");
+  MCServerHistory::destroy();
+
   if (m_pMainWindow) { delete m_pMainWindow; }
 
   ILogger::Debug() << "Clean-up resources.";

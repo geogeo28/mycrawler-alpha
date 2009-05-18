@@ -24,6 +24,7 @@
 #include "Debug/Logger.h"
 
 #include "Server.h"
+#include "ServerHistory.h"
 
 const int DefaultMaxConnections = 5;
 
@@ -195,9 +196,14 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
      ************/
     case MCClientThread::UnconnectedState:
     {
-      // Remove client IP
-      if (client->isConnectionRefused() == false) {
+      if ((client->isAuthenticated() == true) && (client->isConnectionRefused() == false)) {
+        // Remove client IP
         m_lstClientsIP.removeClient(client);
+
+        // Add the client in the server history
+        if (client->isRemoteClient() == true) {
+          MCServerHistory::instance()->addClient(client);
+        }
       }
     }
     break;
@@ -206,11 +212,32 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
   }
 
   emit clientConnectionStateChanged(senderClientThread_(), state);
+
+  // Connected
+  if (state == MCClientThread::ConnectedState) {
+    bool unknownClientInTheServerHistory = true;
+
+    // Manage client in the server history
+    if (client->isRemoteClient() == true) {
+      quint64 hAddr = client->clientInfo().hardwareAddress();
+
+      unknownClientInTheServerHistory = !MCServerHistory::instance()->isHardwareAddressRegistered(hAddr);
+
+      // Remove the client in the server history
+      if (unknownClientInTheServerHistory == false) {
+        MCServerHistory::instance()->removeClient(hAddr);
+      }
+    }
+
+    emit clientConnected(client, unknownClientInTheServerHistory);
+  }
 }
 
 void MCServer::clientDisconnected_() {
   MCClientThread* client = senderClientThread_();
   AssertCheckPtr(client);
+
+  emit clientDisconnected(client);
 
   ILogger::Debug() << "Prepare to finish the thread " << client << " (client disconnected).";
   client->quit();
@@ -284,7 +311,7 @@ void MCServer::setError_(Error error, bool signal) {
       m_sError = QTcpServer::errorString();
       break;
     case ServerFullError:
-      m_sError = QT_TRANSLATE_NOOP(MCServer, "Could not accept a new client because the server is full. You must increase the number of connections than the server can supported. Client refused.");
+      m_sError = QT_TRANSLATE_NOOP(MCServer, "Could not accept a new client because the server is full.\nYou must increase the number of connections than the server can supported.\nNew client refused.");
       break;
     case ListenError:
       m_sError = QT_TRANSLATE_NOOP(MCServer, "Listen is not allowed in Closing State.");
