@@ -92,7 +92,7 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged_(MCClientThread* clie
       QTreeWidgetItem* item = newClientItem_();
       m_lstClientsManaged.insert(client, item);
       if (client->isRemoteClient() == true) {
-        m_lstItemsRefByHAddr.insert(client->clientInfo().hardwareAddress(), item);
+        m_lstItemsRefByHAddr.insert(client->hardwareAddress(), item);
       }
 
       setClientItemValues_(item, client);
@@ -252,7 +252,8 @@ void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientTh
   AssertCheckPtr(item);
   AssertCheckPtr(client);
 
-  CNetworkInfo networkInfo = client->clientInfo();
+  client->lockMutex();
+  const CNetworkInfo& networkInfo = client->clientInfo();
 
   item->setData(ThreadIdColumn,        Qt::UserRole, QVariant::fromValue(client));
   item->setData(HardwareAddressColumn, Qt::UserRole, networkInfo.hardwareAddress());
@@ -267,6 +268,7 @@ void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientTh
   item->setText(GatewayColumn,         networkInfo.gateway().toString());
   item->setText(BroadcastColumn,       networkInfo.broadcast().toString());
   item->setText(NetmaskColumn,         networkInfo.netmask().toString());
+  client->unlockMutex();
 }
 
 QTreeWidgetItem* MCClientsTreeWidget::newClientItem_() {

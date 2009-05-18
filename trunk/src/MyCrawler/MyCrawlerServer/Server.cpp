@@ -165,7 +165,7 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
      **********/
     case MCClientThread::ConnectedState:
     {
-      quint64 hAddr = client->clientInfo().hardwareAddress();
+      quint64 hAddr = client->hardwareAddress();
 
       // Remote connection
       if (hAddr != 0x0) {
@@ -219,7 +219,7 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
 
     // Manage client in the server history
     if (client->isRemoteClient() == true) {
-      quint64 hAddr = client->clientInfo().hardwareAddress();
+      quint64 hAddr = client->hardwareAddress();
 
       unknownClientInTheServerHistory = !MCServerHistory::instance()->isHardwareAddressRegistered(hAddr);
 

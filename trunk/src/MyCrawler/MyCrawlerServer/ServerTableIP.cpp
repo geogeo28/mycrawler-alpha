@@ -39,7 +39,7 @@ void MCServerTableIP::addClient(MCClientThread* client) {
   }
   // Remote client
   else {
-    quint64 hardwareAddress = client->clientInfo().hardwareAddress();
+    quint64 hardwareAddress = client->hardwareAddress();
 
     Assert(hardwareAddress != 0x0);
     Assert(isHardwareAddressRegistered(hardwareAddress) == false);
@@ -71,7 +71,7 @@ void MCServerTableIP::removeClient(MCClientThread* client) {
   }
   // Remote client
   else {
-    quint64 hardwareAddress = client->clientInfo().hardwareAddress();
+    quint64 hardwareAddress = client->hardwareAddress();
 
     Assert(hardwareAddress != 0x0);
     Assert(isHardwareAddressRegistered(hardwareAddress) == true);

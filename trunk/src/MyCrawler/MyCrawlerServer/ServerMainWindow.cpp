@@ -218,7 +218,7 @@ void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
     if (nClients > 0) {
       int button = QMessageBox::warning(
         this, QApplication::applicationName(),
-        QString("%1 client(s) are currently connected.<br />" \
+        QString("%1 client(s) is/are currently connected.<br />" \
                 "Do you want to continue and close all connections ?")
                 .arg(nClients),
         QMessageBox::Yes | QMessageBox::No
