@@ -70,8 +70,7 @@ public:
     QHostAddress peerAddress() const { QMutexLocker locker(&mutex); return m_peerAddress; } // thread-safe
     quint16 peerPort() const { QMutexLocker locker(&mutex); return m_u16PeerPort; } // thread-safe
     QString peerAddressAndPort() const { QMutexLocker locker(&mutex); return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); } // thread-safe
-    quint64 hardwareAddress() const { QMutexLocker locker(&mutex); return m_clientInfo.hardwareAddress(); }
-    const CNetworkInfo& clientInfo() const { return m_clientInfo; }
+    const CNetworkInfo& networkInfo() const { return m_clientInfo; } // thread-safe
 
     bool isLocalClient() const { QMutexLocker locker(&mutex); return (peerAddress() == QHostAddress::LocalHost); } // thread-safe
     bool isRemoteClient() const { QMutexLocker locker(&mutex); return !isLocalClient(); } // thread-safe

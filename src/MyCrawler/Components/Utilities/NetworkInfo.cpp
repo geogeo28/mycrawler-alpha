@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <cstdio>
+
 #include <QStringList>
 #include <QHostInfo>
 #include <QNetworkInterface>
@@ -26,23 +27,54 @@
 
 #include "NetworkInfo.h"
 
+class CNetworkInfoPrivate : public QSharedData
+{
+  public:
+    CNetworkInfoPrivate();
+
+    bool valid;
+
+    QString peerName;
+    QHostAddress peerAddress;
+    quint16 peerPort;
+
+    QHostAddress ip;
+    QHostAddress gateway;
+    QHostAddress broadcast;
+    QHostAddress netmask;
+    int prefixLength;
+
+    QString humanReadableName;
+    quint64 hardwareAddress;
+    QString hardwareAddressString;
+
+    QString hostName;
+    QString hostDomain;
+};
+
+CNetworkInfoPrivate::CNetworkInfoPrivate()
+  : valid(false),
+    peerPort(0), prefixLength(-1), hardwareAddress(0x0)
+{}
+
+
 void CNetworkInfo::init_() {
-  if (m_sHostName.isNull())   { m_sHostName = QHostInfo::localHostName(); }
-  if (m_sHostDomain.isNull()) { m_sHostDomain = QHostInfo::localDomainName(); }
+  if (d->hostName.isNull())   { d->hostName = QHostInfo::localHostName(); }
+  if (d->hostDomain.isNull()) { d->hostDomain = QHostInfo::localDomainName(); }
 
+  setFull_();
+}
+
+void CNetworkInfo::setFull_() {
   quint32 gateway = CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address());
-  if (gateway != 0x00) {
-    m_gateway = QHostAddress(gateway);
-  }
+  if (gateway != 0x00) { d->gateway = QHostAddress(gateway); }
+  else { d->gateway = QHostAddress(); }
 
-  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
+  d->hardwareAddressString = CNetworkInfo::hardwareAddressToString(d->hardwareAddress);
 }
 
 CNetworkInfo::CNetworkInfo()
-  : m_bValid(false),
-    m_u16PeerPort(0),
-    m_nPrefixLength(-1),
-    m_u64HardwareAddress(0x0)
+  : d(new CNetworkInfoPrivate)
 {}
 
 CNetworkInfo::CNetworkInfo(
@@ -51,12 +83,25 @@ CNetworkInfo::CNetworkInfo(
   const QString& humanReadableName, quint64 hardwareAddress,
   const QString& hostName, const QString& hostDomain
 )
-  : m_bValid(true),
-    m_sPeerName(peerName), m_peerAddress(peerAddress), m_u16PeerPort(peerPort),
-    m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
-    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress),
-    m_sHostName(hostName), m_sHostDomain(hostDomain)
+  : d(new CNetworkInfoPrivate)
 {
+  d->valid = true;
+
+  d->peerName = peerName;
+  d->peerAddress = peerAddress;
+  d->peerPort = peerPort;
+
+  d->ip = ip;
+  d->broadcast = broadcast;
+  d->netmask = netmask;
+  d->prefixLength = prefixLength;
+
+  d->humanReadableName = humanReadableName;
+  d->hardwareAddress = hardwareAddress;
+
+  d->hostName = hostName;
+  d->hostDomain = hostDomain;
+
   init_();
 }
 
@@ -65,13 +110,104 @@ CNetworkInfo::CNetworkInfo(
   const QString& humanReadableName, quint64 hardwareAddress,
   const QString& hostName, const QString& hostDomain
 )
-  : m_bValid(true),
-    m_u16PeerPort(0),
-    m_ip(ip), m_broadcast(broadcast), m_netmask(netmask), m_nPrefixLength(prefixLength),
-    m_sHumanReadableName(humanReadableName), m_u64HardwareAddress(hardwareAddress),
-    m_sHostName(hostName), m_sHostDomain(hostDomain)
+  : d(new CNetworkInfoPrivate)
 {
+  d->valid = true;
+
+  d->ip = ip;
+  d->broadcast = broadcast;
+  d->netmask = netmask;
+  d->prefixLength = prefixLength;
+
+  d->humanReadableName = humanReadableName;
+  d->hardwareAddress = hardwareAddress;
+
+  d->hostName = hostName;
+  d->hostDomain = hostDomain;
+
   init_();
+}
+
+CNetworkInfo::CNetworkInfo(const CNetworkInfo &other)
+  : d(other.d)
+{}
+
+CNetworkInfo& CNetworkInfo::operator=(const CNetworkInfo& networkInfo) {
+  d = networkInfo.d;
+  return *this;
+}
+
+CNetworkInfo::~CNetworkInfo()
+{
+  // QSharedDataPointer takes care of deleting for us
+}
+
+bool CNetworkInfo::isValid() const {
+  return d->valid;
+}
+
+QString CNetworkInfo::peerName() const {
+  return d->peerName;
+}
+
+void CNetworkInfo::setPeerName(const QString& peerName) {
+  d->peerName = peerName;
+}
+
+QHostAddress CNetworkInfo::peerAddress() const {
+  return d->peerAddress;
+}
+
+void CNetworkInfo::setPeerAddress(const QHostAddress& peerAddress) {
+  d->peerAddress = peerAddress;
+}
+
+quint16 CNetworkInfo::peerPort() const {
+  return d->peerPort;
+}
+
+void CNetworkInfo::setPeerPort(quint16 port) {
+  d->peerPort = port;
+}
+
+QHostAddress CNetworkInfo::ip() const {
+  return d->ip;
+}
+
+QHostAddress CNetworkInfo::gateway() const {
+  return d->gateway;
+}
+
+QHostAddress CNetworkInfo::broadcast() const {
+  return d->broadcast;
+}
+
+QHostAddress CNetworkInfo::netmask() const {
+  return d->netmask;
+}
+
+int CNetworkInfo::prefixLength() const {
+  return d->prefixLength;
+}
+
+QString CNetworkInfo::hostName() const {
+  return d->hostName;
+}
+
+QString CNetworkInfo::hostDomain() const {
+  return d->hostDomain;
+}
+
+QString CNetworkInfo::humanReadableName() const {
+  return d->humanReadableName;
+}
+
+quint64 CNetworkInfo::hardwareAddress() const {
+  return d->hardwareAddress;
+}
+
+QString CNetworkInfo::hardwareAddressString() const {
+  return d->hardwareAddressString;
 }
 
 void CNetworkInfo::write(QDataStream& out) const {
@@ -92,28 +228,24 @@ void CNetworkInfo::write(QDataStream& out) const {
 }
 
 void CNetworkInfo::read(QDataStream& in) {
-  in >> m_sPeerName;
-  in >> m_peerAddress;
-  in >> m_u16PeerPort;
+  in >> d->peerName;
+  in >> d->peerAddress;
+  in >> d->peerPort;
 
-  in >> m_ip;
-  in >> m_broadcast;
-  in >> m_netmask;
-  in >> m_nPrefixLength;
+  in >> d->ip;
+  in >> d->broadcast;
+  in >> d->netmask;
+  in >> d->prefixLength;
 
-  in >> m_sHostName;
-  in >> m_sHostDomain;
+  in >> d->hostName;
+  in >> d->hostDomain;
 
-  in >> m_sHumanReadableName;
-  in >> m_u64HardwareAddress;
+  in >> d->humanReadableName;
+  in >> d->hardwareAddress;
 
-  quint32 gateway = CNetworkInfo::gatewayFromBroadcastAndNetmask(broadcast().toIPv4Address(), netmask().toIPv4Address());
-  if (gateway == 0x00) { m_gateway = QHostAddress(); }
-  else { m_gateway = QHostAddress(gateway); }
+  d->valid = true;
 
-  m_sHardwareAddress = CNetworkInfo::hardwareAddressToString(m_u64HardwareAddress);
-
-  m_bValid = true;
+  setFull_();
 }
 
 CNetworkInfo CNetworkInfo::fromInterfaceByIp(const QHostAddress& address) {
