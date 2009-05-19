@@ -58,10 +58,16 @@
        </property>
        <item>
         <widget class="QGroupBox" name="groupBoxServerConnection">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>75</height>
+           <height>100</height>
           </size>
          </property>
          <property name="title">
@@ -82,7 +88,7 @@
                <string>Address :</string>
               </property>
               <property name="buddy">
-               <cstring>textProxyHostName</cstring>
+               <cstring>textServerAddress</cstring>
               </property>
              </widget>
             </item>
@@ -103,7 +109,7 @@
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>13</width>
+                <width>17</width>
                 <height>20</height>
                </size>
               </property>
@@ -115,7 +121,7 @@
                <string>Port :</string>
               </property>
               <property name="buddy">
-               <cstring>spinBoxProxyHostPort</cstring>
+               <cstring>spinBoxServerPort</cstring>
               </property>
              </widget>
             </item>
@@ -143,35 +149,17 @@
             </item>
            </layout>
           </item>
-          <item>
-           <layout class="QHBoxLayout">
-            <item>
-             <spacer>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="checkBoxServerAutoConnect">
-              <property name="text">
-               <string>Auto connect</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
          </layout>
         </widget>
        </item>
        <item>
         <widget class="QGroupBox" name="groupBoxServerParameters">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Other parameters</string>
          </property>
@@ -182,6 +170,9 @@
              <widget class="QLabel" name="lblServerNumberOfConnections">
               <property name="text">
                <string>Maximum number of simultaneous connections : </string>
+              </property>
+              <property name="buddy">
+               <cstring>spinBoxServerNumberOfConnections</cstring>
               </property>
              </widget>
             </item>
@@ -255,7 +246,7 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>75</height>
+           <height>100</height>
           </size>
          </property>
          <property name="title">
@@ -274,9 +265,6 @@
               </property>
               <property name="text">
                <string>Host :</string>
-              </property>
-              <property name="buddy">
-               <cstring>textProxyHostName</cstring>
               </property>
              </widget>
             </item>
@@ -307,9 +295,6 @@
              <widget class="QLabel" name="lblProxyHostPort">
               <property name="text">
                <string>Port :</string>
-              </property>
-              <property name="buddy">
-               <cstring>spinBoxProxyHostPort</cstring>
               </property>
              </widget>
             </item>
@@ -366,9 +351,6 @@
             <property name="text">
              <string>Username :</string>
             </property>
-            <property name="buddy">
-             <cstring>textProxyUserName</cstring>
-            </property>
            </widget>
           </item>
           <item row="0" column="2">
@@ -378,9 +360,6 @@
            <widget class="QLabel" name="lblProxyUserPassword">
             <property name="text">
              <string>Password :</string>
-            </property>
-            <property name="buddy">
-             <cstring>textProxyUserPassword</cstring>
             </property>
            </widget>
           </item>
@@ -452,6 +431,52 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabAdvancedOptions">
+      <attribute name="title">
+       <string>Advanced options</string>
+      </attribute>
+      <layout class="QVBoxLayout">
+       <item>
+        <widget class="QGroupBox" name="groupBoxAdvancedOptionsGeneral">
+         <property name="title">
+          <string>General</string>
+         </property>
+         <layout class="QVBoxLayout">
+          <item>
+           <widget class="QCheckBox" name="checkBoxAutoConnectServerAtStartup">
+            <property name="text">
+             <string>Auto connect server at startup</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBoxSaveServerHistory">
+            <property name="text">
+             <string>Save server history</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -475,7 +500,7 @@
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
        </property>
       </widget>
      </item>
@@ -487,13 +512,14 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>textServerAddress</tabstop>
   <tabstop>spinBoxServerPort</tabstop>
-  <tabstop>checkBoxServerAutoConnect</tabstop>
   <tabstop>spinBoxServerNumberOfConnections</tabstop>
   <tabstop>textProxyHostName</tabstop>
   <tabstop>spinBoxProxyHostPort</tabstop>
   <tabstop>textProxyUserName</tabstop>
   <tabstop>textProxyUserPassword</tabstop>
   <tabstop>checkBoxProxyUse</tabstop>
+  <tabstop>checkBoxAutoConnectServerAtStartup</tabstop>
+  <tabstop>checkBoxSaveServerHistory</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>

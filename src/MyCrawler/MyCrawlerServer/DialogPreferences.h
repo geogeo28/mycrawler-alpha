@@ -40,9 +40,13 @@ public slots:
 
 private:
     void readServerConnectionConfiguration_();
-    void readProxyConfiguration_();
     void writeServerConnectionConfiguration_();
+
+    void readProxyConfiguration_();
     void writeProxyConfiguration_();
+
+    void readAdvancedOptions_();
+    void writeAdvancedOptions_();
 
 private:
     void readSettings_();

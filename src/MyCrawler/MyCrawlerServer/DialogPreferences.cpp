@@ -21,6 +21,7 @@
 #include "Debug/Logger.h"
 #include "DialogPreferences.h"
 #include "ServerApplication.h"
+#include "Server.h"
 
 MCDialogPreferences::MCDialogPreferences(QWidget* parent)
   : QDialog(parent)
@@ -40,51 +41,58 @@ void MCDialogPreferences::accept() {
 }
 
 void MCDialogPreferences::readServerConnectionConfiguration_() {  
-  MCSettings->beginGroup("ServerConnectionConfiguration");
-    textServerAddress->setText(MCSettings->value("Address", "").toString());
-    spinBoxServerPort->setValue(MCSettings->value("Port", 8080).toUInt());
-    checkBoxServerAutoConnect->setChecked(MCSettings->value("AutoConnect", false).toBool());
-
-    spinBoxServerNumberOfConnections->setValue(MCSettings->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
-  MCSettings->endGroup();
-}
-
-void MCDialogPreferences::readProxyConfiguration_() {
-  MCSettings->beginGroup("ProxyConfiguration");
-    checkBoxProxyUse->setChecked(MCSettings->value("Use", false).toBool());
-    textProxyHostName->setText(MCSettings->value("HostName").toString());
-    spinBoxProxyHostPort->setValue(MCSettings->value("Port", "3128").toInt());
-    textProxyUserName->setText(MCSettings->value("UserName").toString());
-    textProxyUserPassword->setText(QByteArray::fromBase64(MCSettings->value("UserPassword").toByteArray()));
-  MCApp->settings()->endGroup();
+  textServerAddress->setText(MCServer::instance()->listenAddress().toString());
+  spinBoxServerPort->setValue(MCServer::instance()->listenPort());
+  spinBoxServerNumberOfConnections->setValue(MCServer::instance()->maxConnections());
 }
 
 void MCDialogPreferences::writeServerConnectionConfiguration_() {
-  MCSettings->beginGroup("ServerConnectionConfiguration");
-    MCSettings->setValue("Address", textServerAddress->text());
-    MCSettings->setValue("Port", spinBoxServerPort->value());
-    MCSettings->setValue("AutoConnect", checkBoxServerAutoConnect->isChecked());
+  MCApp->saveSettingsServerConnection(
+    textServerAddress->text(), spinBoxServerPort->value(),
+    spinBoxServerNumberOfConnections->value()
+  );
+}
 
-    MCSettings->setValue("MaxConnections", spinBoxServerNumberOfConnections->value());
-  MCSettings->endGroup();
+void MCDialogPreferences::readProxyConfiguration_() {
+  const QNetworkProxy& proxy = MCServerApplication::proxy();
+
+  checkBoxProxyUse->setChecked(proxy.type() != QNetworkProxy::NoProxy);
+  textProxyHostName->setText(proxy.hostName());
+  spinBoxProxyHostPort->setValue(proxy.port());
+  textProxyUserName->setText(proxy.user());
+  textProxyUserPassword->setText(proxy.password());
 }
 
 void MCDialogPreferences::writeProxyConfiguration_() {
-  MCSettings->beginGroup("ProxyConfiguration");
-    MCSettings->setValue("Use", checkBoxProxyUse->isChecked());
-    MCSettings->setValue("HostName", textProxyHostName->text());
-    MCSettings->setValue("Port", spinBoxProxyHostPort->value());
-    MCSettings->setValue("UserName", textProxyUserName->text());
-    MCSettings->setValue("UserPassword", textProxyUserPassword->text().toUtf8().toBase64());
+  MCApp->saveSettingsProxyConfiguration(
+    checkBoxProxyUse->isChecked(),
+    textProxyHostName->text(), spinBoxProxyHostPort->value(),
+    textProxyUserName->text(), textProxyUserPassword->text()
+  );
+}
+
+void MCDialogPreferences::readAdvancedOptions_() {
+  MCSettings->beginGroup("AdvancedOptions");
+    checkBoxAutoConnectServerAtStartup->setChecked(MCSettings->value("AutoConnectServerAtStartup", false).toBool());
+    checkBoxSaveServerHistory->setChecked(MCSettings->value("SaveServerHistory", true).toBool());
+  MCSettings->endGroup();
+}
+
+void MCDialogPreferences::writeAdvancedOptions_() {
+  MCSettings->beginGroup("AdvancedOptions");
+    MCSettings->setValue("AutoConnectServerAtStartup", checkBoxAutoConnectServerAtStartup->isChecked());
+    MCSettings->setValue("SaveServerHistory", checkBoxSaveServerHistory->isChecked());
   MCSettings->endGroup();
 }
 
 void MCDialogPreferences::readSettings_() {
   readServerConnectionConfiguration_();
   readProxyConfiguration_();
+  readAdvancedOptions_();
 }
 
 void MCDialogPreferences::writeSettings_() {
   writeServerConnectionConfiguration_();
   writeProxyConfiguration_();
+  writeAdvancedOptions_();
 }
