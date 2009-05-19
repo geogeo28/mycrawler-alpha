@@ -50,7 +50,6 @@ void MCServerApplication::init_() {
   m_pMainWindow = new MCServerMainWindow();
 }
 
-
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
   MCServerHistory::destroy();
@@ -59,20 +58,6 @@ void MCServerApplication::cleanAll_() {
 
   ILogger::Debug() << "Clean-up resources.";
   Q_CLEANUP_RESOURCE(resources);
-}
-
-void MCServerApplication::close_() {
-  saveSettings_();
-}
-
-void MCServerApplication::loadSettings_() {
-  loadSettingsServerConnection();
-  loadSettingsProxyConfiguration();
-  loadSettingsSaveServerHistory();
-}
-
-void MCServerApplication::saveSettings_() {
-  saveSettingsSaveServerHistory();
 }
 
 
@@ -107,9 +92,18 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 }
 
 MCServerApplication::~MCServerApplication() {
-  close_();
   cleanAll_();
   ILogger::Debug() << "Destroyed.";
+}
+
+void MCServerApplication::loadSettings() {
+  loadSettingsServerConnection();
+  loadSettingsProxyConfiguration();
+  loadSettingsServerHistory();
+}
+
+void MCServerApplication::saveSettings() {
+  saveSettingsServerHistory();
 }
 
 void MCServerApplication::loadServerHistory(const QString& fileName) {
@@ -127,9 +121,9 @@ void MCServerApplication::loadSettingsServerConnection() {
 
   ILogger::Debug() << "Load 'ServerConnectionConfiguration' settings.";
   settings()->beginGroup("ServerConnectionConfiguration");
-    MCServer::instance()->setListenAddress(settings()->value("Address").toString());
-    MCServer::instance()->setListenPort(settings()->value("Port", 8080).toUInt());
-    MCServer::instance()->setMaxConnections(settings()->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
+    MCServer::instance()->setListenAddress(settings()->value("Address", MCSettingsApplication::DefaultServerAddress).toString());
+    MCServer::instance()->setListenPort(settings()->value("Port", MCSettingsApplication::DefaultServerPort).toUInt());
+    MCServer::instance()->setMaxConnections(settings()->value("MaxConnections", MCSettingsApplication::DefaultServerMaxConnections).toInt());
   settings()->endGroup();
 }
 
@@ -154,12 +148,12 @@ void MCServerApplication::loadSettingsProxyConfiguration() {
   ILogger::Debug() << "Load 'ProxyConfiguration' settings.";
   QNetworkProxy proxy(QNetworkProxy::NoProxy);
   settings()->beginGroup("ProxyConfiguration");
-    proxy.setHostName(settings()->value("HostName").toString());
-    proxy.setPort(settings()->value("Port", "3128").toInt());
-    proxy.setUser(settings()->value("UserName").toString());
-    proxy.setPassword(QByteArray::fromBase64(settings()->value("UserPassword").toByteArray()));
+    proxy.setHostName(settings()->value("HostName", MCSettingsApplication::DefaultProxyHostName).toString());
+    proxy.setPort(settings()->value("Port", MCSettingsApplication::DefaultProxyPort).toInt());
+    proxy.setUser(settings()->value("UserName", MCSettingsApplication::DefaultProxyUserName).toString());
+    proxy.setPassword(QByteArray::fromBase64(settings()->value("UserPassword", MCSettingsApplication::DefaultProxyUserPassword).toByteArray()));
 
-    if (settings()->value("Use", false).toBool() == true) {
+    if (settings()->value("Use", MCSettingsApplication::DefaultProxyUse).toBool() == true) {
       proxy.setType(QNetworkProxy::HttpProxy);
     }
   settings()->endGroup();
@@ -184,10 +178,10 @@ void MCServerApplication::saveSettingsProxyConfiguration(
   settings()->endGroup();
 }
 
-void MCServerApplication::loadSettingsSaveServerHistory() {
+void MCServerApplication::loadSettingsServerHistory() {
   AssertCheckPtr(settings());
 
-  if (settings()->value("AdvancedOptions/SaveServerHistory", true).toBool() == true) {
+  if (settings()->value("AdvancedOptions/ServerSaveHistory", MCSettingsApplication::DefaultServerSaveHistory).toBool() == true) {
     // Load server history
     QFileInfo file(ServerHistoryFileName);
     if (file.exists()) {
@@ -196,18 +190,16 @@ void MCServerApplication::loadSettingsSaveServerHistory() {
   }
 }
 
-void MCServerApplication::saveSettingsSaveServerHistory() {
+void MCServerApplication::saveSettingsServerHistory() {
   AssertCheckPtr(settings());
 
-  if (settings()->value("AdvancedOptions/SaveServerHistory", true).toBool() == true) {
+  if (settings()->value("AdvancedOptions/ServerSaveHistory", MCSettingsApplication::DefaultServerSaveHistory).toBool() == true) {
     saveServerHistory(ServerHistoryFileName);
   }
 }
 
 void MCServerApplication::run() {
   ILogger::Debug() << "Running...";
-
-  loadSettings_();
 
   mainWindow()->setup();
   mainWindow()->show();

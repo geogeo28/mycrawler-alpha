@@ -18,7 +18,9 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
+
 #include "DialogPreferences.h"
 #include "ServerApplication.h"
 #include "Server.h"
@@ -40,16 +42,41 @@ void MCDialogPreferences::accept() {
   QDialog::accept();
 }
 
+void MCDialogPreferences::on_buttonBox_clicked(QAbstractButton* button) {
+  AssertCheckPtr(button);
+
+  QDialogButtonBox::StandardButton buttonType = buttonBox->standardButton(button);
+  if (buttonType == QDialogButtonBox::RestoreDefaults) {
+    int buttonSelected = QMessageBox::warning(
+      NULL, QApplication::applicationName(),
+      "The default values of the current tab will be reset.\n" \
+      "Are you sure to continue ?",
+      QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (buttonSelected == QMessageBox::No) { return; }
+
+    // Set default values for the current tab
+    switch (tabWidget->currentIndex()) {
+      case 0: defaultValuesTabConnection_(); break;
+      case 1: defaultValuesTabProxy_(); break;
+      case 2: defaultValuesTabAdvancedOptions_(); break;
+
+      default:;
+    }
+  }
+}
+
 void MCDialogPreferences::readServerConnectionConfiguration_() {  
   textServerAddress->setText(MCServer::instance()->listenAddress().toString());
   spinBoxServerPort->setValue(MCServer::instance()->listenPort());
-  spinBoxServerNumberOfConnections->setValue(MCServer::instance()->maxConnections());
+  spinBoxServerMaxConnections->setValue(MCServer::instance()->maxConnections());
 }
 
 void MCDialogPreferences::writeServerConnectionConfiguration_() {
   MCApp->saveSettingsServerConnection(
     textServerAddress->text(), spinBoxServerPort->value(),
-    spinBoxServerNumberOfConnections->value()
+    spinBoxServerMaxConnections->value()
   );
 }
 
@@ -58,7 +85,7 @@ void MCDialogPreferences::readProxyConfiguration_() {
 
   checkBoxProxyUse->setChecked(proxy.type() != QNetworkProxy::NoProxy);
   textProxyHostName->setText(proxy.hostName());
-  spinBoxProxyHostPort->setValue(proxy.port());
+  spinBoxProxyPort->setValue(proxy.port());
   textProxyUserName->setText(proxy.user());
   textProxyUserPassword->setText(proxy.password());
 }
@@ -66,22 +93,26 @@ void MCDialogPreferences::readProxyConfiguration_() {
 void MCDialogPreferences::writeProxyConfiguration_() {
   MCApp->saveSettingsProxyConfiguration(
     checkBoxProxyUse->isChecked(),
-    textProxyHostName->text(), spinBoxProxyHostPort->value(),
+    textProxyHostName->text(), spinBoxProxyPort->value(),
     textProxyUserName->text(), textProxyUserPassword->text()
   );
 }
 
 void MCDialogPreferences::readAdvancedOptions_() {
   MCSettings->beginGroup("AdvancedOptions");
-    checkBoxAutoConnectServerAtStartup->setChecked(MCSettings->value("AutoConnectServerAtStartup", false).toBool());
-    checkBoxSaveServerHistory->setChecked(MCSettings->value("SaveServerHistory", true).toBool());
+    checkBoxServerAutoConnectAtStartup->setChecked(
+      MCSettings->value("ServerAutoConnectAtStartup", MCSettingsApplication::DefaultServerAutoConnectAtStartup).toBool()
+    );
+    checkBoxServerSaveHistory->setChecked(
+      MCSettings->value("ServerSaveHistory", MCSettingsApplication::DefaultServerSaveHistory).toBool()
+    );
   MCSettings->endGroup();
 }
 
 void MCDialogPreferences::writeAdvancedOptions_() {
   MCSettings->beginGroup("AdvancedOptions");
-    MCSettings->setValue("AutoConnectServerAtStartup", checkBoxAutoConnectServerAtStartup->isChecked());
-    MCSettings->setValue("SaveServerHistory", checkBoxSaveServerHistory->isChecked());
+    MCSettings->setValue("ServerAutoConnectAtStartup", checkBoxServerAutoConnectAtStartup->isChecked());
+    MCSettings->setValue("ServerSaveHistory", checkBoxServerSaveHistory->isChecked());
   MCSettings->endGroup();
 }
 
@@ -95,4 +126,23 @@ void MCDialogPreferences::writeSettings_() {
   writeServerConnectionConfiguration_();
   writeProxyConfiguration_();
   writeAdvancedOptions_();
+}
+
+void MCDialogPreferences::defaultValuesTabConnection_() {
+  textServerAddress->setText(MCSettingsApplication::DefaultServerAddress);
+  spinBoxServerPort->setValue(MCSettingsApplication::DefaultServerPort);
+  spinBoxServerMaxConnections->setValue(MCSettingsApplication::DefaultServerMaxConnections);
+}
+
+void MCDialogPreferences::defaultValuesTabProxy_() {
+  checkBoxProxyUse->setChecked(MCSettingsApplication::DefaultProxyUse);
+  textProxyHostName->setText(MCSettingsApplication::DefaultProxyHostName);
+  spinBoxProxyPort->setValue(MCSettingsApplication::DefaultProxyPort);
+  textProxyUserName->setText(MCSettingsApplication::DefaultProxyUserName);
+  textProxyUserPassword->setText(MCSettingsApplication::DefaultProxyUserPassword);
+}
+
+void MCDialogPreferences::defaultValuesTabAdvancedOptions_() {
+  checkBoxServerAutoConnectAtStartup->setChecked(MCSettingsApplication::DefaultServerAutoConnectAtStartup);
+  checkBoxServerSaveHistory->setChecked(MCSettingsApplication::DefaultServerSaveHistory);
 }

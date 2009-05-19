@@ -172,12 +172,12 @@
                <string>Maximum number of simultaneous connections : </string>
               </property>
               <property name="buddy">
-               <cstring>spinBoxServerNumberOfConnections</cstring>
+               <cstring>spinBoxServerMaxConnections</cstring>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBoxServerNumberOfConnections">
+             <widget class="QSpinBox" name="spinBoxServerMaxConnections">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -299,7 +299,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBoxProxyHostPort">
+             <widget class="QSpinBox" name="spinBoxProxyPort">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -443,14 +443,14 @@
          </property>
          <layout class="QVBoxLayout">
           <item>
-           <widget class="QCheckBox" name="checkBoxAutoConnectServerAtStartup">
+           <widget class="QCheckBox" name="checkBoxServerAutoConnectAtStartup">
             <property name="text">
              <string>Auto connect server at startup</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="checkBoxSaveServerHistory">
+           <widget class="QCheckBox" name="checkBoxServerSaveHistory">
             <property name="text">
              <string>Save server history</string>
             </property>
@@ -512,14 +512,14 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>textServerAddress</tabstop>
   <tabstop>spinBoxServerPort</tabstop>
-  <tabstop>spinBoxServerNumberOfConnections</tabstop>
+  <tabstop>spinBoxServerMaxConnections</tabstop>
   <tabstop>textProxyHostName</tabstop>
-  <tabstop>spinBoxProxyHostPort</tabstop>
+  <tabstop>spinBoxProxyPort</tabstop>
   <tabstop>textProxyUserName</tabstop>
   <tabstop>textProxyUserPassword</tabstop>
   <tabstop>checkBoxProxyUse</tabstop>
-  <tabstop>checkBoxAutoConnectServerAtStartup</tabstop>
-  <tabstop>checkBoxSaveServerHistory</tabstop>
+  <tabstop>checkBoxServerAutoConnectAtStartup</tabstop>
+  <tabstop>checkBoxServerSaveHistory</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>
