@@ -23,6 +23,7 @@
 #ifndef SERVERAPPLICATION_H
 #define SERVERAPPLICATION_H
 
+#include <QString>
 #include <QPointer>
 
 #include "Core/Application.h"
@@ -33,6 +34,10 @@ class MCServerApplication : public IApplication
 private:
     void init_();
     void cleanAll_();
+    void close_();
+
+    void loadSettings_();
+    void saveSettings_();
 
 public:
     static MCServerApplication* instance();
@@ -40,9 +45,34 @@ public:
 
     MCServerApplication(int &argc, char** argv);
     ~MCServerApplication();
-    
+ 
+ public:
     MCServerMainWindow* mainWindow() { return m_pMainWindow; }
+    
+ // Settings
+ public:
+    void loadServerHistory(const QString& fileName);
+    void saveServerHistory(const QString& fileName);
 
+    void loadSettingsServerConnection();
+    void saveSettingsServerConnection(
+      const QString& address, quint16 port,
+      int maxConnections
+    );
+
+    void loadSettingsProxyConfiguration();
+    void saveSettingsProxyConfiguration(
+      bool useProxy,
+      const QString& hostName = QString(), quint16 port = 0,
+      const QString& userName = QString(), const QString& password = QString()
+    );
+
+    void loadSettingsSaveServerHistory();
+    void saveSettingsSaveServerHistory();
+
+
+
+public:    
     void run();
 
 private:

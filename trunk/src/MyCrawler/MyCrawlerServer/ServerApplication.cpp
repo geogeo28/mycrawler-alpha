@@ -19,15 +19,19 @@
  ****************************************************************************/
 
 #include <QFileInfo>
+#include <QNetworkProxy>
 
 #include "Config/Config.h"
 #include "Config/Settings.h"
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ServerApplication.h"
 #include "Server.h"
 #include "ServerHistory.h"
 #include "ServerMainWindow.h"
+
+static const char* ServerHistoryFileName = "history.dat";
 
 MCServerApplication* MCServerApplication::s_instance = NULL;
 
@@ -43,19 +47,12 @@ void MCServerApplication::destroy() {
 }
 
 void MCServerApplication::init_() {
-  // Open server history file
-  QFileInfo file("history.dat");
-  if (file.exists()) {
-    MCServerHistory::instance()->load("history.dat");
-  }
-
   m_pMainWindow = new MCServerMainWindow();
 }
 
+
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
-
-  MCServerHistory::instance()->save("history.dat");
   MCServerHistory::destroy();
 
   if (m_pMainWindow) { delete m_pMainWindow; }
@@ -63,6 +60,21 @@ void MCServerApplication::cleanAll_() {
   ILogger::Debug() << "Clean-up resources.";
   Q_CLEANUP_RESOURCE(resources);
 }
+
+void MCServerApplication::close_() {
+  saveSettings_();
+}
+
+void MCServerApplication::loadSettings_() {
+  loadSettingsServerConnection();
+  loadSettingsProxyConfiguration();
+  loadSettingsSaveServerHistory();
+}
+
+void MCServerApplication::saveSettings_() {
+  saveSettingsSaveServerHistory();
+}
+
 
 MCServerApplication::MCServerApplication(int &argc, char** argv)
   : IApplication(argc, argv)
@@ -95,12 +107,108 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 }
 
 MCServerApplication::~MCServerApplication() {
+  close_();
   cleanAll_();
   ILogger::Debug() << "Destroyed.";
+}
+
+void MCServerApplication::loadServerHistory(const QString& fileName) {
+  ILogger::Debug() << QString("Load the server history from the file '%1'.").arg(fileName);
+  MCServerHistory::instance()->load(fileName);
+}
+
+void MCServerApplication::saveServerHistory(const QString& fileName) {
+  ILogger::Debug() << QString("Save the server history in the file '%1'.").arg(fileName);
+  MCServerHistory::instance()->save(fileName);
+}
+
+void MCServerApplication::loadSettingsServerConnection() {
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Load 'ServerConnectionConfiguration' settings.";
+  settings()->beginGroup("ServerConnectionConfiguration");
+    MCServer::instance()->setListenAddress(settings()->value("Address").toString());
+    MCServer::instance()->setListenPort(settings()->value("Port", 8080).toUInt());
+    MCServer::instance()->setMaxConnections(settings()->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
+  settings()->endGroup();
+}
+
+void MCServerApplication::saveSettingsServerConnection(
+  const QString& address, quint16 port,
+  int maxConnections
+)
+{
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Save 'ServerConnectionConfiguration' settings.";
+  settings()->beginGroup("ServerConnectionConfiguration");
+    settings()->setValue("Address", address);
+    settings()->setValue("Port", port);
+    settings()->setValue("MaxConnections", maxConnections);
+  settings()->endGroup();
+}
+
+void MCServerApplication::loadSettingsProxyConfiguration() {
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Load 'ProxyConfiguration' settings.";
+  QNetworkProxy proxy(QNetworkProxy::NoProxy);
+  settings()->beginGroup("ProxyConfiguration");
+    proxy.setHostName(settings()->value("HostName").toString());
+    proxy.setPort(settings()->value("Port", "3128").toInt());
+    proxy.setUser(settings()->value("UserName").toString());
+    proxy.setPassword(QByteArray::fromBase64(settings()->value("UserPassword").toByteArray()));
+
+    if (settings()->value("Use", false).toBool() == true) {
+      proxy.setType(QNetworkProxy::HttpProxy);
+    }
+  settings()->endGroup();
+  IApplication::setProxy(proxy);
+}
+
+void MCServerApplication::saveSettingsProxyConfiguration(
+  bool useProxy,
+  const QString& hostName, quint16 port,
+  const QString& userName, const QString& password
+)
+{
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Save 'ProxyConfiguration' settings.";
+  settings()->beginGroup("ProxyConfiguration");
+    settings()->setValue("Use", useProxy);
+    settings()->setValue("HostName", hostName);
+    settings()->setValue("Port", port);
+    settings()->setValue("UserName", userName);
+    settings()->setValue("UserPassword", password.toUtf8().toBase64());
+  settings()->endGroup();
+}
+
+void MCServerApplication::loadSettingsSaveServerHistory() {
+  AssertCheckPtr(settings());
+
+  if (settings()->value("AdvancedOptions/SaveServerHistory", true).toBool() == true) {
+    // Load server history
+    QFileInfo file(ServerHistoryFileName);
+    if (file.exists()) {
+      loadServerHistory(ServerHistoryFileName);
+    }
+  }
+}
+
+void MCServerApplication::saveSettingsSaveServerHistory() {
+  AssertCheckPtr(settings());
+
+  if (settings()->value("AdvancedOptions/SaveServerHistory", true).toBool() == true) {
+    saveServerHistory(ServerHistoryFileName);
+  }
 }
 
 void MCServerApplication::run() {
   ILogger::Debug() << "Running...";
 
+  loadSettings_();
+
+  mainWindow()->setup();
   mainWindow()->show();
 }

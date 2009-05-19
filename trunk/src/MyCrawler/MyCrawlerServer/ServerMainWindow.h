@@ -47,17 +47,14 @@ private:
     void setupClientsForm_();
     void setupComponents_();
 
-    void loadSettingsServerConnection_();
-    void loadSettingsProxyConfiguration_();
-    void loadSettings_();
-    void saveSettings_();
-
     void cleanAll_();
     void closeWindow_();
 
 public:
     MCServerMainWindow(QWidget *parent = NULL);
     ~MCServerMainWindow();
+
+    void setup();
 
 private slots:
     void on_doFilePreferences_triggered();

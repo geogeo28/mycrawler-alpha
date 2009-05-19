@@ -29,7 +29,7 @@
 #include "ClientPeer.h"
 #include "ServerLogWidget.h"
 
-const char* SettingCurrentForm = "CurrentForm";
+static const char* SettingCurrentForm = "CurrentForm";
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -39,7 +39,7 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  if (!MCApp->settings()->loadLayout(this, "MCServerMainWindow")) {
+  if (!MCSettings->loadLayout(this, "MCServerMainWindow")) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -57,7 +57,7 @@ void MCServerMainWindow::setupMainToolBar_() {
   QObject::connect(doMainToolBarPreferences, SIGNAL(triggered()), this, SLOT(on_doFilePreferences_triggered()));
 
   // Set default page
-  QString sActionName = MCApp->settings()->value(SettingCurrentForm, "doMainToolBarClients").toString();
+  QString sActionName = MCSettings->value(SettingCurrentForm, "doMainToolBarClients").toString();
   QAction* action = qFindChild<QAction*>(this, sActionName);
   if (action == NULL) {
     ILogger::Notice() << QString("Invalid value '%1' for the setting '%2'.")
@@ -104,47 +104,14 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
 }
 
-void MCServerMainWindow::loadSettingsServerConnection_() {
-  MCSettings->beginGroup("ServerConnectionConfiguration");
-    MCServer::instance()->setListenAddress(MCSettings->value("Address", "").toString());
-    MCServer::instance()->setListenPort(MCSettings->value("Port", 8080).toUInt());
-
-    MCServer::instance()->setMaxConnections(MCSettings->value("MaxConnections", MCServer::defaultMaxConnections()).toInt());
-  MCSettings->endGroup();
-}
-
-void MCServerMainWindow::loadSettingsProxyConfiguration_() {
-  QNetworkProxy proxy(QNetworkProxy::NoProxy);
-  MCSettings->beginGroup("ProxyConfiguration");
-    if (MCSettings->value("Use", false).toBool() == true) {
-      proxy.setType(QNetworkProxy::HttpProxy);
-      proxy.setHostName(MCSettings->value("HostName").toString());
-      proxy.setPort(MCSettings->value("Port", "3128").toInt());
-      proxy.setUser(MCSettings->value("UserName").toString());
-      proxy.setPassword(QByteArray::fromBase64(MCSettings->value("UserPassword").toByteArray()));
-    }
-  MCSettings->endGroup();
-  IApplication::setProxy(proxy);
-}
-
-void MCServerMainWindow::loadSettings_() {
-  ILogger::Debug() << "Load settings.";
-  loadSettingsServerConnection_();
-  loadSettingsProxyConfiguration_();
-}
-
-void MCServerMainWindow::saveSettings_() {
-  ILogger::Debug() << "Save settings.";
-  MCApp->settings()->setValue(SettingCurrentForm, m_pActionCurrentForm->objectName());
-  MCApp->settings()->saveLayout(this, "MCServerMainWindow"); // Window layout
-}
-
 void MCServerMainWindow::cleanAll_() {
-  if (!m_pProgressDialogCloseClients.isNull()) { delete m_pProgressDialogCloseClients; }
+  if (m_pProgressDialogCloseClients) { delete m_pProgressDialogCloseClients; }
 }
 
 void MCServerMainWindow::closeWindow_() {
-  saveSettings_();
+  // Save window settings
+  MCSettings->setValue(SettingCurrentForm, m_pActionCurrentForm->objectName());
+  MCSettings->saveLayout(this, "MCServerMainWindow"); // Window layout
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
@@ -154,25 +121,6 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
   ILogger::Debug() << "Construct.";
 
   setupUi(this);
-
-  try {
-    setupWindow_();
-    setupMainToolBar_();
-    setupMenu_();
-    setupServerLogForm_();
-    setupClientsForm_();
-    setupComponents_();
-    loadSettings_();
-
-    // Auto connect ?
-    if (MCSettings->value("ServerConnectionConfiguration/AutoConnect", false).toBool() == true) {
-      on_doMainToolBarConnectDisconnect_triggered();
-    }
-  }
-  catch(...) {
-    cleanAll_();
-    throw;
-  }
 }
 
 MCServerMainWindow::~MCServerMainWindow() {
@@ -182,11 +130,23 @@ MCServerMainWindow::~MCServerMainWindow() {
   ILogger::Debug() << "Destroyed.";
 }
 
+void MCServerMainWindow::setup() {
+  setupWindow_();
+  setupMainToolBar_();
+  setupMenu_();
+  setupServerLogForm_();
+  setupClientsForm_();
+  setupComponents_();
+
+  // Auto connect ?
+  if (MCSettings->value("AdvancedOptions/AutoConnectServerAtStartup", false).toBool() == true) {
+    on_doMainToolBarConnectDisconnect_triggered();
+  }
+}
+
 void MCServerMainWindow::on_doFilePreferences_triggered() {
   MCDialogPreferences dlgPreferences(this);
-  if (dlgPreferences.exec() == QDialog::Accepted) {
-    loadSettings_();
-  }
+  dlgPreferences.exec();
 }
 
 void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
@@ -418,6 +378,9 @@ void MCServerMainWindow::closeEvent(QCloseEvent* event) {
 }
 
 bool MCServerMainWindow::connectServer_() {
+  MCApp->loadSettingsServerConnection();
+  MCApp->loadSettingsProxyConfiguration();
+
   if (MCServer::instance()->listenAddress().isNull()) {
     QMessageBox::critical(
       this, QApplication::applicationName(),
