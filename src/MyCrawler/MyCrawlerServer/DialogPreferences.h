@@ -31,12 +31,17 @@
 class MCDialogPreferences : public QDialog,
                             private Ui_DialogPreferences
 {
+    Q_OBJECT
+
 public:
     MCDialogPreferences(QWidget* parent = NULL);
 
 public slots:
     int exec();
     void accept();
+
+private slots:
+    void on_buttonBox_clicked(QAbstractButton* button);
 
 private:
     void readServerConnectionConfiguration_();
@@ -51,6 +56,11 @@ private:
 private:
     void readSettings_();
     void writeSettings_();
+
+private:
+    void defaultValuesTabConnection_();
+    void defaultValuesTabProxy_();
+    void defaultValuesTabAdvancedOptions_();
 };
 
 #endif // DIALOGPREFERENCES_H

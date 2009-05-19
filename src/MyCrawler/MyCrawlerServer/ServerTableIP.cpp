@@ -55,11 +55,11 @@ bool MCServerTableIP::isHardwareAddressRegistered(quint64 hardwareAddress) const
 }
 
 MCClientThread* MCServerTableIP::remoteClient(quint64 hardwareAddress) const {
-  return m_mapRemoteClientThreads.value(hardwareAddress, NULL);
+  return m_mapRemoteClientThreads.value(hardwareAddress);
 }
 
 MCClientThread* MCServerTableIP::localClient(quint16 port) const {
-  return m_mapLocalClientThreads.value(port, NULL);
+  return m_mapLocalClientThreads.value(port);
 }
 
 void MCServerTableIP::removeClient(MCClientThread* client) {

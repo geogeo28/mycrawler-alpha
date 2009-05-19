@@ -27,6 +27,7 @@
 #include <QPointer>
 
 #include "Core/Application.h"
+#include "SettingsApplication.h"
 #include "ServerMainWindow.h"
 
 class MCServerApplication : public IApplication
@@ -34,10 +35,6 @@ class MCServerApplication : public IApplication
 private:
     void init_();
     void cleanAll_();
-    void close_();
-
-    void loadSettings_();
-    void saveSettings_();
 
 public:
     static MCServerApplication* instance();
@@ -51,6 +48,9 @@ public:
     
  // Settings
  public:
+    void loadSettings();
+    void saveSettings();
+
     void loadServerHistory(const QString& fileName);
     void saveServerHistory(const QString& fileName);
 
@@ -67,10 +67,8 @@ public:
       const QString& userName = QString(), const QString& password = QString()
     );
 
-    void loadSettingsSaveServerHistory();
-    void saveSettingsSaveServerHistory();
-
-
+    void loadSettingsServerHistory();
+    void saveSettingsServerHistory();
 
 public:    
     void run();

@@ -29,8 +29,6 @@
 #include "ClientPeer.h"
 #include "ServerLogWidget.h"
 
-static const char* SettingCurrentForm = "CurrentForm";
-
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
   //setAttribute(Qt::WA_DeleteOnClose, true);
@@ -57,13 +55,13 @@ void MCServerMainWindow::setupMainToolBar_() {
   QObject::connect(doMainToolBarPreferences, SIGNAL(triggered()), this, SLOT(on_doFilePreferences_triggered()));
 
   // Set default page
-  QString sActionName = MCSettings->value(SettingCurrentForm, "doMainToolBarClients").toString();
+  QString sActionName = MCSettings->value(MCSettingsApplication::SettingTagCurrentForm, MCSettingsApplication::DefaultMainWindowForm).toString();
   QAction* action = qFindChild<QAction*>(this, sActionName);
   if (action == NULL) {
     ILogger::Notice() << QString("Invalid value '%1' for the setting '%2'.")
                          .arg(sActionName)
-                         .arg(SettingCurrentForm);
-    action = doMainToolBarClients;
+                         .arg(MCSettingsApplication::SettingTagCurrentForm);
+    action = doMainToolBarServerLog;
   }
 
   on_mainToolBar_actionTriggered(action);
@@ -110,8 +108,10 @@ void MCServerMainWindow::cleanAll_() {
 
 void MCServerMainWindow::closeWindow_() {
   // Save window settings
-  MCSettings->setValue(SettingCurrentForm, m_pActionCurrentForm->objectName());
+  MCSettings->setValue(MCSettingsApplication::SettingTagCurrentForm, m_pActionCurrentForm->objectName());
   MCSettings->saveLayout(this, "MCServerMainWindow"); // Window layout
+
+  MCApp->saveSettings();
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
@@ -124,7 +124,6 @@ MCServerMainWindow::MCServerMainWindow(QWidget *parent)
 }
 
 MCServerMainWindow::~MCServerMainWindow() {
-  closeWindow_();
   cleanAll_();
 
   ILogger::Debug() << "Destroyed.";
@@ -139,7 +138,7 @@ void MCServerMainWindow::setup() {
   setupComponents_();
 
   // Auto connect ?
-  if (MCSettings->value("AdvancedOptions/AutoConnectServerAtStartup", false).toBool() == true) {
+  if (MCSettings->value("AdvancedOptions/ServerAutoConnectAtStartup", MCSettingsApplication::DefaultServerAutoConnectAtStartup).toBool() == true) {
     on_doMainToolBarConnectDisconnect_triggered();
   }
 }
@@ -224,8 +223,8 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     {
       // Log message
       message = QString("Listening the address %1 on the port %2...")
-                .arg(MCServer::instance()->listenAddress().toString())
-                .arg(MCServer::instance()->listenPort());
+                .arg(MCServer::instance()->serverAddress().toString())
+                .arg(MCServer::instance()->serverPort());
       color = Qt::darkGreen;
 
       // Button connected
@@ -374,6 +373,7 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
 
 void MCServerMainWindow::closeEvent(QCloseEvent* event) {
   disconnectServer_(); // Forces to disconnect all clients
+  closeWindow_();
   event->accept();
 }
 
