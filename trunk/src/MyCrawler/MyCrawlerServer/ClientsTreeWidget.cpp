@@ -71,7 +71,7 @@ void MCClientsTreeWidget::setup() {
   loadSettings_();
   setupContextMenu();
 
-  // Construct the list of items base ont the server history
+  // Construct the list of items based on the server history
   foreach (const CNetworkInfo& networkInfo, MCServerHistory::instance()->allClients()) {
     newClientItemFromNetworkInfo_(networkInfo);
   }
@@ -90,17 +90,18 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged_(MCClientThread* clie
     case MCClientThread::AuthenticatingState:
     {
       QTreeWidgetItem* item = newClientItem_();
-      m_lstClientsManaged.insert(client, item);
+      m_lstClientsManaged.insert(client->id(), item);
       if (client->isRemoteClient() == true) {
         m_lstItemsRefByHAddr.insert(client->networkInfo().hardwareAddress(), item);
       }
 
-      setClientItemValues_(item, client);
-
-      item->setText(StatusColumn, "Authenticating...");
+      // Set columns content
+      MCClientsTreeWidget::setClientItemValues_(item, client);
 
       item->setIcon(StateColumn, QIcon(":/Clients/UnauthenticatedIcon"));
       item->setText(StateColumn, "Unknown");
+
+      item->setText(StatusColumn, "Authenticating...");
     }
     break;
 
@@ -109,9 +110,10 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged_(MCClientThread* clie
      *************************/
     case MCClientThread::ClosingState:
     {
-      QTreeWidgetItem* item = m_lstClientsManaged.value(client);
+      QTreeWidgetItem* item = m_lstClientsManaged.value(client->id());
       AssertCheckPtr(item);
 
+      // Set columns content
       item->setText(StatusColumn, "Closing...");
     }
     break;
@@ -123,7 +125,7 @@ void MCClientsTreeWidget::slotClientConnectionStateChanged_(MCClientThread* clie
 void MCClientsTreeWidget::slotClientConnected_(MCClientThread* client, bool unknownClientInTheServerHistory) {
   AssertCheckPtr(client);
 
-  QTreeWidgetItem* item = m_lstClientsManaged.value(client);
+  QTreeWidgetItem* item = m_lstClientsManaged.value(client->id());
   AssertCheckPtr(item);
 
   quint64 hAddr = client->networkInfo().hardwareAddress();
@@ -131,19 +133,19 @@ void MCClientsTreeWidget::slotClientConnected_(MCClientThread* client, bool unkn
   // Client previously in the server history (cannot be a local client
   if (unknownClientInTheServerHistory == false) {
     delete item;
-    m_lstClientsManaged.remove(client);
+    m_lstClientsManaged.remove(client->id());
 
     item = m_lstItemsRefByHAddr.value(hAddr);
     AssertCheckPtr(item);
 
     // Erase the preview item attached with this client
-    m_lstClientsManaged.insert(client, item);
+    m_lstClientsManaged.insert(client->id(), item);
   }
 
   m_lstItemsRefByHAddr.insert(hAddr, item);
-  setClientItemValues_(item, client);
 
-  item->setText(StatusColumn, "Connected");
+  // Set columns content
+  MCClientsTreeWidget::setClientItemValues_(item, client);
 
   // Local
   if (client->isLocalClient() == true) {
@@ -155,15 +157,17 @@ void MCClientsTreeWidget::slotClientConnected_(MCClientThread* client, bool unkn
     item->setIcon(StateColumn, QIcon(":/Clients/ConnectedRemoteIcon"));
     item->setText(StateColumn, "Remote");
   }
+
+  item->setText(StatusColumn, "Connected");
 }
 
 void MCClientsTreeWidget::slotClientDisconnected_(MCClientThread* client) {
   AssertCheckPtr(client);
 
-  QTreeWidgetItem* item = m_lstClientsManaged.value(client);
+  QTreeWidgetItem* item = m_lstClientsManaged.value(client->id());
   AssertCheckPtr(item);
 
-  m_lstClientsManaged.remove(client);
+  m_lstClientsManaged.remove(client->id());
 
   // No trace
   if ((client->isAuthenticated() == false)
@@ -175,19 +179,14 @@ void MCClientsTreeWidget::slotClientDisconnected_(MCClientThread* client) {
   }
 
   // Keep a trace (image of the server history)
-  unsetClientItemValues_(item);
-
-  item->setIcon(StateColumn, QIcon(":/Clients/UnconnectedIcon"));
-  item->setText(StateColumn, "Unconnected");
-
-  item->setText(StatusColumn, "Unconnected");
+  MCClientsTreeWidget::unsetClientItemValues_(item, true);
 }
 
 void MCClientsTreeWidget::on_forceToDisconnectClient_() {
   if (selectedItems().isEmpty()) { return; }
 
   QTreeWidgetItem* item = selectedItems().at(0);
-  MCClientThread* client = qVariantValue<MCClientThread*>(item->data(ThreadIdColumn, Qt::UserRole));
+  MCClientThread* client = MCServer::instance()->clientFromId(item->data(ThreadIdColumn, Qt::UserRole).toULongLong());
 
   // Managed client
   if (client != NULL) {
@@ -199,7 +198,7 @@ void MCClientsTreeWidget::on_removeClient_() {
   if (selectedItems().isEmpty()) { return; }
 
   QTreeWidgetItem* item = selectedItems().at(0);
-  MCClientThread* client = qVariantValue<MCClientThread*>(item->data(ThreadIdColumn, Qt::UserRole));
+  MCClientThread* client = MCServer::instance()->clientFromId(item->data(ThreadIdColumn, Qt::UserRole).toULongLong());
 
   // Unmanaged client
   if (client == NULL) {
@@ -222,9 +221,8 @@ void MCClientsTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
   }
 
   // Item context menu
-  MCClientThread* client = qVariantValue<MCClientThread*>(item->data(ThreadIdColumn, Qt::UserRole));
-
   QMenu menu(this);
+  MCClientThread* client = MCServer::instance()->clientFromId(item->data(ThreadIdColumn, Qt::UserRole).toULongLong());
 
   // Unmanaged client
   if (client == NULL) {
@@ -239,59 +237,41 @@ void MCClientsTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
   event->accept();
 }
 
-void MCClientsTreeWidget::unsetClientItemValues_(QTreeWidgetItem* item) {
+void MCClientsTreeWidget::unsetClientItemValues_(QTreeWidgetItem* item, bool previouslyConnected) {
   AssertCheckPtr(item);
 
-  item->setData(ThreadIdColumn,    Qt::UserRole, QVariant::fromValue((MCClientThread*)0));
+  item->setData(ThreadIdColumn,    Qt::UserRole, (quint64)0);
 
   item->setText(ThreadIdColumn,    QString());
   item->setText(PeerPortColumn,    QString());
+
+  if (previouslyConnected == true) {
+    item->setIcon(StateColumn, QIcon(":/Clients/UnconnectedIcon"));
+    item->setText(StateColumn, "Unconnected");
+  }
+  else {
+    item->setIcon(StateColumn, QIcon(":/Clients/UnauthenticatedIcon"));
+    item->setText(StateColumn, "Unknown");
+  }
+
+  item->setText(StatusColumn, "Unconnected");
 }
 
 void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientThread* client) {
   AssertCheckPtr(item);
   AssertCheckPtr(client);
 
-  const CNetworkInfo& networkInfo = client->networkInfo();
+  item->setData(ThreadIdColumn,        Qt::UserRole, QVariant::fromValue(client->id()));
 
-  item->setData(ThreadIdColumn,        Qt::UserRole, QVariant::fromValue(client));
-  item->setData(HardwareAddressColumn, Qt::UserRole, networkInfo.hardwareAddress());
-
-  item->setText(ThreadIdColumn,        "0x" + QString::number((int)client, 16));
-  item->setText(HardwareAddressColumn, (networkInfo.hardwareAddress() == 0x0)?QString():networkInfo.hardwareAddressString());
+  // Set columns content
   item->setText(PeerAddressColumn,     client->peerAddress().toString());
   item->setText(PeerPortColumn,        QString::number(client->peerPort()));
-  item->setText(HostNameColumn,        networkInfo.hostName());
-  item->setText(HostDomainColumn,      networkInfo.hostDomain());
-  item->setText(IPColumn,              networkInfo.ip().toString());
-  item->setText(GatewayColumn,         networkInfo.gateway().toString());
-  item->setText(BroadcastColumn,       networkInfo.broadcast().toString());
-  item->setText(NetmaskColumn,         networkInfo.netmask().toString());
+
+  MCClientsTreeWidget::setClientItemFromNetworkInfo_(item, client->networkInfo());
 }
 
-QTreeWidgetItem* MCClientsTreeWidget::newClientItem_() {
-  QTreeWidgetItem* item = new QTreeWidgetItem(this);
-  unsetClientItemValues_(item);
-
-  item->setIcon(StateColumn, QIcon(":/Clients/UnauthenticatedIcon"));
-  item->setText(StateColumn, "Unknown");
-
-  return item;
-}
-
-void MCClientsTreeWidget::newClientItemFromNetworkInfo_(const CNetworkInfo& networkInfo) {
-  QTreeWidgetItem* item = new QTreeWidgetItem(this);
-
-  m_lstItemsRefByHAddr.insert(networkInfo.hardwareAddress(), item);
-
-  unsetClientItemValues_(item);
-
+void MCClientsTreeWidget::setClientItemFromNetworkInfo_(QTreeWidgetItem* item, const CNetworkInfo& networkInfo) {
   item->setData(HardwareAddressColumn, Qt::UserRole, networkInfo.hardwareAddress());
-
-  item->setIcon(StateColumn, QIcon(":/Clients/UnconnectedIcon"));
-  item->setText(StateColumn, "Unconnected");
-
-  item->setText(StatusColumn, "Unconnected");
 
   item->setText(HardwareAddressColumn, networkInfo.hardwareAddressString());
   item->setText(PeerAddressColumn,     networkInfo.peerAddress().toString());
@@ -302,4 +282,20 @@ void MCClientsTreeWidget::newClientItemFromNetworkInfo_(const CNetworkInfo& netw
   item->setText(GatewayColumn,         networkInfo.gateway().toString());
   item->setText(BroadcastColumn,       networkInfo.broadcast().toString());
   item->setText(NetmaskColumn,         networkInfo.netmask().toString());
+}
+
+QTreeWidgetItem* MCClientsTreeWidget::newClientItem_() {
+  QTreeWidgetItem* item = new QTreeWidgetItem(this);
+  MCClientsTreeWidget::unsetClientItemValues_(item, false);
+
+  return item;
+}
+
+void MCClientsTreeWidget::newClientItemFromNetworkInfo_(const CNetworkInfo& networkInfo) {
+  QTreeWidgetItem* item = new QTreeWidgetItem(this);
+  m_lstItemsRefByHAddr.insert(networkInfo.hardwareAddress(), item);
+  MCClientsTreeWidget::unsetClientItemValues_(item, true);
+
+  // Set columns content
+  MCClientsTreeWidget::setClientItemFromNetworkInfo_(item, networkInfo);
 }

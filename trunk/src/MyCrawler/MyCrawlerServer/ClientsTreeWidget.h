@@ -76,17 +76,17 @@ protected:
     void contextMenuEvent(QContextMenuEvent* event);
 
 private:
-    static void unsetClientItemValues_(QTreeWidgetItem* item);
+    static void unsetClientItemValues_(QTreeWidgetItem* item, bool previouslyConnected = true);
     static void setClientItemValues_(QTreeWidgetItem* item, MCClientThread* client);
+    static void setClientItemFromNetworkInfo_(QTreeWidgetItem* item, const CNetworkInfo& networkInfo);
 
 private:
     QTreeWidgetItem* newClientItem_();
     void newClientItemFromNetworkInfo_(const CNetworkInfo& networkInfo);
 
-
 private:
-    typedef QMap<MCClientThread*, QTreeWidgetItem*> ClientsManagedList;
-    typedef QMap<quint64, QTreeWidgetItem*> ItemsRefByHAddrList;
+    typedef QMap<quint64, QTreeWidgetItem*> ClientsManagedList; // clientId, item
+    typedef QMap<quint64, QTreeWidgetItem*> ItemsRefByHAddrList; // hardwareAddress, item
 
     ClientsManagedList m_lstClientsManaged;
     ItemsRefByHAddrList m_lstItemsRefByHAddr;

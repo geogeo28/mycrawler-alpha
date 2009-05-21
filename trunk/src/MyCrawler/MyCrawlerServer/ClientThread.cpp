@@ -42,6 +42,10 @@ MCClientThread::~MCClientThread() {
   ILogger::Debug() << "Destroyed.";
 }
 
+quint64 MCClientThread::id() const {
+  return (quint64)((unsigned int)this);
+}
+
 QString MCClientThread::connectionStateToString(ConnectionState state) {
   switch (state) {
     case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
@@ -161,7 +165,7 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
   mutex.lock();
   m_bAuthenticated = true;
-  m_clientInfo = info;
+  m_networkInfo = info;
   mutex.unlock();
 
   setConnectionState_(ConnectedState, true);

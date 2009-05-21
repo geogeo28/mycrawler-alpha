@@ -64,7 +64,7 @@ MCServer::~MCServer() {
 }
 
 bool MCServer::canAcceptNewConnection() const {
-  return (m_lstClientThreads.count() < m_nMaxConnections);
+  return (countClients() < m_nMaxConnections);
 }
 
 bool MCServer::listen() {
@@ -129,7 +129,7 @@ bool MCServer::addClient(MCClientThread* client) {
   }
 
   ILogger::Debug() << "Add a new client " << client << ".";
-  m_lstClientThreads << client;
+  m_lstClientThreads.insert(client);
 
   return true;
 }
@@ -139,6 +139,16 @@ void MCServer::removeClient(MCClientThread* client) {
 
   ILogger::Debug() << "Force to disconnect the client " << client << ".";
   client->quit();
+}
+
+MCClientThread* MCServer::clientFromId(quint64 clientId) {
+  MCClientThread* client = (MCClientThread*)(unsigned int)clientId;
+
+  if (m_lstClientThreads.contains(client) == false) {
+    return NULL;
+  }
+
+  return client;
 }
 
 int MCServer::defaultMaxConnections() {
@@ -153,6 +163,27 @@ QString MCServer::stateToString(State state) {
     default:
       return QT_TRANSLATE_NOOP(MCServer, "Closed");
   }
+}
+
+void MCServer::clientError_(MCClientThread::Error error) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientError(client, error);
+}
+
+void MCServer::clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientTimeout(client, notifiedWhen);
+}
+
+void MCServer::clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientErrorProcessingPacket(client, error, type, size, aborted);
 }
 
 void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState state) {
@@ -211,7 +242,7 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
     default:;
   }
 
-  emit clientConnectionStateChanged(senderClientThread_(), state);
+  emit clientConnectionStateChanged(client, state);
 
   // Connected
   if (state == MCClientThread::ConnectedState) {

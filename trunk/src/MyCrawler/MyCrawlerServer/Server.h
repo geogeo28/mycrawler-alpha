@@ -24,7 +24,6 @@
 #define SERVER_H
 
 #include <QtNetwork>
-#include <QMap>
 
 #include "ClientThread.h"
 #include "ServerTableIP.h"
@@ -35,8 +34,6 @@
   In other words, the parameter 'client*' of all signals is thread-safe if you connect
   signals to slots in Direct Connection mode. If you use a Queue Connection, don't forget to
   lock the mutex.
-
-
  */
 class MCServer : public QTcpServer
 {
@@ -88,6 +85,7 @@ public:
     bool addClient(MCClientThread* client);
     void removeClient(MCClientThread* client);
     int countClients() const { return m_lstClientThreads.count(); }
+    MCClientThread* clientFromId(quint64 clientId);
 
     bool isHardwareAddressRegistered(quint64 hardwareAddress) const { return m_lstClientsIP.isHardwareAddressRegistered(hardwareAddress); }
 
@@ -110,9 +108,9 @@ signals:
     void clientFinished(MCClientThread* client);
 
 private slots:
-    void clientError_(MCClientThread::Error error) { emit clientError(senderClientThread_(), error); }
-    void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) { emit clientTimeout(senderClientThread_(), notifiedWhen); }
-    void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) { emit clientErrorProcessingPacket(senderClientThread_(), error, type, size, aborted); }
+    void clientError_(MCClientThread::Error error);
+    void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen);
+    void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
     void clientDisconnected_();
     void clientFinished_();
