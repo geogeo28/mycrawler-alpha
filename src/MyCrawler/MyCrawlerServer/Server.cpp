@@ -202,7 +202,6 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
       if (hAddr != 0x0) {
         // Check if the client is already connected to the server (two instances forbidden)
         if (isHardwareAddressRegistered(hAddr) == true) {
-          // TODO : Send an error message
           refuseClientConnection_(client, "User already connected");
           return;
         }
@@ -211,7 +210,6 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
       else {
         // It's not a Localhost IP
         if (client->isLocalClient() == false) {
-          // TODO : Send an error message
           refuseClientConnection_(client, "A MAC address attribued to a local client isn't possible");
           return;
         }
