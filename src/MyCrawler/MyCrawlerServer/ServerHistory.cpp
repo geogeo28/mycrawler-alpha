@@ -90,17 +90,17 @@ void MCServerHistory::addClient(MCClientThread* client) {
   addClient(networkInfo);
 }
 
-void MCServerHistory::removeClient(quint64 hardwareAddress) {
+bool MCServerHistory::removeClient(quint64 hardwareAddress) {
   Assert(hardwareAddress != 0x0);
   Assert(isHardwareAddressRegistered(hardwareAddress) == true);
 
-  m_lstClients.remove(hardwareAddress);
+  return (m_lstClients.remove(hardwareAddress) == 1);
 }
 
-void MCServerHistory::removeClient(MCClientThread* client) {
+bool MCServerHistory::removeClient(MCClientThread* client) {
   AssertCheckPtr(client);
 
-  removeClient(client->networkInfo().hardwareAddress());
+  return removeClient(client->networkInfo().hardwareAddress());
 }
 
 QList<CNetworkInfo> MCServerHistory::allClients() const {

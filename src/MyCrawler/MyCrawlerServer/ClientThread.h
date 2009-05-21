@@ -60,6 +60,8 @@ public:
     void lockMutex() { mutex.lock(); }
     void unlockMutex() { mutex.unlock(); }
 
+    quint64 id() const;
+
     /*!
       \note This object lives from the method 'run' to an explicit call of the method 'deleteLater'.
       See MCServer for an instance of MCClientThread created into the server.
@@ -70,7 +72,7 @@ public:
     QHostAddress peerAddress() const { QMutexLocker locker(&mutex); return m_peerAddress; } // thread-safe
     quint16 peerPort() const { QMutexLocker locker(&mutex); return m_u16PeerPort; } // thread-safe
     QString peerAddressAndPort() const { QMutexLocker locker(&mutex); return QString("%1:%2").arg(peerAddress().toString()).arg(peerPort()); } // thread-safe
-    CNetworkInfo networkInfo() const { return m_clientInfo; } // thread-safe
+    CNetworkInfo networkInfo() const { return m_networkInfo; } // thread-safe
 
     bool isLocalClient() const { QMutexLocker locker(&mutex); return (peerAddress() == QHostAddress::LocalHost); } // thread-safe
     bool isRemoteClient() const { QMutexLocker locker(&mutex); return !isLocalClient(); } // thread-safe
@@ -123,7 +125,7 @@ private:
     QString m_sPeerName;
     QHostAddress m_peerAddress;
     quint16 m_u16PeerPort;
-    CNetworkInfo m_clientInfo;
+    CNetworkInfo m_networkInfo;
 
     ConnectionState m_enumConnectionState;
     bool m_bAuthenticated;

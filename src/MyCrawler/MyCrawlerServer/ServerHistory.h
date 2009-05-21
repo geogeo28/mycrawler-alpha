@@ -49,8 +49,8 @@ public:
     bool isHardwareAddressRegistered(quint64 hardwareAddress) const;
     void addClient(const CNetworkInfo& networkInfo);
     void addClient(MCClientThread* client);
-    void removeClient(quint64 hardwareAddress);
-    void removeClient(MCClientThread* client);
+    bool removeClient(quint64 hardwareAddress);
+    bool removeClient(MCClientThread* client);
     QList<CNetworkInfo> allClients() const;
 
 public:
