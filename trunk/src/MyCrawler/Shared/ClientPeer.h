@@ -25,6 +25,7 @@
 
 #include <QtNetwork>
 #include <QByteArray>
+#include <QDataStream>
 
 #include "Utilities/NetworkInfo.h"
 
@@ -43,7 +44,8 @@ public:
     typedef enum {
       KeepAliveAcknowledgmentPacket = 0xFFFF,
       KeepAlivePacket = 0,
-      AuthenticationPacket
+      AuthenticationPacket,
+      ConnectionRefusedPacket
     } PacketType;
 
     typedef enum {
@@ -71,6 +73,7 @@ public:
 
     const CNetworkInfo& networkInfo() const { return m_networkInfo; }
     void sendPacket(PacketType type, const QByteArray& data = QByteArray());
+    template <class T> void sendPacket(PacketType type, const T& data);
 
 public:
     static QString stateToString(QAbstractSocket::SocketState state);
@@ -100,8 +103,10 @@ private:
     void errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
+    void sendConnectionRefusedPacket_(const QString& reason = QString());
 
-    CNetworkInfo processAuthenticationPacket_();
+    CNetworkInfo processAuthenticationPacket_(QDataStream& data);
+    void processConnectionRefusedPacket_(QDataStream& data);
 
 private:
     void connecting_();
@@ -127,5 +132,14 @@ private:
 
     CNetworkInfo m_networkInfo;
 };
+
+template <class T> void MCClientPeer::sendPacket(PacketType type, const T& data) {
+  QByteArray bytes;
+  QDataStream in(&bytes, QIODevice::WriteOnly);
+  in.setVersion(SerializationVersion);
+
+  in << data;
+  sendPacket(type, bytes);
+}
 
 #endif // CLIENTPEER_H

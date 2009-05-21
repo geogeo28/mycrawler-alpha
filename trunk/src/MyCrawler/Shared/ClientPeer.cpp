@@ -18,8 +18,6 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QDataStream>
-
 #include "Config/Config.h"
 #include "Debug/Logger.h"
 
@@ -59,7 +57,7 @@ void MCClientPeer::sendPacket(PacketType type, const QByteArray& data) {
                       .arg(packetTypeToString(type))
                       .arg(type);
 
-  // Prepate the packet
+  // Prepare the packet
   QByteArray packet;
   QDataStream out(&packet, QIODevice::WriteOnly);
   out.setVersion(SerializationVersion);
@@ -109,6 +107,7 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
     case KeepAliveAcknowledgmentPacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive (acknowledgment)");
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
+    case ConnectionRefusedPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Connection refused");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -117,11 +116,11 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
 
 QString MCClientPeer::packetErrorToString(PacketError error) {
   switch (error) {
-    case PacketSizeError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
-    case PacketTypeError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
-    case ProtocolIdError:      return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
-    case ProtocolVersionError: return QT_TRANSLATE_NOOP(MCClientPeer, "Could not etablish a communication with the peer because the protocol version is different");
-    case AuthenticationError:  return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
+    case PacketSizeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
+    case PacketTypeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+    case ProtocolIdError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
+    case ProtocolVersionError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Could not etablish a communication with the peer because the protocol version is different");
+    case AuthenticationError:    return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
@@ -131,8 +130,8 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
 void MCClientPeer::refuseConnection(const QString& reason) {
   ILogger::Debug() << "The connection was aborted (reason = " << reason << ").";
 
-  // TODO : Send an error message
-  abort();
+  sendConnectionRefusedPacket_(reason);
+  disconnectFromHost();
 }
 
 void MCClientPeer::disconnect(int msecs) {
@@ -321,28 +320,32 @@ void MCClientPeer::sendHandShakePacket_() {
 }
 
 void MCClientPeer::sendAuthenticationPacket_() {
-  QByteArray bytes;
-  QDataStream data(&bytes, QIODevice::WriteOnly);
-  data.setVersion(SerializationVersion);
-
   CNetworkInfo networkInfo = CNetworkInfo::fromInterfaceByIp(localAddress());
   networkInfo.setPeerName(peerName());
   networkInfo.setPeerAddress(peerAddress());
   networkInfo.setPeerPort(peerPort());
 
-  data << networkInfo;
-
-  sendPacket(AuthenticationPacket, bytes);
+  sendPacket(AuthenticationPacket, networkInfo);
 }
 
-CNetworkInfo MCClientPeer::processAuthenticationPacket_() {
-  QDataStream data(this);
-  data.setVersion(SerializationVersion);
+void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
+  sendPacket(ConnectionRefusedPacket, reason);
+}
 
+CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
   CNetworkInfo networkInfo;
   data >> networkInfo;
 
   return networkInfo;
+}
+
+void MCClientPeer::processConnectionRefusedPacket_(QDataStream& data) {
+  QString reason;
+  data >> reason;
+
+  setSocketError(QTcpSocket::ConnectionRefusedError);
+  setErrorString(QString("%1. (Connection refused)").arg(reason));
+  emit error(QTcpSocket::ConnectionRefusedError);
 }
 
 // Initialize all state variable
@@ -385,6 +388,10 @@ void MCClientPeer::processPacket_() {
                       .arg(packetTypeToString(packetType))
                       .arg(packetType);
 
+  // Create a data stream to read packet content
+  QDataStream data(this);
+  data.setVersion(SerializationVersion);
+
   // HandShake packet not received
   if (m_bReceivedHandShake == false) {
     // Could not process the packet because no authentication message was received.
@@ -393,7 +400,7 @@ void MCClientPeer::processPacket_() {
       return;
     }
 
-    m_networkInfo = processAuthenticationPacket_();
+    m_networkInfo = processAuthenticationPacket_(data);
     emit authenticated(m_networkInfo);
 
     m_bReceivedHandShake = true;
@@ -414,12 +421,19 @@ void MCClientPeer::processPacket_() {
   switch (packetType) {
     // KeepAlive (demand)
     case KeepAlivePacket:
+    {
       m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval); // Restart KeepAlive timer
       sendPacket(KeepAliveAcknowledgmentPacket);
-      break;
+    }
+    break;
 
     // KeepAlive (acknowledgment)
     case KeepAliveAcknowledgmentPacket:
+      break;
+
+    // Connection Refused
+    case ConnectionRefusedPacket:
+      processConnectionRefusedPacket_(data);
       break;
 
     default:

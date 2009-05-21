@@ -41,7 +41,8 @@ void MCClient::destroy() {
 }
 
 MCClient::MCClient(QObject* parent)
-  : QObject(parent)
+  : QObject(parent),
+    m_bConnectionRefused(false)
 {
   ILogger::Debug() << "Construct.";
 
@@ -49,7 +50,7 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(connected()), &m_clientPeer, SLOT(sendHandShake()));
 
   // Other connections
-  QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)));
+  QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error_(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)));
@@ -77,4 +78,15 @@ void MCClient::disconnect(int msecs) {
   ILogger::Debug() << "Slot disconnect.";
 
   m_clientPeer.disconnect(msecs);
+}
+
+void MCClient::error_(QAbstractSocket::SocketError socketError) {
+  if (socketError == QAbstractSocket::ConnectionRefusedError) {
+    m_bConnectionRefused = true;
+  }
+  else if ((socketError == QAbstractSocket::RemoteHostClosedError) && (m_bConnectionRefused == true)) {
+    return;
+  }
+
+  emit error(socketError);
 }

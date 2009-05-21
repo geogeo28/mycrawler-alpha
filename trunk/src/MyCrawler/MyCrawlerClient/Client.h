@@ -61,9 +61,13 @@ signals:
 public slots:
     void disconnect(int msecs = 30000);
 
+private slots:
+    void error_(QAbstractSocket::SocketError socketError);
+
 private:
     static MCClient* s_instance;
     MCClientPeer m_clientPeer;
+    bool m_bConnectionRefused;
 
 };
 
