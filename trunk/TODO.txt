@@ -8,5 +8,5 @@ Google Code :
 
 - Configure timestamp in Google Code. See $Id$ properties when updated.
 (09/04/09) - Change project description.
-
+- The source code uses the GPL v3.0 neither the licence of the project (LGPL v3.0).
 
