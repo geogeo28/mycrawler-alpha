@@ -46,27 +46,21 @@ public:
 
     virtual void setup() =0;
 
-public:
-    QMenu* contextMenu() const { return m_pContextMenu; }
-
 public slots:
     void showColumnFromAction(bool show);
+
+protected:
+    void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
+    void setupHeaderContextMenu();
+
+protected:
+    void mousePressEvent(QMouseEvent* event);
 
 private slots:
     void slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order);
 
-protected:
-    void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
-    QMenu* columnsMenu();
-
-    virtual void setupContextMenu();
-    virtual void setContextMenu(QMenu* menu) { m_pContextMenu = menu; }
-
-    virtual void contextMenuEvent(QContextMenuEvent *event);
-
 private:
     int m_nColumnSortedIndex;
-    QPointer<QMenu> m_pContextMenu;
 };
 
 #endif // MYQTREEWIDGET_H
