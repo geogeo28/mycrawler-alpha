@@ -45,7 +45,12 @@ public:
  
  public:
     MCServerMainWindow* mainWindow() { return m_pMainWindow; }
-    
+
+ // Resources
+ public:
+    void initResources();
+    void cleanupResources();
+
  // Settings
  public:
     void loadSettings();

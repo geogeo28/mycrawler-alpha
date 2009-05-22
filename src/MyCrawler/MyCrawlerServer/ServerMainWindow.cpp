@@ -18,16 +18,12 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QNetworkProxy>
-
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ServerMainWindow.h"
 #include "DialogPreferences.h"
 #include "ServerApplication.h"
-#include "ClientPeer.h"
-#include "ServerLogWidget.h"
 
 void MCServerMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -37,7 +33,7 @@ void MCServerMainWindow::setupWindow_() {
   setWindowTitle(MCServerApplication::applicationName() + " v" + _MYCRAWLER_SERVER_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  if (!MCSettings->loadLayout(this, "MCServerMainWindow")) {
+  if (!MCSettings->loadLayout(this, "ServerMainWindow")) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -64,7 +60,7 @@ void MCServerMainWindow::setupMainToolBar_() {
     action = doMainToolBarServerLog;
   }
 
-  on_mainToolBar_actionTriggered(action);
+  tabWidgetForms->attachToolBar(mainToolBar, action);
 }
 
 void MCServerMainWindow::setupMenu_() {
@@ -75,19 +71,19 @@ void MCServerMainWindow::setupMenu_() {
   QObject::connect(doHelpAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 }
 
-void MCServerMainWindow::setupServerLogForm_() {
+void MCServerMainWindow::setupForms_() {
+  // Server log
   treeWidgetServerLog->setup();
-  QObject::connect(buttonServerLogCopy, SIGNAL(clicked()), treeWidgetServerLog, SLOT(copyToClipboard()));
-}
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetServerLog, "ServerLogTreeWidget");
+  treeWidgetServerLog->setupHeaderContextMenu();
 
-void MCServerMainWindow::setupClientsForm_() {
+  // Clients
   treeWidgetClients->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetClients, "ClientsTreeWidget");
+  treeWidgetClients->setupHeaderContextMenu();
 }
 
 void MCServerMainWindow::setupComponents_() {
-  // Hide TabBar of TabWidgetForms
-  tabWidgetForms->setTabBarHidden(true);
-
   // Components
   m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
   m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);
@@ -108,15 +104,17 @@ void MCServerMainWindow::cleanAll_() {
 
 void MCServerMainWindow::closeWindow_() {
   // Save window settings
-  MCSettings->setValue(MCSettingsApplication::SettingTagCurrentForm, m_pActionCurrentForm->objectName());
-  MCSettings->saveLayout(this, "MCServerMainWindow"); // Window layout
+  MCSettings->setValue(MCSettingsApplication::SettingTagCurrentForm, tabWidgetForms->actionCurrentForm()->objectName());
+
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetServerLog, "ServerLogTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetClients, "ClientsTreeWidget");
+  MCSettings->saveLayout(this, "ServerMainWindow"); // Window layout
 
   MCApp->saveSettings();
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
-  : QMainWindow(parent),
-    m_pActionCurrentForm(NULL)
+  : QMainWindow(parent)
 {
   ILogger::Debug() << "Construct.";
 
@@ -133,8 +131,7 @@ void MCServerMainWindow::setup() {
   setupWindow_();
   setupMainToolBar_();
   setupMenu_();
-  setupServerLogForm_();
-  setupClientsForm_();
+  setupForms_();
   setupComponents_();
 
   // Auto connect ?
@@ -148,24 +145,6 @@ void MCServerMainWindow::on_doFilePreferences_triggered() {
   dlgPreferences.exec();
 }
 
-void MCServerMainWindow::on_mainToolBar_actionTriggered(QAction* action) {
-  QVariant formIndex = action->property("FormIndex");
-  if (formIndex.isValid()) {
-    // New action clicked
-    if (action != m_pActionCurrentForm) {
-      tabWidgetForms->setCurrentIndex(formIndex.toInt());
-
-      // Uncheck the preview action
-      if (m_pActionCurrentForm != NULL) {
-        m_pActionCurrentForm->setChecked(false);
-      }
-    }
-
-    action->setChecked(true);
-    m_pActionCurrentForm = action;
-  }
-}
-
 void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
   // Connect
   if (MCServer::instance()->isListening() == false) {
@@ -173,7 +152,7 @@ void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
   }
   // Disconnect
   else {
-    int nClients = MCServer::instance()->countClients();
+    int nClients = MCServer::instance()->clientCount();
     if (nClients > 0) {
       int button = QMessageBox::warning(
         this, QApplication::applicationName(),
@@ -205,7 +184,7 @@ void MCServerMainWindow::slotServerError(MCServer::Error error) {
   }
 
   treeWidgetServerLog->write(
-    MCServerLogWidget::ErrorIcon,
+    CLogTreeWidget::ErrorIcon,
     QString("%1 (%2).")
       .arg(MCServer::instance()->errorString())
       .arg(errcode),
@@ -242,7 +221,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       color = Qt::blue;
 
       // Init progress dialog
-      int nClients = MCServer::instance()->countClients();
+      int nClients = MCServer::instance()->clientCount();
       if (nClients > 0) {
         m_pProgressDialogCloseClients->setMaximum(nClients);
         m_pProgressDialogCloseClients->setValue(0);
@@ -282,7 +261,7 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
     default:;
   }
 
-  treeWidgetServerLog->write(MCServerLogWidget::InformationIcon, message, color, QFont::Bold);
+  treeWidgetServerLog->write(CLogTreeWidget::InformationIcon, message, color, QFont::Bold);
 }
 
 void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread::Error error) {
@@ -297,7 +276,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
   }
 
   treeWidgetServerLog->write(
-    MCServerLogWidget::ErrorIcon,
+    CLogTreeWidget::ErrorIcon,
     QString("Error on the client %1 : %2 (%3)%4.")
       .arg(client->peerAddressAndPort())
       .arg(client->errorString())
@@ -309,7 +288,7 @@ void MCServerMainWindow::slotClientError(MCClientThread* client, MCClientThread:
 
 void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen) {
   treeWidgetServerLog->write(
-    MCServerLogWidget::ErrorIcon,
+    CLogTreeWidget::ErrorIcon,
     QString("The client %1 not responding (%2).")
       .arg(client->peerAddressAndPort())
       .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen)),
@@ -323,7 +302,7 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
 )
 {
   treeWidgetServerLog->write(
-    MCServerLogWidget::ErrorIcon,
+    CLogTreeWidget::ErrorIcon,
     QString("Error processing a packet of the client %1.\n" \
             "(Type = %2, Size = %3) %4 (%5)\n" \
             "%6")
@@ -350,7 +329,7 @@ void MCServerMainWindow::slotClientConnectionRefused(MCClientThread* client, con
     message += "\nReason : " + reason + ".";
   }
 
-  treeWidgetServerLog->write(MCServerLogWidget::ErrorIcon, message, Qt::red, QFont::Bold);
+  treeWidgetServerLog->write(CLogTreeWidget::ErrorIcon, message, Qt::red, QFont::Bold);
 }
 
 void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state) {
@@ -362,7 +341,7 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
   else if (state == MCClientThread::UnconnectedState)    { color = Qt::red; }
 
   treeWidgetServerLog->write(
-    MCServerLogWidget::InformationIcon,
+    CLogTreeWidget::InformationIcon,
     QString("Client %1 : %2 (%3)")
       .arg(client->peerAddressAndPort())
       .arg(MCClientThread::connectionStateToString(state))
@@ -395,7 +374,7 @@ bool MCServerMainWindow::connectServer_() {
 
   if (!MCServer::instance()->listen()) {
     treeWidgetServerLog->write(
-      MCServerLogWidget::ErrorIcon,
+      CLogTreeWidget::ErrorIcon,
       QString("Could not listen the address %1 on the port %2.\n" \
               "%3 (%4).")
         .arg(MCServer::instance()->listenAddress().toString())

@@ -22,9 +22,9 @@
 #include "Debug/Logger.h"
 
 #include "ClientMainWindow.h"
+#include "DialogPreferences.h"
 #include "ClientApplication.h"
 #include "Client.h"
-#include "ClientPeer.h"
 
 void MCClientMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -34,7 +34,7 @@ void MCClientMainWindow::setupWindow_() {
   setWindowTitle(MCClientApplication::applicationName() + " v" + _MYCRAWLER_CLIENT_VERSION_);
 
   // If this window have not parameters, place the window on the center of the screen if possible
-  if (!MCApp->settings()->loadLayout(this, "MCClientMainWindow")) {
+  if (!MCSettings->loadLayout(this, "ClientMainWindow")) {
     QDesktopWidget desktopWidget;
     int x = (desktopWidget.width() - this->width()) / 2;
     int y = (desktopWidget.height() - this->height()) / 2;
@@ -47,11 +47,44 @@ void MCClientMainWindow::setupWindow_() {
   }
 }
 
+void MCClientMainWindow::setupMainToolBar_() {
+  // Connect buttons
+  QObject::connect(doMainToolBarPreferences, SIGNAL(triggered()), this, SLOT(on_doFilePreferences_triggered()));
+
+  // Set default page
+  QString sActionName = MCSettings->value(MCSettingsApplication::SettingTagCurrentForm, MCSettingsApplication::DefaultMainWindowForm).toString();
+  QAction* action = qFindChild<QAction*>(this, sActionName);
+  if (action == NULL) {
+    ILogger::Notice() << QString("Invalid value '%1' for the setting '%2'.")
+                         .arg(sActionName)
+                         .arg(MCSettingsApplication::SettingTagCurrentForm);
+    action = doMainToolBarClientLog;
+  }
+
+  tabWidgetForms->attachToolBar(mainToolBar, action);
+}
+
+void MCClientMainWindow::setupMenu_() {
+  // View menu (Toolbars)
+  menuViewToolBars->addAction(mainToolBar->toggleViewAction());
+
+  // Help menu
+  QObject::connect(doHelpAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+}
+
+void MCClientMainWindow::setupForms_() {
+  // Client log
+  treeWidgetClientLog->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
+  treeWidgetClientLog->setupHeaderContextMenu();
+}
+
 void MCClientMainWindow::setupComponents_() {
-  QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)));
-  QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)));
-  QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
-  QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  // Connect signals/slots
+  //QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)));
+  //QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)));
+  //QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
+  //QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
 }
 
 void MCClientMainWindow::cleanAll_() {
@@ -59,8 +92,13 @@ void MCClientMainWindow::cleanAll_() {
 }
 
 void MCClientMainWindow::closeWindow_() {
-  ILogger::Debug() << "Save the setting window layout.";
-  MCApp->settings()->saveLayout(this, "MCClientMainWindow");
+  // Save window settings
+  MCSettings->setValue(MCSettingsApplication::SettingTagCurrentForm, tabWidgetForms->actionCurrentForm()->objectName());
+
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
+  MCSettings->saveLayout(this, "ClientMainWindow"); // Window layout
+
+  MCApp->saveSettings();
 }
 
 MCClientMainWindow::MCClientMainWindow(QWidget *parent)
@@ -70,26 +108,59 @@ MCClientMainWindow::MCClientMainWindow(QWidget *parent)
   ILogger::Debug() << "Construct.";
 
   setupUi(this);
-
-  try {
-    setupWindow_();
-    setupComponents_();
-  }
-  catch(...) {
-    cleanAll_();
-    throw;
-  }
 }
 
-MCClientMainWindow::~MCClientMainWindow()
-{
-  closeWindow_();
+MCClientMainWindow::~MCClientMainWindow() {
   cleanAll_();
 
   ILogger::Debug() << "Destroyed.";
 }
 
-void MCClientMainWindow::on_buttonClientConnect_clicked() {
+void MCClientMainWindow::setup() {
+  setupWindow_();
+  setupMainToolBar_();
+  setupMenu_();
+  setupForms_();
+  setupComponents_();
+
+  // Auto connect ?
+  if (MCSettings->value("AdvancedOptions/ServersConnectAtStartup", MCSettingsApplication::DefaultServersConnectAtStartup).toBool() == true) {
+    on_doMainToolBarConnectDisconnect_triggered();
+  }
+}
+
+void MCClientMainWindow::on_doFilePreferences_triggered() {
+  MCDialogPreferences dlgPreferences(this);
+  dlgPreferences.exec();
+}
+
+void MCClientMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
+  /*// Connect
+  if (MCServer::instance()->isListening() == false) {
+    connectServer_();
+  }
+  // Disconnect
+  else {
+    int nClients = MCServer::instance()->clientCount();
+    if (nClients > 0) {
+      int button = QMessageBox::warning(
+        this, QApplication::applicationName(),
+        QString("%1 client(s) is/are currently connected.<br />" \
+                "Do you want to continue and close all connections ?")
+                .arg(nClients),
+        QMessageBox::Yes | QMessageBox::No
+      );
+
+      if (button == QMessageBox::No) {
+        return;
+      }
+    }
+
+    disconnectServer_();
+  }*/
+}
+
+/*void MCClientMainWindow::on_buttonClientConnect_clicked() {
   // Connect the client
   if (m_bClientConnected == false) {
     buttonClientConnect->setText("Connecting...");
@@ -123,21 +194,21 @@ void MCClientMainWindow::on_buttonClientConnect_clicked() {
       MCClient::instance()->disconnect(-1);
     }
   }
-}
+}*/
 
 void MCClientMainWindow::slotClientError(QAbstractSocket::SocketError error) {
-  ILogger::Error() << MCClient::instance()->errorString();
+  //ILogger::Error() << MCClient::instance()->errorString();
 }
 
 void MCClientMainWindow::slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen) {
-  ILogger::Error() << QString(
+  /*ILogger::Error() << QString(
       "The server not responding (%1).\n" \
       "Check your Internet connection.")
-      .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen));
+      .arg(MCClientPeer::timeoutNotifyToString(notifiedWhen));*/
 }
 
 void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) {
-  ILogger::Error() << QString("Error processing a packet of the server.\n" \
+  /*ILogger::Error() << QString("Error processing a packet of the server.\n" \
                               "(Type = %1, Size = %2) %3 (%4) \n" \
                               "%5")
                       .arg(type)
@@ -148,11 +219,11 @@ void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketErr
                         (aborted == true)?
                         "To prevent of a DoS attack, the connection was aborted.":
                         "Trying recover the packet."
-                      );
+                      );*/
 }
 
 void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::SocketState state) {
-  ILogger::Trace() << QString("Connection state changed : %1 (%2)")
+  /*ILogger::Trace() << QString("Connection state changed : %1 (%2)")
                       .arg(MCClientPeer::stateToString(state))
                       .arg(state);
 
@@ -165,5 +236,10 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
   else if (state == QAbstractSocket::UnconnectedState) {
     buttonClientConnect->setText("Connect");
     m_bClientConnected = false;
-  }
+  }*/
+}
+
+void MCClientMainWindow::closeEvent(QCloseEvent* event) {
+  closeWindow_();
+  event->accept();
 }

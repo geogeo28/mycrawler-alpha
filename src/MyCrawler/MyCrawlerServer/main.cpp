@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   try {
     MCServerApplication app(argc, argv);
 
-    try {
+    try { 
       app.loadSettings();
       app.run();
       return app.exec();

@@ -28,6 +28,8 @@ struct MCSettingsApplication
   static const char* SettingTagCurrentForm;
   static const char* DefaultMainWindowForm;
 
+  static const char* ServerHistoryFileName;
+
   static const char* DefaultServerAddress;
   static const quint16 DefaultServerPort;
   static const int DefaultServerMaxConnections;

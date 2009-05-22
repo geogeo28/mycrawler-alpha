@@ -27,15 +27,27 @@
 
 class MyQTabWidget : public QTabWidget
 {
+    Q_OBJECT
+
 public:
-    MyQTabWidget(QWidget* parent = 0)
-      : QTabWidget(parent)
-    {}
-    virtual ~MyQTabWidget() {}
+    MyQTabWidget(QWidget* parent = 0);
+    virtual ~MyQTabWidget();
 
-    QSize sizeHint() const { return baseSize(); }
+    void setTabBarHidden(bool hide);
 
-    void setTabBarHidden(bool hide) { tabBar()->setHidden(hide); }
+    void attachToolBar(QToolBar* toolBar, QAction* defaultActionCurrentForm);
+    void detachToolBar();
+    QAction* actionCurrentForm() { return m_pActionCurrentForm; }
+
+public:
+    QSize sizeHint() const { return baseSize(); }  
+
+private slots:
+    void slotToolBarActionTriggered(QAction* action);
+
+private:
+    QToolBar* m_pToolBar;
+    QAction* m_pActionCurrentForm;
 };
 
 #endif // MYQTABWIDGET_H

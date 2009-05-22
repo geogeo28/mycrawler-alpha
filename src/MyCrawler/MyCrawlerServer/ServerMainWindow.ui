@@ -36,7 +36,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="MCServerLogWidget" name="treeWidgetServerLog">
+         <widget class="CLogTreeWidget" name="treeWidgetServerLog">
           <property name="autoScroll">
            <bool>false</bool>
           </property>
@@ -410,9 +410,12 @@
    <header>ClientsTreeWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>MCServerLogWidget</class>
+   <class>CLogTreeWidget</class>
    <extends>QTreeWidget</extends>
-   <header>ServerLogWidget.h</header>
+   <header>../Components/Widgets/LogTreeWidget.h</header>
+   <slots>
+    <slot>copyToClipboard()</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <resources>
@@ -469,7 +472,7 @@
   </connection>
   <connection>
    <sender>buttonServerLogClear</sender>
-   <signal>clicked()</signal>
+   <signal>released()</signal>
    <receiver>treeWidgetServerLog</receiver>
    <slot>clear()</slot>
    <hints>
@@ -480,6 +483,22 @@
     <hint type="destinationlabel">
      <x>472</x>
      <y>333</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonServerLogCopy</sender>
+   <signal>released()</signal>
+   <receiver>treeWidgetServerLog</receiver>
+   <slot>copyToClipboard()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>419</x>
+     <y>473</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>276</x>
+     <y>296</y>
     </hint>
    </hints>
   </connection>

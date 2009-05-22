@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
     MCClientApplication app(argc, argv);
 
     try {
+      app.loadSettings();
       app.run();
       return app.exec();
     }

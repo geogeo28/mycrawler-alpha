@@ -84,7 +84,7 @@ public:
 
     bool addClient(MCClientThread* client);
     void removeClient(MCClientThread* client);
-    int countClients() const { return m_lstClientThreads.count(); }
+    int clientCount() const { return m_lstClientThreads.count(); }
     MCClientThread* clientFromId(quint64 clientId);
 
     bool isHardwareAddressRegistered(quint64 hardwareAddress) const { return m_lstClientsIP.isHardwareAddressRegistered(hardwareAddress); }

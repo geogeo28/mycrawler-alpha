@@ -18,8 +18,11 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QNetworkProxy>
+
 #include "Config/Config.h"
 #include "Config/Settings.h"
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
 #include "ClientApplication.h"
@@ -46,6 +49,8 @@ void MCClientApplication::init_() {
 void MCClientApplication::cleanAll_() {
   MCClient::destroy();
   if (m_pMainWindow) { delete m_pMainWindow; }
+
+  cleanupResources();
 }
 
 MCClientApplication::MCClientApplication(int &argc, char** argv)
@@ -69,6 +74,9 @@ MCClientApplication::MCClientApplication(int &argc, char** argv)
   installSettings("settings");
   MCSettings->setLayoutPrefixKey("WidgetsLayouts");
 
+  // Init resources
+  initResources();
+
   init_();
 
   installLoggerMsgBox(mainWindow());
@@ -79,8 +87,67 @@ MCClientApplication::~MCClientApplication() {
   ILogger::Debug() << "Destroyed.";
 }
 
+void MCClientApplication::initResources() {
+  ILogger::Debug() << "Init resources.";
+
+  Q_INIT_RESOURCE(widgets);
+  Q_INIT_RESOURCE(resources);
+}
+
+void MCClientApplication::cleanupResources() {
+  ILogger::Debug() << "Clean-Up resources.";
+
+  Q_CLEANUP_RESOURCE(widgets);
+  Q_CLEANUP_RESOURCE(resources);
+}
+
+void MCClientApplication::loadSettings() {
+  loadSettingsProxyConfiguration();
+}
+
+void MCClientApplication::saveSettings() {
+
+}
+
+void MCClientApplication::loadSettingsProxyConfiguration() {
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Load 'ProxyConfiguration' settings.";
+  QNetworkProxy proxy(QNetworkProxy::NoProxy);
+  settings()->beginGroup("ProxyConfiguration");
+    proxy.setHostName(settings()->value("HostName", MCSettingsApplication::DefaultProxyHostName).toString());
+    proxy.setPort(settings()->value("Port", MCSettingsApplication::DefaultProxyPort).toInt());
+    proxy.setUser(settings()->value("UserName", MCSettingsApplication::DefaultProxyUserName).toString());
+    proxy.setPassword(QByteArray::fromBase64(settings()->value("UserPassword", MCSettingsApplication::DefaultProxyUserPassword).toByteArray()));
+
+    if (settings()->value("Use", MCSettingsApplication::DefaultProxyUse).toBool() == true) {
+      proxy.setType(QNetworkProxy::HttpProxy);
+    }
+  settings()->endGroup();
+  IApplication::setProxy(proxy);
+}
+
+void MCClientApplication::saveSettingsProxyConfiguration(
+  bool useProxy,
+  const QString& hostName, quint16 port,
+  const QString& userName, const QString& password
+)
+{
+  AssertCheckPtr(settings());
+
+  ILogger::Debug() << "Save 'ProxyConfiguration' settings.";
+  settings()->beginGroup("ProxyConfiguration");
+    settings()->setValue("Use", useProxy);
+    settings()->setValue("HostName", hostName);
+    settings()->setValue("Port", port);
+    settings()->setValue("UserName", userName);
+    settings()->setValue("UserPassword", password.toUtf8().toBase64());
+  settings()->endGroup();
+}
+
 void MCClientApplication::run() {
   ILogger::Debug() << "Running...";
 
+  mainWindow()->setup();
   mainWindow()->show();
 }

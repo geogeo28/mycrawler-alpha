@@ -52,9 +52,6 @@ public:
     };
 
 private:
-    void loadSettings_();
-    void saveSettings_();
-
     void cleanAll_();
 
 public:

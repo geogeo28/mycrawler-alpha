@@ -1,0 +1,15 @@
+<RCC>
+  <qresource prefix="/MainToolBar" >
+    <file alias="ClientLogIcon" >icons/MainToolBar/ClientLog.png</file>
+    <file alias="ServersIcon" >icons/MainToolBar/Servers.png</file>
+    <file alias="ConnectedIcon" >icons/MainToolBar/Connected.png</file>
+    <file alias="UnconnectedIcon" >icons/MainToolBar/Unconnected.png</file>
+    <file alias="PreferencesIcon" >icons/MainToolBar/Preferences.png</file>
+    <file alias="ExitIcon" >icons/MainToolBar/Exit.png</file>
+  </qresource>
+  <qresource prefix="/Menu" >
+    <file alias="PreferencesIcon" >icons/Menu/Preferences.png</file>
+    <file alias="ExitIcon" >icons/Menu/Exit.png</file>
+    <file alias="AboutQtIcon" >icons/Menu/AboutQt.png</file>
+  </qresource>
+</RCC>

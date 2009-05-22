@@ -25,8 +25,6 @@
 #include "Server.h"
 #include "ServerHistory.h"
 
-Q_DECLARE_METATYPE(MCClientThread*)
-
 static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
   (MyQTreeWidgetHeaderItem){NULL, "Thread ID",    -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "MAC address",  -1, true},
@@ -44,14 +42,6 @@ static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
 static const int ColumnsHeaderCount = 12;
 static const int ColumnSortedIndex = -1;
 
-void MCClientsTreeWidget::loadSettings_() {
-  MCSettings->loadLayout<QTreeWidget>(this, "MCClientsTreeWidget");
-}
-
-void MCClientsTreeWidget::saveSettings_() {
-  MCSettings->saveLayout<QTreeWidget>(this, "MCClientsTreeWidget");
-}
-
 void MCClientsTreeWidget::cleanAll_() {
 
 }
@@ -61,15 +51,13 @@ MCClientsTreeWidget::MCClientsTreeWidget(QWidget* parent)
 {}
 
 MCClientsTreeWidget::~MCClientsTreeWidget() {
-  saveSettings_();
   cleanAll_();
 }
 
 void MCClientsTreeWidget::setup() {
   setupHeader(ColumnsHeader, ColumnsHeaderCount);  
   sortByColumn(ColumnSortedIndex);
-  loadSettings_();
-  setupContextMenu();
+  setPersistentColumnIndex(StateColumn);
 
   // Construct the list of items based on the server history
   foreach (const CNetworkInfo& networkInfo, MCServerHistory::instance()->allClients()) {
@@ -242,6 +230,7 @@ void MCClientsTreeWidget::unsetClientItemValues_(QTreeWidgetItem* item, bool pre
 
   item->setData(ThreadIdColumn,    Qt::UserRole, (quint64)0);
 
+  // Set columns content
   item->setText(ThreadIdColumn,    QString());
   item->setText(PeerPortColumn,    QString());
 

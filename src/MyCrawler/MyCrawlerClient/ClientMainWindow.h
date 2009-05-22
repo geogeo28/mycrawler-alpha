@@ -36,6 +36,9 @@ class MCClientMainWindow : public QMainWindow,
 
 private:
     void setupWindow_();
+    void setupMainToolBar_();
+    void setupMenu_();
+    void setupForms_();
     void setupComponents_();
 
     void cleanAll_();
@@ -45,14 +48,24 @@ public:
     MCClientMainWindow(QWidget *parent = NULL);
     ~MCClientMainWindow();
 
-public slots:
-    void on_buttonClientConnect_clicked();
+    void setup();
+
+private slots:
+    void on_doFilePreferences_triggered();
+    void on_doMainToolBarConnectDisconnect_triggered();
 
 private slots:
     void slotClientError(QAbstractSocket::SocketError error);
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
     void slotClientConnectionStateChanged(QAbstractSocket::SocketState state); 
+
+protected:
+    void closeEvent(QCloseEvent* event);
+
+/*private:
+    bool connectServer_();
+    void disconnectServer_();*/
 
 private:
     bool m_bClientConnected;
