@@ -48,18 +48,6 @@ void MyQTreeWidget::showColumnFromAction(bool show) {
   }
 }
 
-void MyQTreeWidget::slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order) {
-  // Sorting disabled
-  if ((m_nColumnSortedIndex == logicalIndex) && (order == Qt::AscendingOrder)) {
-    sortByColumn(-1, Qt::DescendingOrder);
-    m_nColumnSortedIndex = -1;
-
-    return;
-  }
-
-  m_nColumnSortedIndex = logicalIndex;
-}
-
 void MyQTreeWidget::setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns) {
   for (int i = 0; i < nColumns; ++i) {
     const MyQTreeWidgetHeaderItem& item = headers[i];
@@ -72,36 +60,38 @@ void MyQTreeWidget::setupHeader(const MyQTreeWidgetHeaderItem headers[], int nCo
   }
 }
 
-QMenu* MyQTreeWidget::columnsMenu() {
-  QMenu* menu = new QMenu("Columns", this);
+void MyQTreeWidget::setupHeaderContextMenu() {
+  header()->setContextMenuPolicy(Qt::ActionsContextMenu);
 
-  // Columns
   for (int i = 0; i < columnCount(); ++i) {
-    QAction* action = new QAction(headerItem()->icon(i), headerItem()->text(i), this);
+    // Add column action in the context menu
+    QAction* action = new QAction(headerItem()->icon(i), headerItem()->text(i), header());
     action->setProperty("ColumnIndex", i);
     action->setCheckable(true);
     action->setChecked(!isColumnHidden(i));
     QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(showColumnFromAction(bool)));
 
-    menu->addAction(action);
+    header()->addAction(action);
+  }
+}
+
+void MyQTreeWidget::mousePressEvent(QMouseEvent* event) {
+  QTreeWidgetItem* item = itemAt(event->pos());
+  if (item == NULL) {
+    clearSelection();
   }
 
-  return menu;
+  QTreeWidget::mousePressEvent(event);
 }
 
-void MyQTreeWidget::setupContextMenu() {
-  QMenu *menu = new QMenu(this);
-  menu->addMenu(columnsMenu());
+void MyQTreeWidget::slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order) {
+  // Sorting disabled
+  if ((m_nColumnSortedIndex == logicalIndex) && (order == Qt::AscendingOrder)) {
+    sortByColumn(-1, Qt::DescendingOrder);
+    m_nColumnSortedIndex = -1;
 
-  setContextMenu(menu);
-}
-
-void MyQTreeWidget::contextMenuEvent(QContextMenuEvent *event) {
-  if (!m_pContextMenu.isNull()) {
-    m_pContextMenu->exec(event->globalPos());
-    event->accept();
     return;
   }
-  
-  event->ignore();
+
+  m_nColumnSortedIndex = logicalIndex;
 }
