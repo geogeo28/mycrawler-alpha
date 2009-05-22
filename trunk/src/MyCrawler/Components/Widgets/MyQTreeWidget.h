@@ -46,12 +46,15 @@ public:
 
     virtual void setup() =0;
 
+public:
+    void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
+    void setupHeaderContextMenu();
+
 public slots:
     void showColumnFromAction(bool show);
 
 protected:
-    void setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns);
-    void setupHeaderContextMenu();
+    void setPersistentColumnIndex(int columnIndex);
 
 protected:
     void mousePressEvent(QMouseEvent* event);
@@ -60,6 +63,7 @@ private slots:
     void slotSortIndicatorChanged_(int logicalIndex, Qt::SortOrder order);
 
 private:
+    int m_nPersistentColumnIndex;
     int m_nColumnSortedIndex;
 };
 

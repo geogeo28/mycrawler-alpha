@@ -11,10 +11,12 @@ INCLUDEPATH += .
 INCLUDEPATH += ../Components/
 INCLUDEPATH += ../Shared/
 PRECOMPILED_HEADER = Components.h
-HEADERS += ClientApplication.h \
-    ../Components/Components.h
+HEADERS +=  ../Components/Components.h \
+    ClientApplication.h \
+    SettingsApplication.h
 SOURCES += main.cpp \
-    ClientApplication.cpp
+    ClientApplication.cpp \
+    SettingsApplication.cpp
 OTHER_FILES += ../TODO.txt
 include(../Components/Debug.pri)
 include(../Components/Core.pri)
@@ -24,3 +26,4 @@ include(../Components/Widgets.pri)
 include(../Shared/Shared.pri)
 include(Network.pri)
 include(GUI.pri)
+RESOURCES += resources.qrc

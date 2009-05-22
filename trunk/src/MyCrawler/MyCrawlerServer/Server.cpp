@@ -64,7 +64,7 @@ MCServer::~MCServer() {
 }
 
 bool MCServer::canAcceptNewConnection() const {
-  return (countClients() < m_nMaxConnections);
+  return (clientCount() < m_nMaxConnections);
 }
 
 bool MCServer::listen() {
@@ -92,7 +92,7 @@ void MCServer::close() {
   if (isClosed()) { return; }
 
   #ifdef QT_DEBUG
-    if (countClients() > 0) {
+    if (clientCount() > 0) {
       ILogger::Debug() << "Disconnect all clients.";
     }
   #endif

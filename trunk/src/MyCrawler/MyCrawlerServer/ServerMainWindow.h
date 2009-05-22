@@ -43,8 +43,7 @@ private:
     void setupWindow_();
     void setupMainToolBar_();
     void setupMenu_();
-    void setupServerLogForm_();
-    void setupClientsForm_();
+    void setupForms_();
     void setupComponents_();
 
     void cleanAll_();
@@ -58,7 +57,6 @@ public:
 
 private slots:
     void on_doFilePreferences_triggered();
-    void on_mainToolBar_actionTriggered(QAction* action);
     void on_doMainToolBarConnectDisconnect_triggered();
 
 private slots:
@@ -77,12 +75,10 @@ protected:
     void closeEvent(QCloseEvent* event);
 
 private:
-    //void serverLogMessage_(const QStringconst QString& message,
     bool connectServer_();
     void disconnectServer_();
 
 private:
-    QAction* m_pActionCurrentForm;
     QPointer<QProgressDialog> m_pProgressDialogCloseClients;
 };
 

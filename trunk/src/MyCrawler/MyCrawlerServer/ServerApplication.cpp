@@ -31,8 +31,6 @@
 #include "ServerHistory.h"
 #include "ServerMainWindow.h"
 
-static const char* ServerHistoryFileName = "history.dat";
-
 MCServerApplication* MCServerApplication::s_instance = NULL;
 
 MCServerApplication* MCServerApplication::instance() {
@@ -56,8 +54,7 @@ void MCServerApplication::cleanAll_() {
 
   if (m_pMainWindow) { delete m_pMainWindow; }
 
-  ILogger::Debug() << "Clean-up resources.";
-  Q_CLEANUP_RESOURCE(resources);
+  cleanupResources();
 }
 
 
@@ -82,9 +79,8 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
   installSettings("settings");
   MCSettings->setLayoutPrefixKey("WidgetsLayouts");
 
-  // Load resources
-  ILogger::Debug() << "Load resources.";
-  Q_INIT_RESOURCE(resources);
+  // Init resources
+  initResources();
 
   init_();
 
@@ -94,6 +90,20 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
 MCServerApplication::~MCServerApplication() {
   cleanAll_();
   ILogger::Debug() << "Destroyed.";
+}
+
+void MCServerApplication::initResources() {
+  ILogger::Debug() << "Init resources.";
+
+  Q_INIT_RESOURCE(widgets);
+  Q_INIT_RESOURCE(resources);
+}
+
+void MCServerApplication::cleanupResources() {
+  ILogger::Debug() << "Clean-Up resources.";
+
+  Q_CLEANUP_RESOURCE(widgets);
+  Q_CLEANUP_RESOURCE(resources);
 }
 
 void MCServerApplication::loadSettings() {
@@ -183,9 +193,9 @@ void MCServerApplication::loadSettingsServerHistory() {
 
   if (settings()->value("AdvancedOptions/ServerSaveHistory", MCSettingsApplication::DefaultServerSaveHistory).toBool() == true) {
     // Load server history
-    QFileInfo file(ServerHistoryFileName);
+    QFileInfo file(MCSettingsApplication::ServerHistoryFileName);
     if (file.exists()) {
-      loadServerHistory(ServerHistoryFileName);
+      loadServerHistory(MCSettingsApplication::ServerHistoryFileName);
     }
   }
 }
@@ -194,7 +204,7 @@ void MCServerApplication::saveSettingsServerHistory() {
   AssertCheckPtr(settings());
 
   if (settings()->value("AdvancedOptions/ServerSaveHistory", MCSettingsApplication::DefaultServerSaveHistory).toBool() == true) {
-    saveServerHistory(ServerHistoryFileName);
+    saveServerHistory(MCSettingsApplication::ServerHistoryFileName);
   }
 }
 

@@ -26,6 +26,7 @@
 #include <QPointer>
 
 #include "Core/Application.h"
+#include "SettingsApplication.h"
 #include "ClientMainWindow.h"
 
 class MCClientApplication : public IApplication
@@ -40,9 +41,28 @@ public:
 
     MCClientApplication(int &argc, char** argv);
     ~MCClientApplication();
-    
+
+ public:
     MCClientMainWindow* mainWindow() { return m_pMainWindow; }
 
+  // Resources
+ public:
+    void initResources();
+    void cleanupResources();
+
+ // Settings
+ public:
+    void loadSettings();
+    void saveSettings();
+
+    void loadSettingsProxyConfiguration();
+    void saveSettingsProxyConfiguration(
+      bool useProxy,
+      const QString& hostName = QString(), quint16 port = 0,
+      const QString& userName = QString(), const QString& password = QString()
+    );
+
+public:
     void run();
 
 private:
@@ -50,7 +70,7 @@ private:
     QPointer<MCClientMainWindow> m_pMainWindow;
 };
 
-#define MCApp   	    MCClientApplication::instance()
+#define MCApp         MCClientApplication::instance()
 #define MCSettings    MCApp->settings()
 
 #endif // CLIENTAPPLICATION_H

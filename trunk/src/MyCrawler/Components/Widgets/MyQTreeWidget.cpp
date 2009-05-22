@@ -28,6 +28,7 @@
 
 MyQTreeWidget::MyQTreeWidget(QWidget* parent)
   : QTreeWidget(parent),
+    m_nPersistentColumnIndex(-1),
     m_nColumnSortedIndex(-1)
 {
   QObject::connect(this->header(), SIGNAL(sortIndicatorChanged(int,Qt::SortOrder)), this, SLOT(slotSortIndicatorChanged_(int,Qt::SortOrder)));
@@ -35,18 +36,6 @@ MyQTreeWidget::MyQTreeWidget(QWidget* parent)
 
 MyQTreeWidget::~MyQTreeWidget()
 {}
-
-void MyQTreeWidget::showColumnFromAction(bool show) {
-  QAction* action = qobject_cast<QAction*>(sender());
-  AssertCheckPtr(action);
-
-  int index = action->property("ColumnIndex").toInt();
-  setColumnHidden(index, !show);
-
-  if ((show == true) && (columnWidth(index) == 0)) {
-    setColumnWidth(index, header()->defaultSectionSize());
-  }
-}
 
 void MyQTreeWidget::setupHeader(const MyQTreeWidgetHeaderItem headers[], int nColumns) {
   for (int i = 0; i < nColumns; ++i) {
@@ -64,6 +53,11 @@ void MyQTreeWidget::setupHeaderContextMenu() {
   header()->setContextMenuPolicy(Qt::ActionsContextMenu);
 
   for (int i = 0; i < columnCount(); ++i) {
+    // It's a permanent column, don't add an action to hide it
+    if (i == m_nPersistentColumnIndex) {
+      continue;
+    }
+
     // Add column action in the context menu
     QAction* action = new QAction(headerItem()->icon(i), headerItem()->text(i), header());
     action->setProperty("ColumnIndex", i);
@@ -73,6 +67,22 @@ void MyQTreeWidget::setupHeaderContextMenu() {
 
     header()->addAction(action);
   }
+}
+
+void MyQTreeWidget::showColumnFromAction(bool show) {
+  QAction* action = qobject_cast<QAction*>(sender());
+  AssertCheckPtr(action);
+
+  int index = action->property("ColumnIndex").toInt();
+  setColumnHidden(index, !show);
+
+  if ((show == true) && (columnWidth(index) == 0)) {
+    setColumnWidth(index, header()->defaultSectionSize());
+  }
+}
+
+void MyQTreeWidget::setPersistentColumnIndex(int columnIndex) {
+  m_nPersistentColumnIndex = columnIndex;
 }
 
 void MyQTreeWidget::mousePressEvent(QMouseEvent* event) {

@@ -23,6 +23,8 @@
 const char* MCSettingsApplication::SettingTagCurrentForm = "CurrentForm";
 const char* MCSettingsApplication::DefaultMainWindowForm = "doMainToolBarClients";
 
+const char* MCSettingsApplication::ServerHistoryFileName = "history.dat";
+
 const char* MCSettingsApplication::DefaultServerAddress = "0.0.0.0";
 const quint16 MCSettingsApplication::DefaultServerPort = 8080;
 const int MCSettingsApplication::DefaultServerMaxConnections = 5;

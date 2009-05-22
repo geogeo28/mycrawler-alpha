@@ -29,6 +29,7 @@ MCDialogPreferences::MCDialogPreferences(QWidget* parent)
   : QDialog(parent)
 {
   setupUi(this);
+  tabWidget->setCurrentIndex(0);
 }
 
 int MCDialogPreferences::exec() {
