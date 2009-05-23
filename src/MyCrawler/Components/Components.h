@@ -39,6 +39,7 @@
   #include "Utilities/NetworkInfo.h"
   #include "Widgets/MyQTabWidget.h"
   #include "Widgets/MyQTreeWidget.h"
+  #include "Widgets/LogTreeWidget.h"
 #endif
 
 #endif // COMPONENTS_H
