@@ -21,7 +21,7 @@
    <string>Preferences Dialog</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset resource="../Shared/shared.qrc">
     <normaloff>:/Menu/PreferencesIcon</normaloff>:/Menu/PreferencesIcon</iconset>
   </property>
   <property name="modal">
@@ -523,7 +523,7 @@
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../Shared/shared.qrc"/>
  </resources>
  <connections>
   <connection>

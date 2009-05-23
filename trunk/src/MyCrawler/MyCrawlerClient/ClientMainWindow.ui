@@ -347,7 +347,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="doMainToolBarExit">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/MainToolBar/ExitIcon</normaloff>:/MainToolBar/ExitIcon</iconset>
    </property>
    <property name="text">
@@ -359,7 +359,7 @@
   </action>
   <action name="doMainToolBarPreferences">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/MainToolBar/PreferencesIcon</normaloff>:/MainToolBar/PreferencesIcon</iconset>
    </property>
    <property name="text">
@@ -377,7 +377,7 @@
   </action>
   <action name="doFileExit">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/Menu/ExitIcon</normaloff>:/Menu/ExitIcon</iconset>
    </property>
    <property name="text">
@@ -414,7 +414,7 @@
   </action>
   <action name="doHelpAboutQt">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/Menu/AboutQtIcon</normaloff>:/Menu/AboutQtIcon</iconset>
    </property>
    <property name="text">
@@ -426,7 +426,7 @@
   </action>
   <action name="doFilePreferences">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/Menu/PreferencesIcon</normaloff>:/Menu/PreferencesIcon</iconset>
    </property>
    <property name="text">
@@ -444,8 +444,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/MainToolBar/ClientLogIcon</normaloff>:/MainToolBar/ClientLogIcon</iconset>
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/MainToolBar/LogIcon</normaloff>:/MainToolBar/LogIcon</iconset>
    </property>
    <property name="text">
     <string>Client Log</string>
@@ -478,7 +478,7 @@
   </action>
   <action name="doMainToolBarConnectDisconnect">
    <property name="icon">
-    <iconset resource="resources.qrc">
+    <iconset resource="../Shared/shared.qrc">
      <normaloff>:/MainToolBar/UnconnectedIcon</normaloff>
      <normalon>:/MainToolBar/ConnectedIcon</normalon>:/MainToolBar/UnconnectedIcon</iconset>
    </property>
@@ -506,6 +506,7 @@
  </customwidgets>
  <resources>
   <include location="resources.qrc"/>
+  <include location="../Shared/shared.qrc"/>
  </resources>
  <connections>
   <connection>

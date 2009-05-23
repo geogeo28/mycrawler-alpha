@@ -91,13 +91,15 @@ void MCClientApplication::initResources() {
   ILogger::Debug() << "Init resources.";
 
   Q_INIT_RESOURCE(widgets);
+  Q_INIT_RESOURCE(shared);
   Q_INIT_RESOURCE(resources);
 }
 
 void MCClientApplication::cleanupResources() {
-  ILogger::Debug() << "Clean-Up resources.";
+  ILogger::Debug() << "Clean-up resources.";
 
   Q_CLEANUP_RESOURCE(widgets);
+  Q_CLEANUP_RESOURCE(shared);
   Q_CLEANUP_RESOURCE(resources);
 }
 
