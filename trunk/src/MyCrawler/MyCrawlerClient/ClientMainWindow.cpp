@@ -18,6 +18,8 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QHostAddress>
+
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
@@ -25,6 +27,7 @@
 #include "DialogPreferences.h"
 #include "ClientApplication.h"
 #include "Client.h"
+#include "ServersList.h"
 
 void MCClientMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -77,6 +80,11 @@ void MCClientMainWindow::setupForms_() {
   treeWidgetClientLog->setup();
   MCSettings->loadLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
   treeWidgetClientLog->setupHeaderContextMenu();
+
+  // Servers
+  treeWidgetServers->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
+  treeWidgetServers->setupHeaderContextMenu();
 }
 
 void MCClientMainWindow::setupComponents_() {
@@ -96,6 +104,7 @@ void MCClientMainWindow::closeWindow_() {
   MCSettings->setValue(MCSettingsApplication::SettingTagCurrentForm, tabWidgetForms->actionCurrentForm()->objectName());
 
   MCSettings->saveLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
   MCSettings->saveLayout(this, "ClientMainWindow"); // Window layout
 
   MCApp->saveSettings();
@@ -195,6 +204,33 @@ void MCClientMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
     }
   }
 }*/
+
+void MCClientMainWindow::on_buttonAddServer_clicked() {
+  QHostAddress ip;
+  quint16 port = spinBoxAddServerPort->value();
+
+  // Check the format of the IP address
+  if (ip.setAddress(textAddServerAddress->text()) == false) {
+    ILogger::Error() << "The IP address you entered is not well formated.";
+    return;
+  }
+
+  // The IP address already exists
+  if (MCServersList::instance()->ipExists(ip.toIPv4Address()) == true) {
+    ILogger::Error() << "The IP address you entered as a new address already exists.";
+    return;
+  }
+
+  // Check if the IP address is valid
+  MCServerInfo serverInfo(ip, port);
+  if (serverInfo.isValid() == false) {
+    ILogger::Error() << "Invalid IP address.";
+    return;
+  }
+
+  // Add the server into the list
+  MCServersList::instance()->addServer(serverInfo);
+}
 
 void MCClientMainWindow::slotClientError(QAbstractSocket::SocketError error) {
   //ILogger::Error() << MCClient::instance()->errorString();

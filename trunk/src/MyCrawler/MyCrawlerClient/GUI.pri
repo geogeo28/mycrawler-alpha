@@ -1,6 +1,8 @@
 HEADERS += ClientMainWindow.h \
-           DialogPreferences.h
+    DialogPreferences.h \
+    ServersTreeWidget.h
 SOURCES += ClientMainWindow.cpp \
-           DialogPreferences.cpp
+    DialogPreferences.cpp \
+    ServersTreeWidget.cpp
 FORMS += ClientMainWindow.ui \
-         DialogPreferences.ui
+    DialogPreferences.ui

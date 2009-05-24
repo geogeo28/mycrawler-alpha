@@ -27,6 +27,7 @@
 
 #include "ClientApplication.h"
 #include "Client.h"
+#include "ServersList.h"
 #include "ClientMainWindow.h"
 
 MCClientApplication* MCClientApplication::s_instance = NULL;
@@ -48,6 +49,8 @@ void MCClientApplication::init_() {
 
 void MCClientApplication::cleanAll_() {
   MCClient::destroy();
+  MCServersList::destroy();
+
   if (m_pMainWindow) { delete m_pMainWindow; }
 
   cleanupResources();
