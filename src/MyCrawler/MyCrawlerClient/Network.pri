@@ -1,2 +1,4 @@
-HEADERS += Client.h
-SOURCES += Client.cpp
+HEADERS += Client.h \
+    ServersList.h
+SOURCES += Client.cpp \
+    ServersList.cpp

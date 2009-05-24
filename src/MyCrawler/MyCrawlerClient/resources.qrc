@@ -1,5 +1,8 @@
 <RCC>
-  <qresource prefix="/MainToolBar" >
-    <file alias="ServersIcon" >icons/MainToolBar/Servers.png</file>
-  </qresource>
+    <qresource prefix="/MainToolBar" >
+        <file alias="ServersIcon" >icons/MainToolBar/Servers.png</file>
+    </qresource>
+    <qresource prefix="/Servers" >
+        <file alias="ServerIcon" >icons/Servers/Server.png</file>
+    </qresource>
 </RCC>

@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tabClientLog">
        <attribute name="title">
@@ -85,7 +85,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTreeWidget" name="treeWidgetServers">
+         <widget class="MCServersTreeWidget" name="treeWidgetServers">
           <property name="autoScroll">
            <bool>false</bool>
           </property>
@@ -93,7 +93,7 @@
            <set>QAbstractItemView::NoEditTriggers</set>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::NoSelection</enum>
+           <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
           <property name="iconSize">
            <size>
@@ -503,6 +503,11 @@
    <extends>QTreeWidget</extends>
    <header>../Components/Widgets/LogTreeWidget.h</header>
   </customwidget>
+  <customwidget>
+   <class>MCServersTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>ServersTreeWidget.h</header>
+  </customwidget>
  </customwidgets>
  <resources>
   <include location="resources.qrc"/>
@@ -559,7 +564,7 @@
   </connection>
   <connection>
    <sender>buttonConnectDisconnect</sender>
-   <signal>released()</signal>
+   <signal>clicked()</signal>
    <receiver>doMainToolBarConnectDisconnect</receiver>
    <slot>trigger()</slot>
    <hints>

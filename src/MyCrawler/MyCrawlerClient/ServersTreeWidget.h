@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) MyCrawler client. Main window.
+ * @(#) Servers Tree Widget.
  * GUI interface
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien
@@ -21,57 +21,60 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#ifndef CLIENTMAINWINDOW_H
-#define CLIENTMAINWINDOW_H
+#ifndef SERVERSTREEWIDGET_H
+#define SERVERSTREEWIDGET_H
 
-#include <QtGui>
+#include <QTreeWidget>
 
-#include "ui_ClientMainWindow.h"
-#include "ClientPeer.h"
+#include "Widgets/MyQTreeWidget.h"
 
-class MCClientMainWindow : public QMainWindow,
-                           private Ui_MCClientMainWindow
+class MCServerInfo;
+
+class MCServersTreeWidget : public MyQTreeWidget
 {
     Q_OBJECT
 
-private:
-    void setupWindow_();
-    void setupMainToolBar_();
-    void setupMenu_();
-    void setupForms_();
-    void setupComponents_();
+public:
+    enum {
+      NameColumn,
+      IPColumn,
+      PortColumn,
+      PingColumn,
+      UsersColumn,
+      MaxUsersColumn,
+      PriorityColumn
+    };
 
+private:
     void cleanAll_();
-    void closeWindow_();
 
 public:
-    MCClientMainWindow(QWidget *parent = NULL);
-    ~MCClientMainWindow();
+    MCServersTreeWidget(QWidget* parent = 0);
+    ~MCServersTreeWidget();
 
     void setup();
 
 private slots:
-    void on_doFilePreferences_triggered();
-    void on_doMainToolBarConnectDisconnect_triggered();
-
-    // Servers
-    void on_buttonAddServer_clicked();
+    void slotServerAdded(const MCServerInfo& serverInfo);
+    void slotServerRemoved(quint32 ip);
 
 private slots:
-    void slotClientError(QAbstractSocket::SocketError error);
-    void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state); 
+    void on_priorityChanged(QAction* action);
 
 protected:
-    void closeEvent(QCloseEvent* event);
-
-/*private:
-    bool connectServer_();
-    void disconnectServer_();*/
+    void contextMenuEvent(QContextMenuEvent* event);
 
 private:
-    bool m_bClientConnected;
+    static void unsetServerItemValues_(QTreeWidgetItem* item);
+    static void setServerItemFromServerInfo_(QTreeWidgetItem* item, const MCServerInfo& serverInfo);
+
+private:
+    QTreeWidgetItem* newServerItem_();
+
+private:
+    typedef QMap<quint32, QTreeWidgetItem*> ServersManagedList; // ip, info
+
+    ServersManagedList m_lstServersManaged;
 };
 
-#endif // CLIENTMAINWINDOW_H
+#endif // SERVERSTREEWIDGET_H
