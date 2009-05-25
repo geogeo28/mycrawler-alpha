@@ -65,13 +65,6 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent* event);
-
-/*private:
-    bool connectServer_();
-    void disconnectServer_();*/
-
-private:
-    bool m_bClientConnected;
 };
 
 #endif // CLIENTMAINWINDOW_H

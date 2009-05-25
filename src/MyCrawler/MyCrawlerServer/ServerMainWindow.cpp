@@ -258,7 +258,8 @@ void MCServerMainWindow::slotServerStateChanged(MCServer::State state) {
       break;
     }
 
-    default:;
+    default:
+      return;
   }
 
   treeWidgetServerLog->write(CLogTreeWidget::InformationIcon, message, color, QFont::Bold);
