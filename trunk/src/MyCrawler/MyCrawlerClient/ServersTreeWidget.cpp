@@ -18,9 +18,12 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QHostAddress>
+
 #include "Debug/Exception.h"
 
 #include "ServersTreeWidget.h"
+#include "Client.h"
 #include "ServersList.h"
 
 static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
@@ -41,9 +44,7 @@ void MCServersTreeWidget::cleanAll_() {
 
 MCServersTreeWidget::MCServersTreeWidget(QWidget* parent)
   : MyQTreeWidget(parent)
-{
-
-}
+{}
 
 MCServersTreeWidget::~MCServersTreeWidget() {
   cleanAll_();
@@ -57,6 +58,8 @@ void MCServersTreeWidget::setup() {
   // Signals/slots connections
   QObject::connect(MCServersList::instance(), SIGNAL(serverAdded(const MCServerInfo&)), this, SLOT(slotServerAdded(const MCServerInfo&)));
   QObject::connect(MCServersList::instance(), SIGNAL(serverRemoved(quint32)), this, SLOT(slotServerRemoved(quint32)));
+
+  QObject::connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(on_connectToServer()));
 }
 
 void MCServersTreeWidget::slotServerAdded(const MCServerInfo& serverInfo) {
@@ -72,6 +75,19 @@ void MCServersTreeWidget::slotServerRemoved(quint32 ip) {
   AssertCheckPtr(item);
   delete item;
   m_lstServersManaged.remove(ip);
+}
+
+void MCServersTreeWidget::on_connectToServer() {
+  QTreeWidgetItem* item = currentItem();
+  if (item == NULL) {
+    return;
+  }
+
+  quint32 ip = qVariantValue<quint32>(item->data(IPColumn, Qt::UserRole));
+  quint16 port = qVariantValue<quint16>(item->data(PortColumn, Qt::UserRole));
+  QString name = item->text(NameColumn);
+
+  MCClient::instance()->connectToHost(MCServerInfo(QHostAddress(ip), port, name));
 }
 
 void MCServersTreeWidget::on_priorityChanged(QAction* action) {
@@ -135,6 +151,7 @@ void MCServersTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
 
   // Construct others actions
   QAction* actionConnect = new QAction("Connect", &menu);
+  QObject::connect(actionConnect, SIGNAL(triggered()), this, SLOT(on_connectToServer()));
 
   menu.addAction(actionConnect);
   menu.addMenu(mnuPriority);

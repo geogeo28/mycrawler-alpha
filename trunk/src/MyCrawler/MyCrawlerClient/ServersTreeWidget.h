@@ -59,6 +59,7 @@ private slots:
     void slotServerRemoved(quint32 ip);
 
 private slots:
+    void on_connectToServer();
     void on_priorityChanged(QAction* action);
 
 protected:

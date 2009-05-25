@@ -50,7 +50,7 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(connected()), &m_clientPeer, SLOT(sendHandShake()));
 
   // Other connections
-  QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error_(QAbstractSocket::SocketError)));
+  QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)));
@@ -66,12 +66,17 @@ MCClient::~MCClient() {
   ILogger::Debug() << "Destroyed.";
 }
 
-void MCClient::connectToHost(const QString& address, quint16 port) {
-  ILogger::Debug() << QString("Connecting to the host %1:%2...")
-                      .arg(address)
-                      .arg(port);
+void MCClient::connectToHost(const MCServerInfo& serverInfo) {
+  if (m_clientPeer.state() != QAbstractSocket::UnconnectedState) {
+    m_clientPeer.disconnect();
+  }
 
-  m_clientPeer.connectToHost(address, port);
+  Assert(serverInfo.isValid());
+  ILogger::Debug() << QString("Connecting to the host %1...")
+                      .arg(serverInfo.ipAndPortString());
+
+  m_serverInfo = serverInfo;
+  m_clientPeer.connectToHost(serverInfo.ip(), serverInfo.port());
 }
 
 void MCClient::disconnect(int msecs) {
@@ -80,7 +85,7 @@ void MCClient::disconnect(int msecs) {
   m_clientPeer.disconnect(msecs);
 }
 
-void MCClient::error_(QAbstractSocket::SocketError socketError) {
+void MCClient::peerError_(QAbstractSocket::SocketError socketError) {
   if (socketError == QAbstractSocket::ConnectionRefusedError) {
     m_bConnectionRefused = true;
   }

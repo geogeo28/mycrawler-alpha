@@ -66,6 +66,8 @@ public:
     Priority priority() const { return m_enumPriority; }
     void setPriority(Priority priority) { m_enumPriority = priority; }
 
+    QString ipAndPortString() const { return QString("%1:%2").arg(ip().toString()).arg(port()); }
+
 public:
     bool operator<(const MCServerInfo& serverInfo) const;
 

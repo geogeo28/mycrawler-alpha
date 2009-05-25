@@ -28,6 +28,7 @@
 #include <QHostAddress>
 
 #include "ClientPeer.h"
+#include "ServersList.h"
 
 class MCClient : public QObject
 {
@@ -47,8 +48,10 @@ public:
     QString errorString() const { return m_clientPeer.errorString(); }
     QAbstractSocket::SocketState state() const { return m_clientPeer.state(); }
 
-    void connectToHost(const QString& address, quint16 port);
-    void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(address.toString(), port); }
+    void connectToHost(const MCServerInfo& serverInfo);
+    void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(MCServerInfo(address, port)); }
+
+    const MCServerInfo& serverInfo() const { return m_serverInfo; }
 
 signals:
     void error(QAbstractSocket::SocketError error);
@@ -62,13 +65,14 @@ public slots:
     void disconnect(int msecs = 30000);
 
 private slots:
-    void error_(QAbstractSocket::SocketError socketError);
+    void peerError_(QAbstractSocket::SocketError socketError);
 
 private:
     static MCClient* s_instance;
     MCClientPeer m_clientPeer;
     bool m_bConnectionRefused;
 
+    MCServerInfo m_serverInfo;
 };
 
 #endif // CLIENT_H
