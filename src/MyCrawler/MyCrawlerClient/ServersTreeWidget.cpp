@@ -23,6 +23,7 @@
 #include "Debug/Exception.h"
 
 #include "ServersTreeWidget.h"
+#include "ClientApplication.h"
 #include "Client.h"
 #include "ServersList.h"
 
@@ -55,9 +56,15 @@ void MCServersTreeWidget::setup() {
   sortByColumn(ColumnSortedIndex);
   setPersistentColumnIndex(NameColumn);
 
+  // Construct the list of items based on the servers list
+  foreach (const MCServerInfo& serverInfo, MCServersList::instance()->allServers()) {
+    newServerItemFromServerInfo_(serverInfo);
+  }
+
   // Signals/slots connections
   QObject::connect(MCServersList::instance(), SIGNAL(serverAdded(const MCServerInfo&)), this, SLOT(slotServerAdded(const MCServerInfo&)));
   QObject::connect(MCServersList::instance(), SIGNAL(serverRemoved(quint32)), this, SLOT(slotServerRemoved(quint32)));
+  QObject::connect(MCServersList::instance(), SIGNAL(allServersRemoved()), this, SLOT(slotAllServersRemoved()));
 
   QObject::connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(on_connectToServer()));
 }
@@ -77,6 +84,11 @@ void MCServersTreeWidget::slotServerRemoved(quint32 ip) {
   m_lstServersManaged.remove(ip);
 }
 
+void MCServersTreeWidget::slotAllServersRemoved() {
+  clear();
+  m_lstServersManaged.clear();
+}
+
 void MCServersTreeWidget::on_connectToServer() {
   QTreeWidgetItem* item = currentItem();
   if (item == NULL) {
@@ -87,6 +99,7 @@ void MCServersTreeWidget::on_connectToServer() {
   quint16 port = qVariantValue<quint16>(item->data(PortColumn, Qt::UserRole));
   QString name = item->text(NameColumn);
 
+  MCClientApplication::instance()->mainWindow()->flushServersToConnectList();
   MCClient::instance()->connectToHost(MCServerInfo(QHostAddress(ip), port, name));
 }
 
@@ -112,15 +125,31 @@ void MCServersTreeWidget::on_priorityChanged(QAction* action) {
   }
 }
 
-void MCServersTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
-  QTreeWidgetItem* item = itemAt(event->pos());
-
-  // General context menu
-  if (item == NULL) {
-    MyQTreeWidget::contextMenuEvent(event);
+void MCServersTreeWidget::on_remove() {
+  // No item selected
+  if (currentItem() == NULL) {
     return;
   }
 
+  foreach (QTreeWidgetItem* item, selectedItems()) {
+    quint32 ip = qVariantValue<quint32>(item->data(IPColumn, Qt::UserRole));
+    MCServersList::instance()->removeServer(ip);
+  }
+}
+
+void MCServersTreeWidget::on_removeAll() {
+  int buttonSelected = QMessageBox::question(
+    NULL, QApplication::applicationName(),
+    "Do you really want to remove all servers ?",
+    QMessageBox::Yes | QMessageBox::No
+  );
+
+  if (buttonSelected == QMessageBox::No) { return; }
+
+  MCServersList::instance()->removeAllServers();
+}
+
+void MCServersTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
   QMenu menu(this);
 
   // Create the menu priority
@@ -140,7 +169,7 @@ void MCServersTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
 
   // Set the current priority of the single selected item
   if (selectedItems().count() == 1) {
-    int idx = static_cast<int>(qVariantValue<MCServerInfo::Priority>(item->data(PriorityColumn, Qt::UserRole)));
+    int idx = static_cast<int>(qVariantValue<MCServerInfo::Priority>(currentItem()->data(PriorityColumn, Qt::UserRole)));
 
     Assert((idx >= 0) && (idx < 3));
     QAction* action = actionPriorities[idx];
@@ -153,8 +182,23 @@ void MCServersTreeWidget::contextMenuEvent(QContextMenuEvent* event) {
   QAction* actionConnect = new QAction("Connect", &menu);
   QObject::connect(actionConnect, SIGNAL(triggered()), this, SLOT(on_connectToServer()));
 
+  QAction* actionRemove = new QAction("Remove the server", &menu);
+  QObject::connect(actionRemove, SIGNAL(triggered()), this, SLOT(on_remove()));
+
+  QAction* actionRemoveAll = new QAction("Remove all servers", &menu);
+  QObject::connect(actionRemoveAll, SIGNAL(triggered()), this, SLOT(on_removeAll()));
+
+  // No item selected
+  if (selectedItems().count() == 0) {
+    actionConnect->setEnabled(false);
+    mnuPriority->setEnabled(false);
+    actionRemove->setEnabled(false);
+  }
+
   menu.addAction(actionConnect);
   menu.addMenu(mnuPriority);
+  menu.addAction(actionRemove);
+  menu.addAction(actionRemoveAll);
 
   menu.exec(event->globalPos());
   event->accept();
@@ -199,4 +243,13 @@ QTreeWidgetItem* MCServersTreeWidget::newServerItem_() {
   MCServersTreeWidget::unsetServerItemValues_(item);
 
   return item;
+}
+
+void MCServersTreeWidget::newServerItemFromServerInfo_(const MCServerInfo& serverInfo) {
+  QTreeWidgetItem* item = new QTreeWidgetItem(this);
+  m_lstServersManaged.insert(serverInfo.ip().toIPv4Address(), item);
+  MCServersTreeWidget::unsetServerItemValues_(item);
+
+  // Set columns content
+  MCServersTreeWidget::setServerItemFromServerInfo_(item, serverInfo);
 }

@@ -111,10 +111,7 @@
        <attribute name="title">
         <string>Servers</string>
        </attribute>
-       <layout class="QHBoxLayout">
-        <property name="margin">
-         <number>0</number>
-        </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
          <widget class="MCServersTreeWidget" name="treeWidgetServers">
           <property name="autoScroll">
@@ -153,9 +150,6 @@
           <attribute name="headerShowSortIndicator" stdset="0">
            <bool>true</bool>
           </attribute>
-          <attribute name="headerShowSortIndicator" stdset="0">
-           <bool>true</bool>
-          </attribute>
           <column>
            <property name="text">
             <string notr="true">1</string>
@@ -164,7 +158,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
            <widget class="QPushButton" name="buttonConnectDisconnect">
             <property name="text">
@@ -183,86 +177,127 @@
             <property name="title">
              <string>Add a server</string>
             </property>
-            <layout class="QVBoxLayout">
+            <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <layout class="QFormLayout">
-               <item row="0" column="0">
-                <widget class="QLabel" name="lblAddServerAddress">
-                 <property name="text">
-                  <string>Address :</string>
-                 </property>
-                 <property name="buddy">
-                  <cstring>textAddServerAddress</cstring>
-                 </property>
-                </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_2">
+                 <item>
+                  <widget class="QLabel" name="lblAddServerIP">
+                   <property name="text">
+                    <string>IP address :</string>
+                   </property>
+                   <property name="buddy">
+                    <cstring>textAddServerIP</cstring>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="textAddServerIP">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>100</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>100</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="baseSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
-               <item row="0" column="1">
-                <widget class="QLineEdit" name="textAddServerAddress">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
+               <item>
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
                  </property>
-                 <property name="minimumSize">
+                 <property name="sizeType">
+                  <enum>QSizePolicy::Fixed</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
                   <size>
-                   <width>100</width>
-                   <height>0</height>
+                   <width>10</width>
+                   <height>20</height>
                   </size>
                  </property>
-                 <property name="maximumSize">
-                  <size>
-                   <width>100</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="baseSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </widget>
+                </spacer>
                </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="lblAddServerPort">
-                 <property name="text">
-                  <string>Port :</string>
-                 </property>
-                 <property name="buddy">
-                  <cstring>spinBoxAddServerPort</cstring>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QSpinBox" name="spinBoxAddServerPort">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>60</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                 <property name="maximum">
-                  <number>65535</number>
-                 </property>
-                 <property name="value">
-                  <number>8080</number>
-                 </property>
-                </widget>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <widget class="QLabel" name="lblAddServerPort">
+                   <property name="text">
+                    <string>Port :</string>
+                   </property>
+                   <property name="buddy">
+                    <cstring>spinBoxAddServerPort</cstring>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="spinBoxAddServerPort">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>60</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
+                   <property name="maximum">
+                    <number>65535</number>
+                   </property>
+                   <property name="value">
+                    <number>8080</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
               </layout>
              </item>
              <item>
-              <layout class="QHBoxLayout">
+              <widget class="QLabel" name="lblAddServerName">
+               <property name="text">
+                <string>Name :</string>
+               </property>
+               <property name="buddy">
+                <cstring>textAddServerIP</cstring>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="textAddServerName">
+               <property name="maxLength">
+                <number>64</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
                 <spacer>
                  <property name="orientation">
@@ -270,8 +305,8 @@
                  </property>
                  <property name="sizeHint" stdset="0">
                   <size>
-                   <width>0</width>
-                   <height>0</height>
+                   <width>58</width>
+                   <height>13</height>
                   </size>
                  </property>
                 </spacer>
@@ -384,7 +419,7 @@
    <addaction name="doMainToolBarPreferences"/>
    <addaction name="doMainToolBarExit"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusbar"/>
   <action name="doMainToolBarExit">
    <property name="icon">
     <iconset resource="../Shared/shared.qrc">
@@ -592,7 +627,7 @@
   <connection>
    <sender>doViewStatusBar</sender>
    <signal>toggled(bool)</signal>
-   <receiver>statusBar</receiver>
+   <receiver>statusbar</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">

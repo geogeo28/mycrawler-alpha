@@ -25,9 +25,11 @@
 #define CLIENTMAINWINDOW_H
 
 #include <QtGui>
+#include <QList>
 
 #include "ui_ClientMainWindow.h"
 #include "ClientPeer.h"
+#include "ServersList.h"
 
 class MCClientMainWindow : public QMainWindow,
                            private Ui_MCClientMainWindow
@@ -39,6 +41,7 @@ private:
     void setupMainToolBar_();
     void setupMenu_();
     void setupForms_();
+    void setupStatusBar_();
     void setupComponents_();
 
     void cleanAll_();
@@ -49,6 +52,9 @@ public:
     ~MCClientMainWindow();
 
     void setup();
+
+public slots:
+    void flushServersToConnectList();
 
 private slots:
     void on_doFilePreferences_triggered();
@@ -61,10 +67,19 @@ private slots:
     void slotClientError(QAbstractSocket::SocketError error);
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state); 
+    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state);
 
 protected:
     void closeEvent(QCloseEvent* event);
+
+private:
+    void connectClient_(const MCServerInfo& serverInfo);
+    void disconnectClient_();
+
+private:
+    QList<MCServerInfo> m_lstServersToConnect;
+    bool m_bPreviouslyConnected;
+    bool m_bCancelConnection;
 };
 
 #endif // CLIENTMAINWINDOW_H

@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <QNetworkProxy>
+#include <QFileInfo>
 
 #include "Config/Config.h"
 #include "Config/Settings.h"
@@ -108,10 +109,26 @@ void MCClientApplication::cleanupResources() {
 
 void MCClientApplication::loadSettings() {
   loadSettingsProxyConfiguration();
+  loadServersList(MCSettingsApplication::ServersListFileName);
 }
 
 void MCClientApplication::saveSettings() {
+  saveServersList(MCSettingsApplication::ServersListFileName);
+}
 
+void MCClientApplication::loadServersList(const QString& fileName) {
+  ILogger::Debug() << QString("Load the servers list from the file '%1'.").arg(fileName);
+
+  // Load server history
+  QFileInfo file(fileName);
+  if (file.exists()) {
+    MCServersList::instance()->load(fileName);
+  }
+}
+
+void MCClientApplication::saveServersList(const QString& fileName) {
+  ILogger::Debug() << QString("Save the servers list in the file '%1'.").arg(fileName);
+  MCServersList::instance()->save(fileName);
 }
 
 void MCClientApplication::loadSettingsProxyConfiguration() {

@@ -57,10 +57,13 @@ public:
 private slots:
     void slotServerAdded(const MCServerInfo& serverInfo);
     void slotServerRemoved(quint32 ip);
+    void slotAllServersRemoved();
 
 private slots:
     void on_connectToServer();
     void on_priorityChanged(QAction* action);
+    void on_remove();
+    void on_removeAll();
 
 protected:
     void contextMenuEvent(QContextMenuEvent* event);
@@ -71,6 +74,7 @@ private:
 
 private:
     QTreeWidgetItem* newServerItem_();
+    void newServerItemFromServerInfo_(const MCServerInfo& serverInfo);
 
 private:
     typedef QMap<quint32, QTreeWidgetItem*> ServersManagedList; // ip, info

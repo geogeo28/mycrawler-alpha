@@ -55,6 +55,9 @@ public:
     void loadSettings();
     void saveSettings();
 
+    void loadServersList(const QString& fileName);
+    void saveServersList(const QString& fileName);
+
     void loadSettingsProxyConfiguration();
     void saveSettingsProxyConfiguration(
       bool useProxy,
