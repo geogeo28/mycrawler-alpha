@@ -18,7 +18,7 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include "Debug/Exception.h"
+#include <QFile>
 
 #include "ServersList.h"
 
@@ -54,7 +54,7 @@ bool MCServerInfo::isValid() const {
 }
 
 bool MCServerInfo::operator<(const MCServerInfo& serverInfo) const {
-  return (this->priority() >= serverInfo.priority());
+  return (this->priority() > serverInfo.priority());
 }
 
 QString MCServerInfo::priorityToString(Priority priority) {
@@ -130,8 +130,95 @@ bool MCServersList::removeServer(quint32 ip) {
   return success;
 }
 
+void MCServersList::removeAllServers() {
+  m_lstServers.clear();
+  emit allServersRemoved();
+}
+
+QList<MCServerInfo> MCServersList::allServers() const {
+  return m_lstServers.values();
+}
+
 QList<MCServerInfo> MCServersList::serversListSorted() const {
   QList<MCServerInfo> lstServers = m_lstServers.values();
   qSort(lstServers);
   return lstServers;
+}
+
+void MCServersList::write(QTextStream& out) const {
+  foreach (const MCServerInfo& serverInfo, m_lstServers.values()) {
+    out << serverInfo.name() << "\t"
+        << serverInfo.ip().toString() << "\t" << serverInfo.port() << "\t"
+        << serverInfo.ping() << "\t"
+        << serverInfo.users() << "\t" << serverInfo.maxUsers() << "\t"
+        << serverInfo.priority() << endl;
+  }
+}
+
+bool MCServersList::read(QTextStream& in) {
+  while (in.atEnd() == false) {
+    QString name;
+    QString ip; int port;
+    int ping;
+    int users;
+    int maxUsers;
+    int priority;
+
+    in >> name
+       >> ip >> port
+       >> ping
+       >> users >> maxUsers
+       >> priority;
+
+    in.skipWhiteSpace();
+
+    MCServerInfo serverInfo(
+      QHostAddress(ip), port,
+      name, ping,
+      users, maxUsers,
+      static_cast<MCServerInfo::Priority>(priority)
+    );
+
+    if (serverInfo.isValid() == false) {
+      return false;
+    }
+
+    addServer(serverInfo);
+  }
+
+  return true;
+}
+
+void MCServersList::save(const QString& fileName) const throw(CFileException) {
+  QFile file;
+  file.setFileName(fileName);
+  bool succeed = file.open(QFile::WriteOnly);
+
+  // Cannot open the file
+  if (succeed == false) {
+    ThrowFileAccessException(fileName, file.errorString());
+  }
+
+  // Write content
+  QTextStream out(&file);
+  out.setCodec("ISO 8859-1");
+  this->write(out);
+}
+
+void MCServersList::load(const QString& fileName) throw(CFileException) {
+  QFile file;
+  file.setFileName(fileName);
+  bool succeed = file.open(QFile::ReadOnly);
+
+  // Cannot open the file
+  if (succeed == false) {
+    ThrowFileAccessException(fileName, file.errorString());
+  }
+
+  // Read content
+  QTextStream in(&file);
+  in.setCodec("ISO 8859-1");
+  if (this->read(in) == false) {
+    ThrowFileFormatException(fileName, "File not well formated. Check data consistency.");
+  }
 }

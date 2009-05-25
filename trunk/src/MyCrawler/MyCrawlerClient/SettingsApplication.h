@@ -28,6 +28,8 @@ struct MCSettingsApplication
   static const char* SettingTagCurrentForm;
   static const char* DefaultMainWindowForm;
 
+  static const char* ServersListFileName;
+
   static const bool DefaultProxyUse;
   static const char* DefaultProxyHostName;
   static const quint16 DefaultProxyPort;

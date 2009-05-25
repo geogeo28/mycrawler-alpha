@@ -27,6 +27,9 @@
 #include <QMap>
 #include <QString>
 #include <QHostAddress>
+#include <QTextStream>
+
+#include "Debug/Exception.h"
 
 class MCServerInfo
 {
@@ -111,11 +114,21 @@ public:
     MCServerInfo& fromIp(quint32 ip);
     void addServer(const MCServerInfo& serverInfo);
     bool removeServer(quint32 ip);
+    void removeAllServers();
+    QList<MCServerInfo> allServers() const;
     QList<MCServerInfo> serversListSorted() const;
+
+public:
+    void write(QTextStream& out) const;
+    bool read(QTextStream& in);
+
+    void save(const QString& fileName) const throw(CFileException);
+    void load(const QString& fileName) throw(CFileException);
 
 signals:
     void serverAdded(const MCServerInfo& serverInfo);
     void serverRemoved(quint32 ip);
+    void allServersRemoved();
 
 private:
     typedef QMap<quint32, MCServerInfo> ServersList;

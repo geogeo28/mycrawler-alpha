@@ -119,7 +119,7 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
     case PacketSizeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
     case PacketTypeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
     case ProtocolIdError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
-    case ProtocolVersionError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Could not etablish a communication with the peer because the protocol version is different");
+    case ProtocolVersionError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Could not establish a communication with the peer because the protocol version is different");
     case AuthenticationError:    return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
 
     default:

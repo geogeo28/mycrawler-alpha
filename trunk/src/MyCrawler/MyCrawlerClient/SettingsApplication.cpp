@@ -23,6 +23,8 @@
 const char* MCSettingsApplication::SettingTagCurrentForm = "CurrentForm";
 const char* MCSettingsApplication::DefaultMainWindowForm = "doMainToolBarServers";
 
+const char* MCSettingsApplication::ServersListFileName = "servers.lst";
+
 const bool MCSettingsApplication::DefaultProxyUse = false;
 const char* MCSettingsApplication::DefaultProxyHostName = "";
 const quint16 MCSettingsApplication::DefaultProxyPort = 3128;

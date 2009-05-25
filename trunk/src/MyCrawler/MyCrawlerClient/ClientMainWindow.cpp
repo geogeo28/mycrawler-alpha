@@ -27,7 +27,6 @@
 #include "DialogPreferences.h"
 #include "ClientApplication.h"
 #include "Client.h"
-#include "ServersList.h"
 
 void MCClientMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -87,12 +86,19 @@ void MCClientMainWindow::setupForms_() {
   treeWidgetServers->setupHeaderContextMenu();
 }
 
+void MCClientMainWindow::setupStatusBar_() {
+  statusbar->showMessage("Unconnected");
+}
+
 void MCClientMainWindow::setupComponents_() {
+  qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
+  qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
+
   // Connect signals/slots
-  QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)));
-  QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)));
+  QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)), Qt::QueuedConnection);
   QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)), Qt::QueuedConnection);
 }
 
 void MCClientMainWindow::cleanAll_() {
@@ -111,7 +117,9 @@ void MCClientMainWindow::closeWindow_() {
 }
 
 MCClientMainWindow::MCClientMainWindow(QWidget *parent)
-  : QMainWindow(parent)
+  : QMainWindow(parent),
+    m_bPreviouslyConnected(false),
+    m_bCancelConnection(false)
 {
   ILogger::Debug() << "Construct.";
 
@@ -129,12 +137,17 @@ void MCClientMainWindow::setup() {
   setupMainToolBar_();
   setupMenu_();
   setupForms_();
+  setupStatusBar_();
   setupComponents_();
 
   // Auto connect ?
   if (MCSettings->value("AdvancedOptions/ServersConnectAtStartup", MCSettingsApplication::DefaultServersConnectAtStartup).toBool() == true) {
     on_doMainToolBarConnectDisconnect_triggered();
   }
+}
+
+void MCClientMainWindow::flushServersToConnectList() {
+  m_lstServersToConnect.clear();
 }
 
 void MCClientMainWindow::on_doFilePreferences_triggered() {
@@ -145,17 +158,29 @@ void MCClientMainWindow::on_doFilePreferences_triggered() {
 void MCClientMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
   // Disconnect
   if (MCClient::instance()->state() != QAbstractSocket::UnconnectedState) {
-    MCClient::instance()->disconnect();
+    m_bCancelConnection = true;
+    disconnectClient_();
     return;
+  }
+
+  // List of servers sorted by priority
+  m_lstServersToConnect = MCServersList::instance()->serversListSorted();
+  if (m_lstServersToConnect.isEmpty()) {
+    ILogger::Error() << "The servers list is empty. You must add a new server entry.";
+  }
+  else {
+    m_bPreviouslyConnected = false;
+    connectClient_(m_lstServersToConnect.takeFirst());
   }
 }
 
 void MCClientMainWindow::on_buttonAddServer_clicked() {
   QHostAddress ip;
   quint16 port = spinBoxAddServerPort->value();
+  QString name = textAddServerName->text();
 
   // Check the format of the IP address
-  if (ip.setAddress(textAddServerAddress->text()) == false) {
+  if (ip.setAddress(textAddServerIP->text()) == false) {
     ILogger::Error() << "The IP address you entered is not well formated.";
     return;
   }
@@ -167,7 +192,7 @@ void MCClientMainWindow::on_buttonAddServer_clicked() {
   }
 
   // Check if the IP address is valid
-  MCServerInfo serverInfo(ip, port);
+  MCServerInfo serverInfo(ip, port, name);
   if (serverInfo.isValid() == false) {
     ILogger::Error() << "Invalid IP address.";
     return;
@@ -175,6 +200,11 @@ void MCClientMainWindow::on_buttonAddServer_clicked() {
 
   // Add the server into the list
   MCServersList::instance()->addServer(serverInfo);
+
+  // Clear the input area
+  textAddServerIP->clear();
+  spinBoxAddServerPort->setValue(8080);
+  textAddServerName->clear();
 }
 
 void MCClientMainWindow::slotClientError(QAbstractSocket::SocketError error) {
@@ -231,10 +261,12 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
 
       // Button connected
       doMainToolBarConnectDisconnect->setIcon(QIcon(":/MainToolBar/UnconnectedIcon"));
-      doMainToolBarConnectDisconnect->setIconText("Connecting...");
-      doMainToolBarConnectDisconnect->setText("Connecting...");
+      doMainToolBarConnectDisconnect->setIconText("Cancel");
+      doMainToolBarConnectDisconnect->setText("Cancel");
 
       buttonConnectDisconnect->setText("Connecting...");
+
+      statusbar->showMessage(QString("Connecting to %1...").arg(serverInfo.name()));
 
       break;
     }
@@ -255,6 +287,12 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
 
       buttonConnectDisconnect->setText("Disconnect");
 
+      statusbar->showMessage(QString("Connected to %1").arg(serverInfo.name()));
+
+      // Add the current server in the list to servers to connect (used to reconnect)
+      m_bPreviouslyConnected = true;
+      m_lstServersToConnect.push_front(MCClient::instance()->serverInfo());
+
       break;
     }
 
@@ -269,10 +307,12 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
       buttonConnectDisconnect->setText("Closing...");
       buttonConnectDisconnect->setEnabled(false);
 
+      statusbar->showMessage("Closing...");
+
       return;
     }
 
-    // Closed
+    // Unconnected
     case QAbstractSocket::UnconnectedState:
     {
       // Log message
@@ -288,6 +328,29 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
       buttonConnectDisconnect->setEnabled(true);
       buttonConnectDisconnect->setText("Connect"); 
 
+      statusbar->showMessage("Unconnected");
+
+      bool tmpPreviouslyConnected = m_bPreviouslyConnected;
+      bool tmpCancelConnection = m_bCancelConnection;
+
+      m_bPreviouslyConnected = false;
+      m_bCancelConnection = false;
+
+      if (tmpCancelConnection == false) {
+        if ((tmpPreviouslyConnected == false)
+         || ((tmpPreviouslyConnected == true) && (MCSettings->value("AdvancedOptions/ServersAutoReconnect", MCSettingsApplication::DefaultServersAutoReconnect).toBool() == true)))
+        {
+          if (m_lstServersToConnect.isEmpty() == false) {
+            connectClient_(m_lstServersToConnect.takeFirst());
+          }
+
+          // Don't show a message if not connection was established
+          if (tmpPreviouslyConnected == false) {
+            return;
+          }
+        }
+      }
+
       break;
     }
 
@@ -301,4 +364,13 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
 void MCClientMainWindow::closeEvent(QCloseEvent* event) {
   closeWindow_();
   event->accept();
+}
+
+void MCClientMainWindow::connectClient_(const MCServerInfo& serverInfo) {
+  MCApp->loadSettingsProxyConfiguration();
+  MCClient::instance()->connectToHost(serverInfo);
+}
+
+void MCClientMainWindow::disconnectClient_() {
+  MCClient::instance()->disconnect();
 }
