@@ -67,6 +67,14 @@ bool MCServer::canAcceptNewConnection() const {
   return (clientCount() < m_nMaxConnections);
 }
 
+MCServerInfo MCServer::serverInfo() const {
+  MCServerInfo serverInfo(serverAddress(), serverPort());
+  serverInfo.setName(QString());
+  serverInfo.setUsers(clientCount());
+  serverInfo.setMaxUsers(maxConnections());
+  return serverInfo;
+}
+
 bool MCServer::listen() {
   ILogger::Debug() << QString("Try to listening the address %1 on the port %2.")
                       .arg(listenAddress().toString())
@@ -214,6 +222,9 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
           return;
         }
       }
+
+      // Accept client connection
+      //client->sendHandShake();
 
       // Register client IP
       m_lstClientsIP.addClient(client);

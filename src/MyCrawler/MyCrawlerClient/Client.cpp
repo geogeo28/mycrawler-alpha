@@ -20,8 +20,11 @@
 
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
+#include "Utilities/NetworkInfo.h"
 
 #include "Client.h"
+#include "ServersList.h"
+#include "ServerInfo.h"
 
 MCClient* MCClient::s_instance = NULL;
 
@@ -40,11 +43,21 @@ void MCClient::destroy() {
   }
 }
 
+void MCClient::init_() {
+  m_enumConnectionState = UnconnectedState;
+  m_bAuthenticated = false;
+  m_bConnectionRefused = false;
+}
+
 MCClient::MCClient(QObject* parent)
   : QObject(parent),
+    m_enumConnectionState(UnconnectedState),
+    m_bAuthenticated(false),
     m_bConnectionRefused(false)
 {
   ILogger::Debug() << "Construct.";
+
+  init_();
 
   // Send HandShake
   QObject::connect(&m_clientPeer, SIGNAL(connected()), &m_clientPeer, SLOT(sendHandShake()));
@@ -53,9 +66,9 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
-  QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)));
-  QObject::connect(&m_clientPeer, SIGNAL(connected()), this, SIGNAL(connected()));
-  QObject::connect(&m_clientPeer, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
+  QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
+  QObject::connect(&m_clientPeer, SIGNAL(authenticated(const CNetworkInfo&)), this, SLOT(peerAuthenticated_(const CNetworkInfo&)));
+  QObject::connect(&m_clientPeer, SIGNAL(serverInfoResponse(const MCServerInfo&)), this, SLOT(peerServerInfoResponse_(const MCServerInfo&)));
 }
 
 MCClient::~MCClient() {
@@ -75,13 +88,26 @@ void MCClient::connectToHost(const MCServerInfo& serverInfo) {
   ILogger::Debug() << QString("Connecting to the host %1...")
                       .arg(serverInfo.ipAndPortString());
 
+  init_();
   m_serverInfo = serverInfo;
   m_clientPeer.connectToHost(serverInfo.ip(), serverInfo.port());
 }
 
-void MCClient::disconnect(int msecs) {
-  ILogger::Debug() << "Slot disconnect.";
+QString MCClient::connectionStateToString(ConnectionState state) {
+  switch (state) {
+    case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
+    case HostLookupState:      return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
+    case ConnectingState:      return QT_TRANSLATE_NOOP(MCClientThread, "Connecting");
+    case AuthenticatingState : return QT_TRANSLATE_NOOP(MCClientThread, "Authenticating");
+    case ConnectedState:       return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
+    case ClosingState:         return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
 
+    default:
+      return QT_TRANSLATE_NOOP(MCClientThread, "Unknown state");
+  }
+}
+
+void MCClient::disconnect(int msecs) {
   m_clientPeer.disconnect(msecs);
 }
 
@@ -94,4 +120,94 @@ void MCClient::peerError_(QAbstractSocket::SocketError socketError) {
   }
 
   emit error(socketError);
+}
+
+void MCClient::peerStateChanged_(QAbstractSocket::SocketState socketState) {
+  // Translate socket state to MCClient::connectionState
+  ConnectionState state = InvalidState;
+
+  switch (socketState) {
+    case QAbstractSocket::UnconnectedState:
+      state = UnconnectedState;
+      break;
+    case QAbstractSocket::HostLookupState:
+      state = HostLookupState;
+      break;
+    case QAbstractSocket::ConnectingState:
+      state = ConnectingState;
+      break;
+    case QAbstractSocket::ConnectedState:
+      state = AuthenticatingState;
+      break;
+    case QAbstractSocket::ClosingState:
+      state = ClosingState;
+      break;
+    default:;
+  }
+
+  // Emit signal state changed
+  setConnectionState_(state, true);
+}
+
+void MCClient::peerAuthenticated_(const CNetworkInfo& networkInfo) {
+  Q_UNUSED(networkInfo);
+
+  m_bAuthenticated = true;
+
+  // Server Info request
+  m_clientPeer.sendServerInfoRequest();
+
+  setConnectionState_(ConnectedState, true);
+}
+
+void MCClient::peerServerInfoResponse_(const MCServerInfo& serverInfo) {
+  // Update internal server info
+  m_serverInfo.update(serverInfo);
+
+  // Set servers list information
+  quint32 ip = m_clientPeer.peerAddress().toIPv4Address();
+  MCServersList::instance()->updateServer(ip, serverInfo);
+}
+
+void MCClient::setConnectionState_(ConnectionState state, bool signal) {
+  // Do nothing if the connection state didn't changed
+  if (state == m_enumConnectionState) {
+    return;
+  }
+
+  ILogger::Debug() << QString("Connection state changed : %2 (%3).")
+                      .arg(MCClient::connectionStateToString(state))
+                      .arg(state);
+
+  m_enumConnectionState = state;
+
+  // Emit signal if set
+  if (signal == true) {
+    emit MCClient::connectionStateChanged(state);
+  }
+
+  // Connected and disconnected
+  switch (state) {
+    // Connected
+    case ConnectedState:
+    {
+      if (signal == true) {
+        emit connected();
+        return;
+      }
+    }
+    break;
+
+    // Unconnected
+    case UnconnectedState:
+    {
+      if (signal == true) {
+        emit disconnected();
+        return;
+      }
+    }
+    break;
+
+    default:;
+  }
 }

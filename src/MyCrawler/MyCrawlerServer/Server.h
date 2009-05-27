@@ -27,6 +27,7 @@
 
 #include "ClientThread.h"
 #include "ServerTableIP.h"
+#include "ServerInfo.h"
 
 /*!
   \note An instance of MCClientThread is created in the private method 'incomingConnection'.
@@ -74,6 +75,8 @@ public:
     int maxConnections() const { return m_nMaxConnections; }
     void setMaxConnections(int n) { m_nMaxConnections = n; }
     bool canAcceptNewConnection() const;
+
+    MCServerInfo serverInfo() const;
 
 public:
     // Override QTcpServer methods

@@ -28,36 +28,59 @@
 #include <QHostAddress>
 
 #include "ClientPeer.h"
-#include "ServersList.h"
+#include "ServerInfo.h"
+
+class CNetworkInfo;
+class MCServerInfo;
 
 class MCClient : public QObject
 {
     Q_OBJECT
 
 public:
+    typedef enum {
+      InvalidState,
+      UnconnectedState,
+      HostLookupState,
+      ConnectingState,
+      AuthenticatingState,
+      ConnectedState,
+      ClosingState
+    } ConnectionState;
+
+public:
     static MCClient* instance();
-    static void destroy();
+    static void destroy();   
+
+private:
+    void init_();
 
 public:
     MCClient(QObject* parent = NULL);
     ~MCClient();
 
 public:
+    const MCServerInfo& serverInfo() const { return m_serverInfo; }
+
     // Wrapper
     QAbstractSocket::SocketError error() const { return m_clientPeer.error(); }
     QString errorString() const { return m_clientPeer.errorString(); }
-    QAbstractSocket::SocketState state() const { return m_clientPeer.state(); }
 
     void connectToHost(const MCServerInfo& serverInfo);
     void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(MCServerInfo(address, port)); }
 
-    const MCServerInfo& serverInfo() const { return m_serverInfo; }
+    ConnectionState connectionState() const { return m_enumConnectionState; }
+    bool isAuthenticated() const { return m_bAuthenticated; }
+    bool isConnectionRefused() const { return m_bConnectionRefused; }
+
+public:
+    static QString connectionStateToString(ConnectionState state);
 
 signals:
     void error(QAbstractSocket::SocketError error);
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void connectionStateChanged(QAbstractSocket::SocketState state);
+    void connectionStateChanged(MCClient::ConnectionState state);
     void connected();
     void disconnected();
 
@@ -66,13 +89,22 @@ public slots:
 
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
+    void peerStateChanged_(QAbstractSocket::SocketState socketState);
+    void peerAuthenticated_(const CNetworkInfo& networkInfo);
+    void peerServerInfoResponse_(const MCServerInfo& serverInfo);
+
+private:
+    void setConnectionState_(ConnectionState state, bool signal);
 
 private:
     static MCClient* s_instance;
     MCClientPeer m_clientPeer;
-    bool m_bConnectionRefused;
-
     MCServerInfo m_serverInfo;
+
+    ConnectionState m_enumConnectionState;
+    bool m_bAuthenticated;
+
+    bool m_bConnectionRefused;
 };
 
 #endif // CLIENT_H

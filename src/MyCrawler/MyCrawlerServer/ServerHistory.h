@@ -33,13 +33,13 @@ class MCClientThread;
 
 class MCServerHistory
 {  
-private:
-    void init_();
-    void cleanAll_();
-
 public:
     static MCServerHistory* instance();
     static void destroy();
+
+private:
+    void init_();
+    void cleanAll_();
 
 protected:
     MCServerHistory();

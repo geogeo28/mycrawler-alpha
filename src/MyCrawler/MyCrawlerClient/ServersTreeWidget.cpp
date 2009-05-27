@@ -25,6 +25,7 @@
 #include "ServersTreeWidget.h"
 #include "ClientApplication.h"
 #include "Client.h"
+#include "ServerInfo.h"
 #include "ServersList.h"
 
 static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
@@ -65,6 +66,7 @@ void MCServersTreeWidget::setup() {
   QObject::connect(MCServersList::instance(), SIGNAL(serverAdded(const MCServerInfo&)), this, SLOT(slotServerAdded(const MCServerInfo&)));
   QObject::connect(MCServersList::instance(), SIGNAL(serverRemoved(quint32)), this, SLOT(slotServerRemoved(quint32)));
   QObject::connect(MCServersList::instance(), SIGNAL(allServersRemoved()), this, SLOT(slotAllServersRemoved()));
+  QObject::connect(MCServersList::instance(), SIGNAL(serverUpdated(const MCServerInfo&)), this, SLOT(slotServerUpdated(const MCServerInfo&)));
 
   QObject::connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(on_connectToServer()));
 }
@@ -89,6 +91,15 @@ void MCServersTreeWidget::slotAllServersRemoved() {
   m_lstServersManaged.clear();
 }
 
+void MCServersTreeWidget::slotServerUpdated(const MCServerInfo& serverInfo) {
+  quint32 ip = serverInfo.ip().toIPv4Address();
+
+  QTreeWidgetItem* item = m_lstServersManaged.value(ip);
+  if (item == NULL) { return; }
+
+  MCServersTreeWidget::setServerItemFromServerInfo_(item, serverInfo);
+}
+
 void MCServersTreeWidget::on_connectToServer() {
   QTreeWidgetItem* item = currentItem();
   if (item == NULL) {
@@ -100,6 +111,7 @@ void MCServersTreeWidget::on_connectToServer() {
   QString name = item->text(NameColumn);
 
   MCClientApplication::instance()->mainWindow()->flushServersToConnectList();
+  MCApp->loadSettingsProxyConfiguration();
   MCClient::instance()->connectToHost(MCServerInfo(QHostAddress(ip), port, name));
 }
 

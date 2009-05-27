@@ -21,52 +21,11 @@
 #include <QFile>
 
 #include "ServersList.h"
+#include "ServerInfo.h"
 
 static MCServerInfo InvalidServerInfo = MCServerInfo();
 
 MCServersList* MCServersList::s_instance = NULL;
-
-MCServerInfo::MCServerInfo()
- : m_u16Port(0),
-   m_nPing(-1),
-   m_nUsers(-1), m_nMaxUsers(-1),
-   m_enumPriority(NormalPriority)
-{}
-
-MCServerInfo::MCServerInfo(
-  const QHostAddress& ip, quint16 port,
-  const QString& name, int ping,
-  int users, int maxUsers,
-  Priority priority
-)
- : m_ip(ip), m_u16Port(port),
-   m_sName(name), m_nPing(ping),
-   m_nUsers(users), m_nMaxUsers(maxUsers),
-   m_enumPriority(priority)
-{
-  if (m_sName.isEmpty()) { m_sName = m_ip.toString(); }
-}
-
-bool MCServerInfo::isValid() const {
-  return (
-    (m_ip != QHostAddress::Null) && (m_ip != QHostAddress::Any))
-    && (m_u16Port != 0);
-}
-
-bool MCServerInfo::operator<(const MCServerInfo& serverInfo) const {
-  return (this->priority() > serverInfo.priority());
-}
-
-QString MCServerInfo::priorityToString(Priority priority) {
-  switch (priority) {
-    case LowPriority:    return QT_TRANSLATE_NOOP(MCServerInfo, "Low");
-    case NormalPriority: return QT_TRANSLATE_NOOP(MCServerInfo, "Normal");
-    case HighPriority:   return QT_TRANSLATE_NOOP(MCServerInfo, "High");
-
-    default:
-      return QT_TRANSLATE_NOOP(MCServerInfo, "Unknown");
-  }
-}
 
 MCServersList* MCServersList::instance() {
   if (s_instance == NULL) {
@@ -111,7 +70,7 @@ MCServerInfo& MCServersList::fromIp(quint32 ip) {
     return InvalidServerInfo;
   }
 
-  return *it;
+  return it.value();
 }
 
 void MCServersList::addServer(const MCServerInfo& serverInfo) {
@@ -133,6 +92,15 @@ bool MCServersList::removeServer(quint32 ip) {
 void MCServersList::removeAllServers() {
   m_lstServers.clear();
   emit allServersRemoved();
+}
+
+void MCServersList::updateServer(quint32 ip, const MCServerInfo& serverInfo) {
+  if (ipExists(ip) == false) { return; }
+
+  MCServerInfo& lServerInfo = fromIp(ip);
+  lServerInfo.update(serverInfo);
+
+  emit serverUpdated(lServerInfo);
 }
 
 QList<MCServerInfo> MCServersList::allServers() const {

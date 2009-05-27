@@ -108,6 +108,8 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
     case ConnectionRefusedPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Connection refused");
+    case ServerInfoRequestPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Request");
+    case ServerInfoResponsePacket:      return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Response");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -332,6 +334,15 @@ void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
   sendPacket(ConnectionRefusedPacket, reason);
 }
 
+void MCClientPeer::sendServerInfoRequestPacket_() {
+  m_timeStartPingRequest = QTime::currentTime();
+  sendPacket(ServerInfoRequestPacket);
+}
+
+void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo) {
+  sendPacket(ServerInfoResponsePacket, serverInfo);
+}
+
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
   CNetworkInfo networkInfo;
   data >> networkInfo;
@@ -345,7 +356,19 @@ void MCClientPeer::processConnectionRefusedPacket_(QDataStream& data) {
 
   setSocketError(QTcpSocket::ConnectionRefusedError);
   setErrorString(QString("%1. (Connection refused)").arg(reason));
+
   emit error(QTcpSocket::ConnectionRefusedError);
+}
+
+void MCClientPeer::processServerInfoRequestPacket_() {
+  emit serverInfoRequest();
+}
+
+void MCClientPeer::processServerInfoResponsePacket_(QDataStream& data) {
+  MCServerInfo serverInfo;
+  data >> serverInfo;
+  serverInfo.setPing(m_timeStartPingRequest.msecsTo(QTime::currentTime()));
+  emit serverInfoResponse(serverInfo);
 }
 
 // Initialize all state variable
@@ -434,6 +457,16 @@ void MCClientPeer::processPacket_() {
     // Connection Refused
     case ConnectionRefusedPacket:
       processConnectionRefusedPacket_(data);
+      break;
+
+    // Server Info Request
+    case ServerInfoRequestPacket:
+      processServerInfoRequestPacket_();
+      break;
+      
+    // Server Info Response
+    case ServerInfoResponsePacket:
+      processServerInfoResponsePacket_(data);
       break;
 
     default:

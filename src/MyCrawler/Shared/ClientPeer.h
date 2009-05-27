@@ -26,8 +26,11 @@
 #include <QtNetwork>
 #include <QByteArray>
 #include <QDataStream>
+#include <QTime>
 
 #include "Utilities/NetworkInfo.h"
+
+#include "ServerInfo.h"
 
 class MCClientPeer : public QTcpSocket
 {
@@ -45,7 +48,9 @@ public:
       KeepAliveAcknowledgmentPacket = 0xFFFF,
       KeepAlivePacket = 0,
       AuthenticationPacket,
-      ConnectionRefusedPacket
+      ConnectionRefusedPacket,
+      ServerInfoRequestPacket,
+      ServerInfoResponsePacket
     } PacketType;
 
     typedef enum {
@@ -87,10 +92,15 @@ signals:
     void authenticated(const CNetworkInfo& info);
     void packetSent(MCClientPeer::PacketType type, quint32 size);
 
+    void serverInfoRequest();
+    void serverInfoResponse(const MCServerInfo& serverInfo);
+
 public slots:
     void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
+    void sendServerInfoRequest() { sendServerInfoRequestPacket_(); }
+    void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -104,9 +114,13 @@ private:
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
     void sendConnectionRefusedPacket_(const QString& reason = QString());
+    void sendServerInfoRequestPacket_();
+    void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
 
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
     void processConnectionRefusedPacket_(QDataStream& data);
+    void processServerInfoRequestPacket_();
+    void processServerInfoResponsePacket_(QDataStream& data);
 
 private:
     void connecting_();
@@ -131,6 +145,7 @@ private:
     quint16 m_u16PacketType;
 
     CNetworkInfo m_networkInfo;
+    QTime m_timeStartPingRequest;
 };
 
 template <class T> void MCClientPeer::sendPacket(PacketType type, const T& data) {
