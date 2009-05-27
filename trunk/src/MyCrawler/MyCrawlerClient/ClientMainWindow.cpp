@@ -26,7 +26,8 @@
 #include "ClientMainWindow.h"
 #include "DialogPreferences.h"
 #include "ClientApplication.h"
-#include "Client.h"
+#include "ServerInfo.h"
+#include "ServersList.h"
 
 void MCClientMainWindow::setupWindow_() {
   // Destroy window in memory when the user clicks on the close button
@@ -92,13 +93,13 @@ void MCClientMainWindow::setupStatusBar_() {
 
 void MCClientMainWindow::setupComponents_() {
   qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
-  qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
+  qRegisterMetaType<MCClient::ConnectionState>("MCClient::ConnectionState");
 
   // Connect signals/slots
   QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)), Qt::QueuedConnection);
   QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
-  QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(QAbstractSocket::SocketState)), this, SLOT(slotClientConnectionStateChanged(QAbstractSocket::SocketState)), Qt::QueuedConnection);
+  QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(MCClient::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClient::ConnectionState)), Qt::QueuedConnection);
 }
 
 void MCClientMainWindow::cleanAll_() {
@@ -157,7 +158,7 @@ void MCClientMainWindow::on_doFilePreferences_triggered() {
 
 void MCClientMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
   // Disconnect
-  if (MCClient::instance()->state() != QAbstractSocket::UnconnectedState) {
+  if (MCClient::instance()->connectionState() != MCClient::UnconnectedState) {
     m_bCancelConnection = true;
     disconnectClient_();
     return;
@@ -243,7 +244,7 @@ void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketErr
   );
 }
 
-void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::SocketState state) {  
+void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionState state) {
   QString message;
   QColor color = Qt::black;
 
@@ -251,7 +252,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
 
   switch (state) {
     // Connecting
-    case QAbstractSocket::ConnectingState:
+    case MCClient::ConnectingState:
     {
       // Log message
       message = QString("Connecting to %1 (%2)...")
@@ -272,7 +273,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
     }
 
     // Connected
-    case QAbstractSocket::ConnectedState:
+    case MCClient::ConnectedState:
     {
       // Log message
       message = QString("Connected to %1 (%2)...")
@@ -297,7 +298,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
     }
 
     // Closing
-    case QAbstractSocket::ClosingState:
+    case MCClient::ClosingState:
     {
       // Disable Connect/Disconnect button
       doMainToolBarConnectDisconnect->setIconText("Closing...");
@@ -313,7 +314,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(QAbstractSocket::Socke
     }
 
     // Unconnected
-    case QAbstractSocket::UnconnectedState:
+    case MCClient::UnconnectedState:
     {
       // Log message
       message = "Disconnected.";

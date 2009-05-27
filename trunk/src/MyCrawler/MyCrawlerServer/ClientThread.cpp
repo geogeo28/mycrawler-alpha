@@ -23,6 +23,7 @@
 #include "Utilities/NetworkInfo.h"
 
 #include "ClientThread.h"
+#include "Server.h"
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
@@ -74,6 +75,7 @@ void MCClientThread::run() {
   qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
   qRegisterMetaType<CNetworkInfo>("CNetworkInfo");
+  qRegisterMetaType<MCServerInfo>("MCServerInfo");
 
   // Receive 'message'
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
@@ -81,9 +83,12 @@ void MCClientThread::run() {
   QObject::connect(&clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
   QObject::connect(&clientPeer, SIGNAL(authenticated(const CNetworkInfo&)), this, SLOT(peerAuthenticated_(const CNetworkInfo&)));
+  QObject::connect(&clientPeer, SIGNAL(serverInfoRequest()), this, SLOT(peerServerInfoRequest_()));
 
   // Send 'message'
   QObject::connect(this, SIGNAL(callPeerRefuseConnection_(const QString&)), &clientPeer, SLOT(refuseConnection(const QString&)));
+  QObject::connect(this, SIGNAL(callPeerSendHandShake_()), &clientPeer, SLOT(sendHandShake()));
+  QObject::connect(this, SIGNAL(callPeerServerInfoResponse_(const MCServerInfo&)), &clientPeer, SLOT(sendServerInfoResponse(const MCServerInfo&)));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -116,6 +121,10 @@ void MCClientThread::run() {
 
   m_pClientPeer = NULL;
   mutex.unlock();
+}
+
+void MCClientThread::sendHandShake() {
+  emit callPeerSendHandShake_();
 }
 
 void MCClientThread::refuseConnection(const QString& reason) {
@@ -162,14 +171,18 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
   setConnectionState_(state, true);
 }
 
-void MCClientThread::peerAuthenticated_(const CNetworkInfo& info) {
+void MCClientThread::peerAuthenticated_(const CNetworkInfo& networkInfo) {
   mutex.lock();
   m_bAuthenticated = true;
-  m_networkInfo = info;
+  m_networkInfo = networkInfo;
   mutex.unlock();
 
   setConnectionState_(ConnectedState, true);
-  emit authenticated(info);
+  emit authenticated(networkInfo);
+}
+
+void MCClientThread::peerServerInfoRequest_() {
+  emit callPeerServerInfoResponse_(MCServer::instance()->serverInfo());
 }
 
 void MCClientThread::setError_(Error error, bool signal) {

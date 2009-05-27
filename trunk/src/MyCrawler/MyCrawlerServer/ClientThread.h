@@ -31,6 +31,7 @@
 #include "Utilities/NetworkInfo.h"
 
 #include "ClientPeer.h"
+#include "ServerInfo.h"
 
 class MCClientThread : public QThread
 {
@@ -96,18 +97,22 @@ signals:
     void authenticated(const CNetworkInfo& info);
 
 public slots:
+    void sendHandShake(); // thread-safe
     void refuseConnection(const QString& reason = QString()); // thread-safe
 
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError); // thread-safe
     void peerStateChanged_(QAbstractSocket::SocketState socketState); // thread-safe
-    void peerAuthenticated_(const CNetworkInfo& info); // thread-safe
+    void peerAuthenticated_(const CNetworkInfo& networkInfo); // thread-safe
+    void peerServerInfoRequest_(); // thread-safe
 
 protected:
     void run();
 
 signals:
     void callPeerRefuseConnection_(const QString& reason);
+    void callPeerSendHandShake_();
+    void callPeerServerInfoResponse_(const MCServerInfo& serverInfo);
 
 private:
     void setError_(Error error, bool signal = true); // thread-safe

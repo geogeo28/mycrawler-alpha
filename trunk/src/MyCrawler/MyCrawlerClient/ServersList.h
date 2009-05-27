@@ -31,67 +31,7 @@
 
 #include "Debug/Exception.h"
 
-class MCServerInfo
-{
-public:
-    typedef enum {
-      LowPriority,
-      NormalPriority,
-      HighPriority
-    } Priority;
-
-public:
-    MCServerInfo();
-    MCServerInfo(
-      const QHostAddress& ip, quint16 port,
-      const QString& name = QString(), int ping = -1,
-      int users = -1, int maxUsers = -1,
-      Priority priority = NormalPriority
-    );
-
-    bool isValid() const;
-
-    QHostAddress ip() const { return m_ip; }
-    void setIp(const QHostAddress& ip) { m_ip = ip; }
-    quint16 port() const { return m_u16Port; }
-    void setPort(quint16 port) { m_u16Port = port; }
-
-    QString name() const { return m_sName; }
-    void setName(const QString& name) { m_sName = name; }
-    int ping() const { return m_nPing; }
-    void setPing(int ping) { m_nPing = ping; }
-
-    int users() const { return m_nUsers; }
-    void setUsers(int users) { m_nUsers = users; }
-    int maxUsers() const { return m_nMaxUsers; }
-    void setMaxUsers(int maxUsers) { m_nMaxUsers = maxUsers; }
-
-    Priority priority() const { return m_enumPriority; }
-    void setPriority(Priority priority) { m_enumPriority = priority; }
-
-    QString ipAndPortString() const { return QString("%1:%2").arg(ip().toString()).arg(port()); }
-
-public:
-    bool operator<(const MCServerInfo& serverInfo) const;
-
-public:
-    static QString priorityToString(Priority priority);
-
-private:
-    QHostAddress m_ip;
-    quint16 m_u16Port;
-
-    QString m_sName;
-    int m_nPing;
-
-    int m_nUsers;
-    int m_nMaxUsers;
-
-    Priority m_enumPriority;
-};
-
-Q_DECLARE_METATYPE(MCServerInfo::Priority);
-
+class MCServerInfo;
 
 class MCServersList : public QObject
 {
@@ -115,6 +55,7 @@ public:
     void addServer(const MCServerInfo& serverInfo);
     bool removeServer(quint32 ip);
     void removeAllServers();
+    void updateServer(quint32 ip, const MCServerInfo& serverInfo);
     QList<MCServerInfo> allServers() const;
     QList<MCServerInfo> serversListSorted() const;
 
@@ -129,6 +70,7 @@ signals:
     void serverAdded(const MCServerInfo& serverInfo);
     void serverRemoved(quint32 ip);
     void allServersRemoved();
+    void serverUpdated(const MCServerInfo& serverInfo);
 
 private:
     typedef QMap<quint32, MCServerInfo> ServersList;

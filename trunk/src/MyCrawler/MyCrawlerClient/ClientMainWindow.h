@@ -29,7 +29,9 @@
 
 #include "ui_ClientMainWindow.h"
 #include "ClientPeer.h"
-#include "ServersList.h"
+#include "Client.h"
+
+class MCServerInfo;
 
 class MCClientMainWindow : public QMainWindow,
                            private Ui_MCClientMainWindow
@@ -67,7 +69,7 @@ private slots:
     void slotClientError(QAbstractSocket::SocketError error);
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
-    void slotClientConnectionStateChanged(QAbstractSocket::SocketState state);
+    void slotClientConnectionStateChanged(MCClient::ConnectionState state);
 
 protected:
     void closeEvent(QCloseEvent* event);

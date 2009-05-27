@@ -58,6 +58,7 @@ private slots:
     void slotServerAdded(const MCServerInfo& serverInfo);
     void slotServerRemoved(quint32 ip);
     void slotAllServersRemoved();
+    void slotServerUpdated(const MCServerInfo& serverInfo);
 
 private slots:
     void on_connectToServer();
