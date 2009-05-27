@@ -30,7 +30,6 @@
 #include "ClientPeer.h"
 #include "ServerInfo.h"
 
-class CNetworkInfo;
 class MCServerInfo;
 
 class MCClient : public QObject
@@ -43,7 +42,6 @@ public:
       UnconnectedState,
       HostLookupState,
       ConnectingState,
-      AuthenticatingState,
       ConnectedState,
       ClosingState
     } ConnectionState;
@@ -70,7 +68,7 @@ public:
     void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(MCServerInfo(address, port)); }
 
     ConnectionState connectionState() const { return m_enumConnectionState; }
-    bool isAuthenticated() const { return m_bAuthenticated; }
+    bool hasHandShakeReceived() const { return m_bHandShakeReceived; }
     bool isConnectionRefused() const { return m_bConnectionRefused; }
 
 public:
@@ -90,7 +88,8 @@ public slots:
 private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
     void peerStateChanged_(QAbstractSocket::SocketState socketState);
-    void peerAuthenticated_(const CNetworkInfo& networkInfo);
+    void peerConnected_();
+    void peerHandShakeReceived_();
     void peerServerInfoResponse_(const MCServerInfo& serverInfo);
 
 private:
@@ -102,8 +101,7 @@ private:
     MCServerInfo m_serverInfo;
 
     ConnectionState m_enumConnectionState;
-    bool m_bAuthenticated;
-
+    bool m_bHandShakeReceived;
     bool m_bConnectionRefused;
 };
 

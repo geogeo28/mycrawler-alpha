@@ -23,10 +23,11 @@
 
 #include "ClientPeer.h"
 
-int MCClientPeer::s_nTimeout = 120 * 1000;
-int MCClientPeer::s_nConnectTimeout = 60 * 1000;
-int MCClientPeer::s_nHandShakeTimeout = 60 * 1000;
-int MCClientPeer::s_nKeepAliveInterval = 30 * 1000;
+int MCClientPeer::DefaultTimeout = 120 * 1000;
+int MCClientPeer::DefaultConnectTimeout = 60 * 1000;
+int MCClientPeer::DefaultHandShakeTimeout = 60 * 1000;
+int MCClientPeer::DefaultKeepAliveInterval = 30 * 1000;
+bool MCClientPeer::DefaultRequireAuthentication = true;
 
 static const char ProtocolId[] = "MyCrawler Protocol";
 static const char ProtocolIdSize = 18;
@@ -36,11 +37,15 @@ static const quint32 MinimalPacketSize = 6;
 
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent),
+    m_nTimeout(DefaultTimeout), m_nConnectTimeout(DefaultConnectTimeout), m_nHandShakeTimeout(DefaultHandShakeTimeout),
+    m_nKeepAliveInterval(DefaultKeepAliveInterval),
+    m_bRequireAuthentication(DefaultRequireAuthentication),
+
     m_idTimeoutTimer(0),
     m_idKeepAliveTimer(0), m_bInvalidateTimeout(false),
-    m_bProtocolChecked(false),
     m_bReceivedHandShake(false), m_bSentHandShake(false),
-    m_u32PacketSize(0), m_u16PacketType(0)
+    m_u32PacketSize(0), m_u16PacketType(0),
+    m_bAuthenticated(false)
 {
   ILogger::Debug() << "Construct.";
 
@@ -189,35 +194,42 @@ void MCClientPeer::processIncomingData_() {
 
   // Process Handshake
   if (m_bReceivedHandShake == false) {
-    // Check protocol
-    if (m_bProtocolChecked == false) {
-      // Check that we received enough data
-      if (bytesAvailable() < ProtocolHeaderSize) {
-        return;
-      }
-
-      // Check the protocol identification
-      QByteArray id = read(ProtocolIdSize);
-      if (id.startsWith(ProtocolId) == false) {
-        errorProcessingPacket_(ProtocolIdError, true);
-        return;
-      }
-
-      // Check the protocol version
-      QDataStream data(this);
-      data.setVersion(SerializationVersion);
-
-      quint16 ver; data >> ver;
-      if (ver != ProtocolVersion) {
-        errorProcessingPacket_(ProtocolVersionError, true);
-        return;
-      }
-
-      // Discard 8 reserved bytes
-      (void) read(8);
-
-      m_bProtocolChecked = true;
+    // Check that we received enough data
+    if (bytesAvailable() < ProtocolHeaderSize) {
+      return;
     }
+
+    // Check the protocol identification
+    QByteArray id = read(ProtocolIdSize);
+    if (id.startsWith(ProtocolId) == false) {
+      errorProcessingPacket_(ProtocolIdError, true);
+      return;
+    }
+
+    // Check the protocol version
+    QDataStream data(this);
+    data.setVersion(SerializationVersion);
+
+    quint16 ver; data >> ver;
+    if (ver != ProtocolVersion) {
+      errorProcessingPacket_(ProtocolVersionError, true);
+      return;
+    }
+
+    // Discard 8 reserved bytes
+    (void) read(8);
+
+    // Initialize keep-alive timer
+    if (!m_idKeepAliveTimer) {
+      m_idKeepAliveTimer = startTimer(m_nKeepAliveInterval);
+    }
+
+    m_bReceivedHandShake = true;
+    emit handShakeReceived();
+
+    /*if (m_bSentHandShake == false) {
+      sendHandShakePacket_();
+    }*/
   }
 
   do {
@@ -303,7 +315,7 @@ void MCClientPeer::sendHandShakePacket_() {
   if (m_idTimeoutTimer) {
     killTimer(m_idTimeoutTimer);
   }
-  m_idTimeoutTimer = startTimer(s_nTimeout);
+  m_idTimeoutTimer = startTimer(m_nTimeout);
 
   QByteArray bytes;
   QDataStream data(&bytes, QIODevice::WriteOnly);
@@ -316,9 +328,6 @@ void MCClientPeer::sendHandShakePacket_() {
   // Write protocol data
   write(bytes);
   write(QByteArray(8, '\0')); // Reserved characters
-
-  // Write authentication
-  sendAuthenticationPacket_();
 }
 
 void MCClientPeer::sendAuthenticationPacket_() {
@@ -331,6 +340,9 @@ void MCClientPeer::sendAuthenticationPacket_() {
 }
 
 void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
+  if (m_bSentHandShake == false) {
+    sendHandShakePacket_();
+  }
   sendPacket(ConnectionRefusedPacket, reason);
 }
 
@@ -374,17 +386,16 @@ void MCClientPeer::processServerInfoResponsePacket_(QDataStream& data) {
 // Initialize all state variable
 void MCClientPeer::connecting_() {
   m_bInvalidateTimeout = false;
-  m_idTimeoutTimer = startTimer(s_nConnectTimeout);
+  m_idTimeoutTimer = startTimer(m_nConnectTimeout);
 }
 
 void MCClientPeer::connected_() {
-  m_bProtocolChecked = false;
   m_bReceivedHandShake = false;
   m_bSentHandShake = false;
   m_u16PacketType = 0;
   m_u32PacketSize = 0;
 
-  m_idTimeoutTimer = startTimer(s_nHandShakeTimeout);
+  m_idTimeoutTimer = startTimer(m_nHandShakeTimeout);
 }
 
 void MCClientPeer::closing_() {
@@ -394,7 +405,6 @@ void MCClientPeer::closing_() {
 // Clean all state variable
 void MCClientPeer::disconnected_() {
   m_bInvalidateTimeout = false;
-  m_bProtocolChecked = false;
   m_bReceivedHandShake = false;
   m_bSentHandShake = false;
   m_u16PacketType = 0;
@@ -415,28 +425,18 @@ void MCClientPeer::processPacket_() {
   QDataStream data(this);
   data.setVersion(SerializationVersion);
 
-  // HandShake packet not received
-  if (m_bReceivedHandShake == false) {
+  // Check authentication packet (received just after HandShake message)
+  if ((m_bRequireAuthentication == true) && (m_bAuthenticated == false)) {
     // Could not process the packet because no authentication message was received.
-    if ((m_bReceivedHandShake == false) && (packetType != AuthenticationPacket)) {
+    if (packetType != AuthenticationPacket) {
       errorProcessingPacket_(AuthenticationError, true);
-      return;
     }
-
-    m_networkInfo = processAuthenticationPacket_(data);
-    emit authenticated(m_networkInfo);
-
-    m_bReceivedHandShake = true;
-
-    // Initialize keep-alive timer
-    if (!m_idKeepAliveTimer) {
-      m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval);
+    // Process the authentication packet
+    else {
+      m_networkInfo = processAuthenticationPacket_(data);
+      m_bAuthenticated = true;
+      emit authenticated(m_networkInfo);
     }
-
-    if (m_bSentHandShake == false) {
-      sendHandShakePacket_();
-    }
-
     return;
   }
 
@@ -445,7 +445,7 @@ void MCClientPeer::processPacket_() {
     // KeepAlive (demand)
     case KeepAlivePacket:
     {
-      m_idKeepAliveTimer = startTimer(s_nKeepAliveInterval); // Restart KeepAlive timer
+      m_idKeepAliveTimer = startTimer(m_nKeepAliveInterval); // Restart KeepAlive timer
       sendPacket(KeepAliveAcknowledgmentPacket);
     }
     break;

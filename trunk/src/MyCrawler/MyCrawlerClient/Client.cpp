@@ -45,29 +45,29 @@ void MCClient::destroy() {
 
 void MCClient::init_() {
   m_enumConnectionState = UnconnectedState;
-  m_bAuthenticated = false;
+  m_bHandShakeReceived = false;
   m_bConnectionRefused = false;
 }
 
 MCClient::MCClient(QObject* parent)
-  : QObject(parent),
-    m_enumConnectionState(UnconnectedState),
-    m_bAuthenticated(false),
-    m_bConnectionRefused(false)
+  : QObject(parent)
 {
   ILogger::Debug() << "Construct.";
 
+  // Check server authentication is not necessary to process packets
+  m_clientPeer.setRequireAuthentication(false);
+
   init_();
 
-  // Send HandShake
-  QObject::connect(&m_clientPeer, SIGNAL(connected()), &m_clientPeer, SLOT(sendHandShake()));
+  // Send HandShake and authentication
+  QObject::connect(&m_clientPeer, SIGNAL(connected()), this, SLOT(peerConnected_()));
 
   // Other connections
   QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
-  QObject::connect(&m_clientPeer, SIGNAL(authenticated(const CNetworkInfo&)), this, SLOT(peerAuthenticated_(const CNetworkInfo&)));
+  QObject::connect(&m_clientPeer, SIGNAL(handShakeReceived()), this, SLOT(peerHandShakeReceived_()));
   QObject::connect(&m_clientPeer, SIGNAL(serverInfoResponse(const MCServerInfo&)), this, SLOT(peerServerInfoResponse_(const MCServerInfo&)));
 }
 
@@ -98,7 +98,6 @@ QString MCClient::connectionStateToString(ConnectionState state) {
     case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
     case HostLookupState:      return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
     case ConnectingState:      return QT_TRANSLATE_NOOP(MCClientThread, "Connecting");
-    case AuthenticatingState : return QT_TRANSLATE_NOOP(MCClientThread, "Authenticating");
     case ConnectedState:       return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
     case ClosingState:         return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
 
@@ -137,7 +136,7 @@ void MCClient::peerStateChanged_(QAbstractSocket::SocketState socketState) {
       state = ConnectingState;
       break;
     case QAbstractSocket::ConnectedState:
-      state = AuthenticatingState;
+      state = ConnectingState;
       break;
     case QAbstractSocket::ClosingState:
       state = ClosingState;
@@ -149,10 +148,13 @@ void MCClient::peerStateChanged_(QAbstractSocket::SocketState socketState) {
   setConnectionState_(state, true);
 }
 
-void MCClient::peerAuthenticated_(const CNetworkInfo& networkInfo) {
-  Q_UNUSED(networkInfo);
+void MCClient::peerConnected_() {
+  m_clientPeer.sendHandShake(); // Send HandShake
+  m_clientPeer.sendAuthentication(); // Send Authentication
+}
 
-  m_bAuthenticated = true;
+void MCClient::peerHandShakeReceived_() {
+  m_bHandShakeReceived = true;
 
   // Server Info request
   m_clientPeer.sendServerInfoRequest();

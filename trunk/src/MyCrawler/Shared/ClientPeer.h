@@ -67,18 +67,30 @@ public:
     ~MCClientPeer();
 
 public:
-    static int timeout() { return s_nTimeout; }
-    static int connectTimeout() { return s_nConnectTimeout; }
-    static int handShakeTimeout() { return s_nHandShakeTimeout; }
-    static int keepAliveInterval() { return s_nKeepAliveInterval; }
-    static void setTimeout(int sec) { s_nTimeout = sec * 1000; }
-    static void setConnectTimeout(int sec) { s_nConnectTimeout = sec * 1000; }
-    static void setHandShakeTimeout(int sec) { s_nHandShakeTimeout = sec * 1000; }
-    static void setKeepAliveInterval(int sec) { s_nKeepAliveInterval = sec * 1000; }
+    static int DefaultTimeout;
+    static int DefaultConnectTimeout;
+    static int DefaultHandShakeTimeout;
+    static int DefaultKeepAliveInterval;
+    static bool DefaultRequireAuthentication;
 
+public:
+    int timeout() { return m_nTimeout; }
+    int connectTimeout() { return m_nConnectTimeout; }
+    int handShakeTimeout() { return m_nHandShakeTimeout; }
+    int keepAliveInterval() { return m_nKeepAliveInterval; }
+    bool requireAuthentication() { return m_bRequireAuthentication; } // Server mode
+
+    void setTimeout(int sec) { m_nTimeout = sec * 1000; }
+    void setConnectTimeout(int sec) { m_nConnectTimeout = sec * 1000; }
+    void setHandShakeTimeout(int sec) { m_nHandShakeTimeout = sec * 1000; }
+    void setKeepAliveInterval(int sec) { m_nKeepAliveInterval = sec * 1000; }
+    void setRequireAuthentication(bool requireAuthentication) { m_bRequireAuthentication = requireAuthentication;}
+
+    bool isAuthenticated() const { return m_bAuthenticated; }
     const CNetworkInfo& networkInfo() const { return m_networkInfo; }
+
     void sendPacket(PacketType type, const QByteArray& data = QByteArray());
-    template <class T> void sendPacket(PacketType type, const T& data);
+    template <class T> void sendPacket(PacketType type, const T& data);  
 
 public:
     static QString stateToString(QAbstractSocket::SocketState state);
@@ -89,6 +101,7 @@ public:
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void handShakeReceived();
     void authenticated(const CNetworkInfo& info);
     void packetSent(MCClientPeer::PacketType type, quint32 size);
 
@@ -99,6 +112,7 @@ public slots:
     void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
+    void sendAuthentication() { sendAuthenticationPacket_(); }
     void sendServerInfoRequest() { sendServerInfoRequestPacket_(); }
     void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
 
@@ -130,20 +144,21 @@ private:
     void processPacket_();
 
 private:
-    static int s_nTimeout;
-    static int s_nConnectTimeout;
-    static int s_nHandShakeTimeout;
-    static int s_nKeepAliveInterval;
+    int m_nTimeout;
+    int m_nConnectTimeout;
+    int m_nHandShakeTimeout;
+    int m_nKeepAliveInterval;
+    bool m_bRequireAuthentication;
 
     int m_idTimeoutTimer;
     int m_idKeepAliveTimer;
     bool m_bInvalidateTimeout;
 
-    bool m_bProtocolChecked;
     bool m_bReceivedHandShake, m_bSentHandShake;
     quint32 m_u32PacketSize;
     quint16 m_u16PacketType;
 
+    bool m_bAuthenticated;
     CNetworkInfo m_networkInfo;
     QTime m_timeStartPingRequest;
 };

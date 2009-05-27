@@ -68,6 +68,8 @@ void MCClientThread::run() {
   MCClientPeer clientPeer;
   m_pClientPeer = &clientPeer;
 
+  clientPeer.setRequireAuthentication(true); // The client must be authenticated to process packets
+
   // Setup signals/slots connections
   qRegisterMetaType<QAbstractSocket::SocketError>("QAbstractSocket::SocketError");
   qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");

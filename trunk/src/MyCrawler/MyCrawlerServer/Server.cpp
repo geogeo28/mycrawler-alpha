@@ -224,7 +224,7 @@ void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState sta
       }
 
       // Accept client connection
-      //client->sendHandShake();
+      client->sendHandShake();
 
       // Register client IP
       m_lstClientsIP.addClient(client);
