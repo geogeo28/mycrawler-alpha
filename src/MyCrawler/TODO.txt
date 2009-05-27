@@ -25,13 +25,13 @@ X Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the 
 (2009-05-19 Rev 126) - The settings must be load and saved in IApplication instances (MCServerApplication and MCClientApplication).
 (2009-05-19 Rev 128) - Add the code for the button 'Default values' in the dialog preferences.
 (2009-05-21 Rev 134) - Send an error message to the host if the method 'refuseConnection()' is call in the class MCClientPeer.
+(2009-05-27 Rev 146) - Manage a ConnectionRefused packet before received an handshake. 
 - Bug (Major) : When a computer plays the role of server with an Internet connection and another computer with the same Internet connection
 plays the role of client, the server sees the client authenticating and disconnected states with the error 'The remote host closed the
 connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
 occured too. Bug not observed with a Freebox.
 - Derived QTreeWidgetItem with a own class in order to improve columns sorting.
 - The class MCServerInfo must be thread-safe.
-- Manage a ConnectionRefused packet before received an handshake. 
 
 
 MyCrawlerServer :
