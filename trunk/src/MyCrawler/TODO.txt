@@ -30,6 +30,8 @@ plays the role of client, the server sees the client authenticating and disconne
 connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
 occured too. Bug not observed with a Freebox.
 - Derived QTreeWidgetItem with a own class in order to improve columns sorting.
+- The class MCServerInfo must be thread-safe.
+- Manage a ConnectionRefused packet before received an handshake. 
 
 
 MyCrawlerServer :
@@ -38,11 +40,11 @@ MyCrawlerServer :
 (2009-05-17 Rev 117) - Improve the management of the mutex in the class MCClientThread.
 (2009-05-19 Rev 126) - Use a setting in the Preferences Dialog for save/or not the server history.
 (2009-05-21 Rev 132) - Clean-up the code in MCClientsTreeWidgets (factorize the code).
+- The class MCServer must be thread-safe. Added Read/Write mutex.
 
 
 MyCrawlerClient :
 -----------------
-- Store MCServerInfo in each item of MCServersTreeWidget.
-- Load the proxy settings before call the method 'connectToHost' of MCClient.
-- Add an enumerate type 'Connection states' in MCClient (Connecting even during authenticating...).
-
+X Store MCServerInfo in each item of MCServersTreeWidget.
+(2009-05-26 Rev 144) - Load the proxy settings before call the method 'connectToHost' of MCClient.
+(2009-05-26 Rev 144) - Add an enumerate type 'Connection states' in MCClient (Connecting even during authenticating...).
