@@ -69,7 +69,7 @@ bool MCServer::canAcceptNewConnection() const {
 
 MCServerInfo MCServer::serverInfo() const {
   MCServerInfo serverInfo(serverAddress(), serverPort());
-  serverInfo.setName(QString());
+  serverInfo.setName(name());
   serverInfo.setUsers(clientCount());
   serverInfo.setMaxUsers(maxConnections());
   return serverInfo;

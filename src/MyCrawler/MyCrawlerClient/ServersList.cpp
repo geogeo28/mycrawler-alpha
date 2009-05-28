@@ -23,6 +23,10 @@
 #include "ServersList.h"
 #include "ServerInfo.h"
 
+static const char* ServersListFileMagic = "MyCrawlerServersList";
+static const quint16 ServersListFileMagicSize = 20;
+static const quint16 ServersListFileVersion = 0x0100;
+
 static MCServerInfo InvalidServerInfo = MCServerInfo();
 
 MCServersList* MCServersList::s_instance = NULL;
@@ -113,48 +117,13 @@ QList<MCServerInfo> MCServersList::serversListSorted() const {
   return lstServers;
 }
 
-void MCServersList::write(QTextStream& out) const {
-  foreach (const MCServerInfo& serverInfo, m_lstServers.values()) {
-    out << serverInfo.name() << "\t"
-        << serverInfo.ip().toString() << "\t" << serverInfo.port() << "\t"
-        << serverInfo.ping() << "\t"
-        << serverInfo.users() << "\t" << serverInfo.maxUsers() << "\t"
-        << serverInfo.priority() << endl;
-  }
+void MCServersList::write(QDataStream& out) const {
+  out << m_lstServers;
 }
 
-bool MCServersList::read(QTextStream& in) {
-  while (in.atEnd() == false) {
-    QString name;
-    QString ip; int port;
-    int ping;
-    int users;
-    int maxUsers;
-    int priority;
-
-    in >> name
-       >> ip >> port
-       >> ping
-       >> users >> maxUsers
-       >> priority;
-
-    in.skipWhiteSpace();
-
-    MCServerInfo serverInfo(
-      QHostAddress(ip), port,
-      name, ping,
-      users, maxUsers,
-      static_cast<MCServerInfo::Priority>(priority)
-    );
-
-    if (serverInfo.isValid() == false) {
-      return false;
-    }
-
-    addServer(serverInfo);
-  }
-
-  return true;
+void MCServersList::read(QDataStream& in) {
+  // Warning : Data are not checked.
+  in >> m_lstServers;
 }
 
 void MCServersList::save(const QString& fileName) const throw(CFileException) {
@@ -167,10 +136,15 @@ void MCServersList::save(const QString& fileName) const throw(CFileException) {
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-  // Write content
-  QTextStream out(&file);
-  out.setCodec("ISO 8859-1");
+  QByteArray data;
+  QDataStream out(&data, QIODevice::WriteOnly);
+  out.setVersion(SerializationVersion);
+
+  out.writeRawData(ServersListFileMagic, ServersListFileMagicSize);
+  out << ServersListFileVersion;
   this->write(out);
+
+  file.write(data);
 }
 
 void MCServersList::load(const QString& fileName) throw(CFileException) {
@@ -183,10 +157,22 @@ void MCServersList::load(const QString& fileName) throw(CFileException) {
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-  // Read content
-  QTextStream in(&file);
-  in.setCodec("ISO 8859-1");
-  if (this->read(in) == false) {
-    ThrowFileFormatException(fileName, "File not well formated. Check data consistency.");
+  // Read magic
+  QByteArray magic = file.read(ServersListFileMagicSize);
+  if (magic.startsWith(ServersListFileMagic) == false) {
+    ThrowFileFormatException(fileName, "Invalid magic descriptor.");
   }
+
+  // Prepare to read content
+  QDataStream in(&file);
+  in.setVersion(SerializationVersion);
+
+  // Check version
+  quint16 version; in >> version;
+  if (version != ServersListFileVersion) {
+    ThrowFileFormatException(fileName, "Version not supported.");
+    return;
+  }
+
+  this->read(in);
 }

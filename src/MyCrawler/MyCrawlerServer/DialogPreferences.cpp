@@ -71,12 +71,14 @@ void MCDialogPreferences::on_buttonBox_clicked(QAbstractButton* button) {
 void MCDialogPreferences::readServerConnectionConfiguration_() {  
   textServerAddress->setText(MCServer::instance()->listenAddress().toString());
   spinBoxServerPort->setValue(MCServer::instance()->listenPort());
+  textServerName->setText(MCServer::instance()->name());
   spinBoxServerMaxConnections->setValue(MCServer::instance()->maxConnections());
 }
 
 void MCDialogPreferences::writeServerConnectionConfiguration_() {
   MCApp->saveSettingsServerConnection(
     textServerAddress->text(), spinBoxServerPort->value(),
+    textServerName->text(),
     spinBoxServerMaxConnections->value()
   );
 }
@@ -132,6 +134,7 @@ void MCDialogPreferences::writeSettings_() {
 void MCDialogPreferences::defaultValuesTabConnection_() {
   textServerAddress->setText(MCSettingsApplication::DefaultServerAddress);
   spinBoxServerPort->setValue(MCSettingsApplication::DefaultServerPort);
+  textServerName->setText(MCSettingsApplication::DefaultServerName);
   spinBoxServerMaxConnections->setValue(MCSettingsApplication::DefaultServerMaxConnections);
 }
 

@@ -60,8 +60,8 @@ public:
     QList<MCServerInfo> serversListSorted() const;
 
 public:
-    void write(QTextStream& out) const;
-    bool read(QTextStream& in);
+    void write(QDataStream& out) const;
+    void read(QDataStream& in);
 
     void save(const QString& fileName) const throw(CFileException);
     void load(const QString& fileName) throw(CFileException);
