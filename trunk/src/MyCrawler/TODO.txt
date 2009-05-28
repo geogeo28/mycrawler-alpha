@@ -12,6 +12,10 @@ X Bug : Cannot show a message box in the logger CLoggerMsgBox from a thread with
 X (thread-unsafe controlled, see notes) Remove the pointer 'm_pClient' and the method 'clientPeer()' in the class MCClientThread because it's thread-unsafe.
 X (the slot must be protected but not signals emitted) Avoid to use a mutex in the slots of MCClientThread.
 X Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the log must be possible. Add a context menu.
+X Bug (Major) : When a computer plays the role of server with an Internet connection and another computer with the same Internet connection
+plays the role of client, the server sees the client authenticating and disconnected states with the error 'The remote host closed the
+connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
+occured too. Bug not observed with a Freebox.
 (2009-04-27 Rev 41) - Reorganize the src folder with packages (with .pri or .pro files).
 (2009-04-27 Rev 41) - Add a base exception named Exception with upper exceptions such as CAssertException, CBadAddressException...
 (2009-04-27 Rev 41) - Add the CLoggerConsole inherited of ILogger to log messages into a console.
@@ -25,24 +29,20 @@ X Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the 
 (2009-05-19 Rev 126) - The settings must be load and saved in IApplication instances (MCServerApplication and MCClientApplication).
 (2009-05-19 Rev 128) - Add the code for the button 'Default values' in the dialog preferences.
 (2009-05-21 Rev 134) - Send an error message to the host if the method 'refuseConnection()' is call in the class MCClientPeer.
-(2009-05-27 Rev 146) - Manage a ConnectionRefused packet before received an handshake. 
-- Bug (Major) : When a computer plays the role of server with an Internet connection and another computer with the same Internet connection
-plays the role of client, the server sees the client authenticating and disconnected states with the error 'The remote host closed the
-connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
-occured too. Bug not observed with a Freebox.
+(2009-05-27 Rev 146) - Manage a ConnectionRefused packet before received an handshake.
+(2009-05-28 Rev 149) - The class MCServerInfo must be thread-safe.
 - Derived QTreeWidgetItem with a own class in order to improve columns sorting.
-- The class MCServerInfo must be thread-safe.
 - Bug : The error 'Connection refused' is never processed because the connection is closed just after the message was emitted.
 
 
 MyCrawlerServer :
 -----------------
+X The class MCServer must be thread-safe. Added Read/Write mutex. Keep an eye on this singleton.
 (2009-05-17 Rev 112) - Detect multi connections with the same MAC address (remote client).
 (2009-05-17 Rev 117) - Improve the management of the mutex in the class MCClientThread.
 (2009-05-19 Rev 126) - Use a setting in the Preferences Dialog for save/or not the server history.
 (2009-05-21 Rev 132) - Clean-up the code in MCClientsTreeWidgets (factorize the code).
-- The class MCServer must be thread-safe. Added Read/Write mutex.
-- Bug : The peer address of a client is not showed after load the server history.
+(2009-05-28 Rev 149) - Bug : The peer address of a client is not showed after load the server history.
 
 
 MyCrawlerClient :
