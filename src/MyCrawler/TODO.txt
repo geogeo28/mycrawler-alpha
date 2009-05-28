@@ -33,6 +33,7 @@ occured too. Bug not observed with a Freebox.
 (2009-05-28 Rev 149) - The class MCServerInfo must be thread-safe.
 - Derived QTreeWidgetItem with a own class in order to improve columns sorting.
 - Bug : The error 'Connection refused' is never processed because the connection is closed just after the message was emitted.
+- Don't emit the signal 'disconnected' when the connection is refused by the server or the client wasn't authenticated.
 
 
 MyCrawlerServer :
