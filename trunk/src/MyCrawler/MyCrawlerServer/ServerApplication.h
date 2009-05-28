@@ -62,6 +62,7 @@ public:
     void loadSettingsServerConnection();
     void saveSettingsServerConnection(
       const QString& address, quint16 port,
+      const QString& name,
       int maxConnections
     );
 

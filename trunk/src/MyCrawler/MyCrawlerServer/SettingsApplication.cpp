@@ -27,6 +27,7 @@ const char* MCSettingsApplication::ServerHistoryFileName = "history.dat";
 
 const char* MCSettingsApplication::DefaultServerAddress = "0.0.0.0";
 const quint16 MCSettingsApplication::DefaultServerPort = 8080;
+const char* MCSettingsApplication::DefaultServerName = "";
 const int MCSettingsApplication::DefaultServerMaxConnections = 5;
 
 const bool MCSettingsApplication::DefaultProxyUse = false;

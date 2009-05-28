@@ -135,12 +135,14 @@ void MCServerApplication::loadSettingsServerConnection() {
   settings()->beginGroup("ServerConnectionConfiguration");
     MCServer::instance()->setListenAddress(settings()->value("Address", MCSettingsApplication::DefaultServerAddress).toString());
     MCServer::instance()->setListenPort(settings()->value("Port", MCSettingsApplication::DefaultServerPort).toUInt());
+    MCServer::instance()->setName(settings()->value("Name", MCSettingsApplication::DefaultServerName).toString());
     MCServer::instance()->setMaxConnections(settings()->value("MaxConnections", MCSettingsApplication::DefaultServerMaxConnections).toInt());
   settings()->endGroup();
 }
 
 void MCServerApplication::saveSettingsServerConnection(
   const QString& address, quint16 port,
+  const QString& name,
   int maxConnections
 )
 {
@@ -150,6 +152,7 @@ void MCServerApplication::saveSettingsServerConnection(
   settings()->beginGroup("ServerConnectionConfiguration");
     settings()->setValue("Address", address);
     settings()->setValue("Port", port);
+    settings()->setValue("Name", name);
     settings()->setValue("MaxConnections", maxConnections);
   settings()->endGroup();
 }

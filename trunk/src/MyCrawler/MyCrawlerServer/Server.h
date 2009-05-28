@@ -72,6 +72,8 @@ public:
     State state() const { return m_enumState; }
     Error error() const { return m_enumError; }
     QString errorString() const { return m_sError; }
+    const QString& name() const { return m_sName; }
+    void setName(const QString& name) { m_sName = name; }
     int maxConnections() const { return m_nMaxConnections; }
     void setMaxConnections(int n) { m_nMaxConnections = n; }
     bool canAcceptNewConnection() const;
@@ -132,6 +134,7 @@ private:
 
     static MCServer* s_instance;
 
+    QString m_sName;
     int m_nMaxConnections;
     State m_enumState;
 

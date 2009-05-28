@@ -137,7 +137,7 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
 void MCClientPeer::refuseConnection(const QString& reason) {
   ILogger::Debug() << "The connection was aborted (reason = " << reason << ").";
 
-  sendConnectionRefusedPacket_(reason);
+  //sendConnectionRefusedPacket_(reason);
   disconnectFromHost();
 }
 
@@ -340,9 +340,6 @@ void MCClientPeer::sendAuthenticationPacket_() {
 }
 
 void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
-  if (m_bSentHandShake == false) {
-    sendHandShakePacket_();
-  }
   sendPacket(ConnectionRefusedPacket, reason);
 }
 

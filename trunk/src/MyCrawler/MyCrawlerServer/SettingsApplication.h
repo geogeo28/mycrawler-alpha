@@ -32,6 +32,7 @@ struct MCSettingsApplication
 
   static const char* DefaultServerAddress;
   static const quint16 DefaultServerPort;
+  static const char* DefaultServerName;
   static const int DefaultServerMaxConnections;
 
   static const bool DefaultProxyUse;

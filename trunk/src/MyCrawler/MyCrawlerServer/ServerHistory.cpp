@@ -112,6 +112,7 @@ void MCServerHistory::write(QDataStream& out) const {
 }
 
 void MCServerHistory::read(QDataStream& in) {
+  // Warning : Data are not checked
   in >> m_lstClients;
 }
 

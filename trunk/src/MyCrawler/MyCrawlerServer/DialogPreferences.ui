@@ -167,6 +167,55 @@
           <item>
            <layout class="QHBoxLayout">
             <item>
+             <widget class="QLabel" name="lblServerName">
+              <property name="text">
+               <string>Server name :</string>
+              </property>
+              <property name="buddy">
+               <cstring>textServerName</cstring>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="textServerName">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>215</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maxLength">
+               <number>64</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Expanding</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>107</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout">
+            <item>
              <widget class="QLabel" name="lblServerNumberOfConnections">
               <property name="text">
                <string>Maximum number of simultaneous connections : </string>
@@ -208,7 +257,7 @@
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>40</width>
+                <width>107</width>
                 <height>20</height>
                </size>
               </property>
@@ -512,12 +561,13 @@
   <tabstop>tabWidget</tabstop>
   <tabstop>textServerAddress</tabstop>
   <tabstop>spinBoxServerPort</tabstop>
+  <tabstop>textServerName</tabstop>
   <tabstop>spinBoxServerMaxConnections</tabstop>
+  <tabstop>checkBoxProxyUse</tabstop>
   <tabstop>textProxyHostName</tabstop>
   <tabstop>spinBoxProxyPort</tabstop>
   <tabstop>textProxyUserName</tabstop>
   <tabstop>textProxyUserPassword</tabstop>
-  <tabstop>checkBoxProxyUse</tabstop>
   <tabstop>checkBoxServerAutoConnectAtStartup</tabstop>
   <tabstop>checkBoxServerSaveHistory</tabstop>
   <tabstop>buttonBox</tabstop>

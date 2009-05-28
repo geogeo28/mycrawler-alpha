@@ -172,21 +172,32 @@ void MCServerInfo::write(QDataStream& out) const {
 
   out << name();
 
+  out << ping();
+
   out << users();
   out << maxUsers();
+
+  out << priority();
 }
 
 void MCServerInfo::read(QDataStream& in) {
   quint32 ip;
+  int priority;
 
   in >> ip;
   in >> d->port;
 
   in >> d->name;
+
+  in >> d->ping;
+
   in >> d->users;
   in >> d->maxUsers;
 
+  in >> priority;
+
   d->ip = QHostAddress(ip);
+  d->priority = static_cast<Priority>(priority);
 }
 
 bool MCServerInfo::operator<(const MCServerInfo& serverInfo) const {
