@@ -27,6 +27,7 @@
 #include <QByteArray>
 #include <QDataStream>
 #include <QTime>
+#include <QList>
 
 #include "Utilities/NetworkInfo.h"
 
@@ -49,8 +50,10 @@ public:
       KeepAlivePacket = 0,
       AuthenticationPacket,
       ConnectionRefusedPacket,
-      ServerInfoRequestPacket,
-      ServerInfoResponsePacket
+      ServerInfoRequestPacket = 1024, // Starting requests
+      SeedUrlsRequestPacket,
+      ServerInfoResponsePacket = 2048, // Starting responses
+      SeedUrlsResponsePacket,
     } PacketType;
 
     typedef enum {
@@ -106,15 +109,22 @@ signals:
     void packetSent(MCClientPeer::PacketType type, quint32 size);
 
     void serverInfoRequest();
+    void seedUrlsRequest();
+
     void serverInfoResponse(const MCServerInfo& serverInfo);
+    void seedUrlsResponse(const QList<QString>& urls);
 
 public slots:
     void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
     void sendAuthentication() { sendAuthenticationPacket_(); }
+
     void sendServerInfoRequest() { sendServerInfoRequestPacket_(); }
+    void sendSeedUrlsRequest() { sendSeedUrlsRequestPacket_(); }
+
     void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
+    void sendSeedUrlsResponse(const QList<QString>& urls) { sendSeedUrlsResponsePacket_(urls); }
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -128,13 +138,21 @@ private:
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
     void sendConnectionRefusedPacket_(const QString& reason = QString());
+
     void sendServerInfoRequestPacket_();
+    void sendSeedUrlsRequestPacket_();
+
     void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
+    void sendSeedUrlsResponsePacket_(const QList<QString>& urls);
 
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
     void processConnectionRefusedPacket_(QDataStream& data);
+
     void processServerInfoRequestPacket_();
+    void processSeedUrlsRequestPacket_();
+
     void processServerInfoResponsePacket_(QDataStream& data);
+    void processSeedUrlsResponsePacket_(QDataStream& data);
 
 private:
     void connecting_();

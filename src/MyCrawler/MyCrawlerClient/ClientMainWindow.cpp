@@ -85,6 +85,9 @@ void MCClientMainWindow::setupForms_() {
   treeWidgetServers->setup();
   MCSettings->loadLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
   treeWidgetServers->setupHeaderContextMenu();
+
+  // Crawler (must be deprecated)
+  treeWidgetThreadsInfos->setup(MCClientApplication::instance()->networkManager());
 }
 
 void MCClientMainWindow::setupStatusBar_() {

@@ -7,8 +7,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>555</width>
-    <height>511</height>
+    <width>743</width>
+    <height>699</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabClientLog">
        <attribute name="title">
@@ -90,14 +90,14 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonServerLogCopy_2">
+           <widget class="QPushButton" name="buttonClientLogCopy">
             <property name="text">
              <string>Copy To Clipboard</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonServerLogClear_2">
+           <widget class="QPushButton" name="buttonClientLogClear">
             <property name="text">
              <string>Clean</string>
             </property>
@@ -111,7 +111,10 @@
        <attribute name="title">
         <string>Servers</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <layout class="QHBoxLayout">
+        <property name="margin">
+         <number>0</number>
+        </property>
         <item>
          <widget class="MCServersTreeWidget" name="treeWidgetServers">
           <property name="autoScroll">
@@ -158,7 +161,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout">
           <item>
            <widget class="QPushButton" name="buttonConnectDisconnect">
             <property name="text">
@@ -177,11 +180,11 @@
             <property name="title">
              <string>Add a server</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
+            <layout class="QVBoxLayout">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout">
+              <layout class="QHBoxLayout">
                <item>
-                <layout class="QVBoxLayout" name="verticalLayout_2">
+                <layout class="QVBoxLayout">
                  <item>
                   <widget class="QLabel" name="lblAddServerIP">
                    <property name="text">
@@ -223,7 +226,7 @@
                 </layout>
                </item>
                <item>
-                <spacer name="horizontalSpacer">
+                <spacer>
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
@@ -239,7 +242,7 @@
                 </spacer>
                </item>
                <item>
-                <layout class="QVBoxLayout" name="verticalLayout">
+                <layout class="QVBoxLayout">
                  <item>
                   <widget class="QLabel" name="lblAddServerPort">
                    <property name="text">
@@ -297,7 +300,7 @@
               </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <layout class="QHBoxLayout">
                <item>
                 <spacer>
                  <property name="orientation">
@@ -340,6 +343,126 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tabCrawler">
+       <attribute name="title">
+        <string>Crawler</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <property name="margin">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="groupBoxCrawlerUrlsInQueue">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string>Urls in queue</string>
+          </property>
+          <layout class="QVBoxLayout">
+           <item>
+            <widget class="QListView" name="listViewCrawlerUrlsInQueue"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBoxCrawlerUrlsInProcessing">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>190</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Urls in processing</string>
+          </property>
+          <layout class="QVBoxLayout">
+           <item>
+            <widget class="TreeWidgetThreadsInfos" name="treeWidgetThreadsInfos">
+             <property name="sizeIncrement">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="autoScroll">
+              <bool>false</bool>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="showDropIndicator" stdset="0">
+              <bool>false</bool>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::NoSelection</enum>
+             </property>
+             <property name="autoExpandDelay">
+              <number>-1</number>
+             </property>
+             <property name="indentation">
+              <number>20</number>
+             </property>
+             <property name="rootIsDecorated">
+              <bool>false</bool>
+             </property>
+             <property name="uniformRowHeights">
+              <bool>true</bool>
+             </property>
+             <property name="itemsExpandable">
+              <bool>false</bool>
+             </property>
+             <property name="allColumnsShowFocus">
+              <bool>true</bool>
+             </property>
+             <property name="wordWrap">
+              <bool>false</bool>
+             </property>
+             <property name="expandsOnDoubleClick">
+              <bool>false</bool>
+             </property>
+             <property name="columnCount">
+              <number>5</number>
+             </property>
+             <column>
+              <property name="text">
+               <string>#</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Url</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Progression</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Taux de transfert</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Etat</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -349,7 +472,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>555</width>
+     <width>743</width>
      <height>21</height>
     </rect>
    </property>
@@ -416,6 +539,7 @@
    <addaction name="separator"/>
    <addaction name="doMainToolBarClientLog"/>
    <addaction name="doMainToolBarServers"/>
+   <addaction name="doMainToolBarCrawler"/>
    <addaction name="doMainToolBarPreferences"/>
    <addaction name="doMainToolBarExit"/>
   </widget>
@@ -564,6 +688,24 @@
     <string>Connect / Disconnect</string>
    </property>
   </action>
+  <action name="doMainToolBarCrawler">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/MainToolBar/CrawlerIcon</normaloff>:/MainToolBar/CrawlerIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Crawler</string>
+   </property>
+   <property name="toolTip">
+    <string>Crawler</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>2</number>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -585,6 +727,11 @@
    <class>MCServersTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>ServersTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TreeWidgetThreadsInfos</class>
+   <extends>QTreeWidget</extends>
+   <header>TreeWidgetThreadsInfos.h</header>
   </customwidget>
  </customwidgets>
  <resources>
@@ -657,7 +804,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonServerLogClear_2</sender>
+   <sender>buttonClientLogClear</sender>
    <signal>clicked()</signal>
    <receiver>treeWidgetClientLog</receiver>
    <slot>clear()</slot>
@@ -673,7 +820,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonServerLogCopy_2</sender>
+   <sender>buttonClientLogCopy</sender>
    <signal>clicked()</signal>
    <receiver>treeWidgetClientLog</receiver>
    <slot>copyToClipboard()</slot>

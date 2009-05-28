@@ -29,6 +29,9 @@
 #include "SettingsApplication.h"
 #include "ClientMainWindow.h"
 
+// Crawler (must be deprecated)
+#include "NetworkManager.h"
+
 class MCClientApplication : public IApplication
 {
 private:
@@ -44,6 +47,7 @@ public:
 
  public:
     MCClientMainWindow* mainWindow() { return m_pMainWindow; }
+    CNetworkManager* networkManager() { return m_pNetworkManager; } // Crawler (must be deprecated)
 
   // Resources
  public:
@@ -71,6 +75,10 @@ public:
 private:
     static MCClientApplication* s_instance;
     QPointer<MCClientMainWindow> m_pMainWindow;
+
+    // Crawler (must be deprecated)
+    bool m_bCrawlerActivated;
+    QPointer<CNetworkManager> m_pNetworkManager;
 };
 
 #define MCApp         MCClientApplication::instance()

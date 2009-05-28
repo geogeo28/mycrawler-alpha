@@ -113,8 +113,12 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
     case ConnectionRefusedPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Connection refused");
+
     case ServerInfoRequestPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Request");
+    case SeedUrlsRequestPacket:         return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Urls Request");
+
     case ServerInfoResponsePacket:      return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Response");
+    case SeedUrlsResponsePacket:        return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Urls Response");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -248,7 +252,7 @@ void MCClientPeer::processIncomingData_() {
       data >> m_u16PacketType;
 
       // Prevent of a DoS attack
-      if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 200000)) {
+      if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 512000)) {
         errorProcessingPacket_(PacketSizeError, true);
         return;
       }
@@ -348,8 +352,16 @@ void MCClientPeer::sendServerInfoRequestPacket_() {
   sendPacket(ServerInfoRequestPacket);
 }
 
+void MCClientPeer::sendSeedUrlsRequestPacket_() {
+  sendPacket(SeedUrlsRequestPacket);
+}
+
 void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo) {
   sendPacket(ServerInfoResponsePacket, serverInfo);
+}
+
+void MCClientPeer::sendSeedUrlsResponsePacket_(const QList<QString>& urls) {
+  sendPacket(SeedUrlsResponsePacket, urls);
 }
 
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
@@ -373,11 +385,21 @@ void MCClientPeer::processServerInfoRequestPacket_() {
   emit serverInfoRequest();
 }
 
+void MCClientPeer::processSeedUrlsRequestPacket_() {
+  emit seedUrlsRequest();
+}
+
 void MCClientPeer::processServerInfoResponsePacket_(QDataStream& data) {
   MCServerInfo serverInfo;
   data >> serverInfo;
   serverInfo.setPing(m_timeStartPingRequest.msecsTo(QTime::currentTime()));
   emit serverInfoResponse(serverInfo);
+}
+
+void MCClientPeer::processSeedUrlsResponsePacket_(QDataStream& data) {
+  QList<QString> urls;
+  data >> urls;
+  emit seedUrlsResponse(urls);
 }
 
 // Initialize all state variable
@@ -456,14 +478,25 @@ void MCClientPeer::processPacket_() {
       processConnectionRefusedPacket_(data);
       break;
 
+    /** REQUESTS */
     // Server Info Request
     case ServerInfoRequestPacket:
       processServerInfoRequestPacket_();
       break;
       
+    // Seed Urls Request
+    case SeedUrlsRequestPacket:
+      processSeedUrlsRequestPacket_();
+      break;
+
+    /** RESPONSES */
     // Server Info Response
     case ServerInfoResponsePacket:
       processServerInfoResponsePacket_(data);
+      break;
+
+    case SeedUrlsResponsePacket:
+      processSeedUrlsResponsePacket_(data);
       break;
 
     default:

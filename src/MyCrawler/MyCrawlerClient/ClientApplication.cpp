@@ -46,6 +46,20 @@ void MCClientApplication::destroy() {
 
 void MCClientApplication::init_() {
   m_pMainWindow = new MCClientMainWindow();
+
+  // Crawler (must be deprecated)
+  m_bCrawlerActivated = false;
+  m_pNetworkManager = new CNetworkManager(5);
+
+  QNetworkRequest request;
+  request.setRawHeader("Accept", "text/html");
+
+  request.setRawHeader("Connection", "Keep-Alive");
+  request.setRawHeader("Proxy-Connection", "Keep-Alive");
+  request.setRawHeader("User-agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14");
+  m_pNetworkManager->setProxy(MCClientApplication::proxy());
+
+  m_pNetworkManager->setBaseRequest(request);
 }
 
 void MCClientApplication::cleanAll_() {
@@ -53,6 +67,9 @@ void MCClientApplication::cleanAll_() {
   MCServersList::destroy();
 
   if (m_pMainWindow) { delete m_pMainWindow; }
+
+  // Crawler (must be deprecated)
+  if (m_pNetworkManager) { delete m_pNetworkManager; }
 
   cleanupResources();
 }
