@@ -25,5 +25,7 @@ include(../Components/Utilities.pri)
 include(../Components/Widgets.pri)
 include(../Shared/Shared.pri)
 include(Network.pri)
+include(Crawler.pri)
 include(GUI.pri)
+
 RESOURCES += resources.qrc
