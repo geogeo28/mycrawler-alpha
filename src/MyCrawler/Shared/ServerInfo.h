@@ -23,8 +23,12 @@
 #ifndef SERVERINFO_H
 #define SERVERINFO_H
 
+#include <QSharedData>
+
 class QHostAddress;
 class QString;
+
+class MCServerInfoPrivate;
 
 class MCServerInfo
 {
@@ -44,25 +48,29 @@ public:
       Priority priority = NormalPriority
     );
 
+    MCServerInfo(const MCServerInfo &other);
+    MCServerInfo& operator=(const MCServerInfo& serverInfo);
+    ~MCServerInfo();
+
     bool isValid() const;
 
-    QHostAddress ip() const { return m_ip; }
-    void setIp(const QHostAddress& ip) { m_ip = ip; }
-    quint16 port() const { return m_u16Port; }
-    void setPort(quint16 port) { m_u16Port = port; }
+    QHostAddress ip() const;
+    void setIp(const QHostAddress& ip);
+    quint16 port() const;
+    void setPort(quint16 port);
 
-    QString name() const { return m_sName; }
-    void setName(const QString& name) { m_sName = name; }
-    int ping() const { return m_nPing; }
-    void setPing(int ping) { m_nPing = ping; }
+    QString name() const;
+    void setName(const QString& name);
+    int ping() const;
+    void setPing(int ping);
 
-    int users() const { return m_nUsers; }
-    void setUsers(int users) { m_nUsers = users; }
-    int maxUsers() const { return m_nMaxUsers; }
-    void setMaxUsers(int maxUsers) { m_nMaxUsers = maxUsers; }
+    int users() const;
+    void setUsers(int users);
+    int maxUsers() const;
+    void setMaxUsers(int maxUsers);
 
-    Priority priority() const { return m_enumPriority; }
-    void setPriority(Priority priority) { m_enumPriority = priority; }
+    Priority priority() const;
+    void setPriority(Priority priority);
 
     QString ipAndPortString() const { return QString("%1:%2").arg(ip().toString()).arg(port()); }
 
@@ -79,16 +87,8 @@ public:
     static QString priorityToString(Priority priority);
 
 private:
-    QHostAddress m_ip;
-    quint16 m_u16Port;
-
-    QString m_sName;
-    int m_nPing;
-
-    int m_nUsers;
-    int m_nMaxUsers;
-
-    Priority m_enumPriority;
+    QSharedDataPointer<MCServerInfoPrivate> d;
+    friend class MCServerInfoPrivate;
 };
 
 QDataStream& operator<<(QDataStream& out, const MCServerInfo& serverInfo);

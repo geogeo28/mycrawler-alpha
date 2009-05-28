@@ -250,14 +250,14 @@ void MCClientsTreeWidget::setClientItemValues_(QTreeWidgetItem* item, MCClientTh
   AssertCheckPtr(item);
   AssertCheckPtr(client);
 
+  MCClientsTreeWidget::setClientItemFromNetworkInfo_(item, client->networkInfo());
+
   item->setData(ThreadIdColumn, Qt::UserRole, QVariant::fromValue(client->id()));
 
   // Set columns content
   item->setText(ThreadIdColumn,    "0x" + QString::number(client->id(), 16));
   item->setText(PeerAddressColumn, client->peerAddress().toString());
   item->setText(PeerPortColumn,    QString::number(client->peerPort()));
-
-  MCClientsTreeWidget::setClientItemFromNetworkInfo_(item, client->networkInfo());
 }
 
 void MCClientsTreeWidget::setClientItemFromNetworkInfo_(QTreeWidgetItem* item, const CNetworkInfo& networkInfo) {
@@ -268,12 +268,13 @@ void MCClientsTreeWidget::setClientItemFromNetworkInfo_(QTreeWidgetItem* item, c
   }
 
   // Set columns content
-  item->setText(HostNameColumn,   networkInfo.hostName());
-  item->setText(HostDomainColumn, networkInfo.hostDomain());
-  item->setText(IPColumn,         networkInfo.ip().toString());
-  item->setText(GatewayColumn,    networkInfo.gateway().toString());
-  item->setText(BroadcastColumn,  networkInfo.broadcast().toString());
-  item->setText(NetmaskColumn,    networkInfo.netmask().toString());
+  item->setText(PeerAddressColumn, networkInfo.peerAddress().toString());
+  item->setText(HostNameColumn,    networkInfo.hostName());
+  item->setText(HostDomainColumn,  networkInfo.hostDomain());
+  item->setText(IPColumn,          networkInfo.ip().toString());
+  item->setText(GatewayColumn,     networkInfo.gateway().toString());
+  item->setText(BroadcastColumn,   networkInfo.broadcast().toString());
+  item->setText(NetmaskColumn,     networkInfo.netmask().toString());
 }
 
 QTreeWidgetItem* MCClientsTreeWidget::newClientItem_() {

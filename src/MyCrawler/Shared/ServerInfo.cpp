@@ -23,11 +23,31 @@
 
 #include "ServerInfo.h"
 
+class MCServerInfoPrivate : public QSharedData
+{
+  public:
+    MCServerInfoPrivate();
+
+    QHostAddress ip;
+    quint16 port;
+
+    QString name;
+    int ping;
+
+    int users;
+    int maxUsers;
+
+    MCServerInfo::Priority priority;
+};
+
+MCServerInfoPrivate::MCServerInfoPrivate()
+  : port(0), ping(-1),
+    users(-1), maxUsers(-1),
+    priority(MCServerInfo::NormalPriority)
+{}
+
 MCServerInfo::MCServerInfo()
- : m_u16Port(0),
-   m_nPing(-1),
-   m_nUsers(-1), m_nMaxUsers(-1),
-   m_enumPriority(NormalPriority)
+  : d(new MCServerInfoPrivate)
 {}
 
 MCServerInfo::MCServerInfo(
@@ -36,19 +56,103 @@ MCServerInfo::MCServerInfo(
   int users, int maxUsers,
   Priority priority
 )
- : m_ip(ip), m_u16Port(port),
-   m_sName(name), m_nPing(ping),
-   m_nUsers(users), m_nMaxUsers(maxUsers),
-   m_enumPriority(priority)
+ : d(new MCServerInfoPrivate)
 {
-  if (m_sName.trimmed().isEmpty()) { m_sName = m_ip.toString(); }
+  d->ip = ip;
+  d->port = port;
+
+  // If name is an empty value, set with ip address
+  if (name.trimmed().isEmpty()) {
+    d->name = ip.toString();
+  }
+  // Set with name string
+  else {
+    d->name = name;
+  }
+
+  d->ping = ping;
+
+  d->users = users;
+  d->maxUsers = maxUsers;
+
+  d->priority = priority;
+}
+
+MCServerInfo::MCServerInfo(const MCServerInfo &other)
+  : d(other.d)
+{}
+
+MCServerInfo& MCServerInfo::operator=(const MCServerInfo& serverInfo) {
+  d = serverInfo.d;
+  return *this;
+}
+
+MCServerInfo::~MCServerInfo()
+{
+  // QSharedDataPointer takes care of deleting for us
 }
 
 bool MCServerInfo::isValid() const {
   return (
-       ((m_ip != QHostAddress::Null) && (m_ip != QHostAddress::Any))
-    && (m_u16Port != 0)
+       ((d->ip != QHostAddress::Null) && (d->ip != QHostAddress::Any))
+    && (d->port != 0)
   );
+}
+
+QHostAddress MCServerInfo::ip() const {
+  return d->ip;
+}
+
+void MCServerInfo::setIp(const QHostAddress& ip) {
+  d->ip = ip;
+}
+
+quint16 MCServerInfo::port() const {
+  return d->port;
+}
+
+void MCServerInfo::setPort(quint16 port) {
+  d->port = port;
+}
+
+QString MCServerInfo::name() const {
+  return d->name;
+}
+
+void MCServerInfo::setName(const QString& name) {
+  d->name = name;
+}
+
+int MCServerInfo::ping() const {
+  return d->ping;
+}
+
+void MCServerInfo::setPing(int ping) {
+  d->ping = ping;
+}
+
+int MCServerInfo::users() const {
+  return d->users;
+}
+
+void MCServerInfo::setUsers(int users) {
+  d->users = users;
+}
+
+int MCServerInfo::maxUsers() const {
+  return d->maxUsers;
+}
+
+void MCServerInfo::setMaxUsers(int maxUsers) {
+  d->maxUsers = maxUsers;
+}
+
+MCServerInfo::Priority MCServerInfo::priority() const {
+  return d->priority;
+}
+
+void MCServerInfo::setPriority(Priority priority) {
+  d->priority = priority;
 }
 
 void MCServerInfo::update(const MCServerInfo& serverInfo) {
@@ -76,13 +180,13 @@ void MCServerInfo::read(QDataStream& in) {
   quint32 ip;
 
   in >> ip;
-  in >> m_u16Port;
+  in >> d->port;
 
-  in >> m_sName;
-  in >> m_nUsers;
-  in >> m_nMaxUsers;
+  in >> d->name;
+  in >> d->users;
+  in >> d->maxUsers;
 
-  m_ip = QHostAddress(ip);
+  d->ip = QHostAddress(ip);
 }
 
 bool MCServerInfo::operator<(const MCServerInfo& serverInfo) const {
