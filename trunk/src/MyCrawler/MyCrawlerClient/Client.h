@@ -58,7 +58,7 @@ public:
     ~MCClient();
 
 public:
-    const MCServerInfo& serverInfo() const { return m_serverInfo; }
+    MCServerInfo serverInfo() const { return m_serverInfo; }
 
     // Wrapper
     QAbstractSocket::SocketError error() const { return m_clientPeer.error(); }

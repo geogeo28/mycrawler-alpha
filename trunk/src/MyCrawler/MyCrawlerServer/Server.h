@@ -76,7 +76,7 @@ public:
     void setMaxConnections(int n) { m_nMaxConnections = n; }
     bool canAcceptNewConnection() const;
 
-    MCServerInfo serverInfo() const;
+    MCServerInfo serverInfo() const; // thread-safe
 
 public:
     // Override QTcpServer methods

@@ -51,7 +51,7 @@ protected:
 
 public:
     bool ipExists(quint32 ip) const;
-    MCServerInfo& fromIp(quint32 ip);
+    MCServerInfo& fromIp(quint32 ip); // unsafe
     void addServer(const MCServerInfo& serverInfo);
     bool removeServer(quint32 ip);
     void removeAllServers();
