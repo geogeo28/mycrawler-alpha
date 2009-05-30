@@ -36,6 +36,7 @@ occured too. Bug not observed with a Freebox.
 - Don't emit the signal 'disconnected' when the connection is refused by the server or the client wasn't authenticated.
 - MCClientPeer : Split requests and responses in two categories. Added a RequestTimeoutTimer and check if the data to read is the reponse to a specific request.
 - MCClientPeer : Added PendingRequestTimeout.
+- Avoid tables of QTreeWidgetItem* in TreeWidgets. Prefer to use a backtracker (QObject dynamic property).
 
 
 MyCrawlerServer :
