@@ -56,7 +56,7 @@ MCClientsTreeWidget::~MCClientsTreeWidget() {
 
 void MCClientsTreeWidget::setup() {
   setupHeader(ColumnsHeader, ColumnsHeaderCount);  
-  sortByColumn(ColumnSortedIndex);
+  sortByColumn(ColumnSortedIndex, Qt::AscendingOrder);
   setPersistentColumnIndex(StateColumn);
 
   // Construct the list of items based on the server history

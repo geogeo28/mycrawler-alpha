@@ -66,5 +66,8 @@ inline void CSettings::saveLayout(const QTreeWidget* tree, const QString& key, b
 
 template <>
 inline bool CSettings::loadLayout(QTreeWidget* tree, const QString& key, bool useLayoutPrefixKey) {
-  return this->loadLayout(tree->header(), key, true);
+  tree->header()->blockSignals(true);
+  bool success = this->loadLayout(tree->header(), key, useLayoutPrefixKey);
+  tree->header()->blockSignals(false);
+  return success;
 }

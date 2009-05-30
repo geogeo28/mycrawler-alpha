@@ -18,8 +18,12 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QUrl>
+
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
+
+#include "UrlInfo.h"
 
 #include "ServerMainWindow.h"
 #include "DialogPreferences.h"
@@ -81,6 +85,15 @@ void MCServerMainWindow::setupForms_() {
   treeWidgetClients->setup();
   MCSettings->loadLayout<QTreeWidget>(treeWidgetClients, "ClientsTreeWidget");
   treeWidgetClients->setupHeaderContextMenu();
+
+  // Tasks
+  treeWidgetTasksUrlsInQueue->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetTasksUrlsInQueue, "TasksUrlsInQueueTreeWidget");
+  treeWidgetTasksUrlsInQueue->setupHeaderContextMenu();
+
+  treeWidgetTasksUrlsInProgress->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetTasksUrlsInProgress, "TasksUrlsInProgressTreeWidget");
+  treeWidgetTasksUrlsInProgress->setupHeaderContextMenu();
 }
 
 void MCServerMainWindow::setupComponents_() {
@@ -108,6 +121,8 @@ void MCServerMainWindow::closeWindow_() {
 
   MCSettings->saveLayout<QTreeWidget>(treeWidgetServerLog, "ServerLogTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetClients, "ClientsTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetTasksUrlsInQueue, "TasksUrlsInQueueTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetTasksUrlsInProgress, "TasksUrlsInProgressTreeWidget");
   MCSettings->saveLayout(this, "ServerMainWindow"); // Window layout
 
   MCApp->saveSettings();
@@ -169,6 +184,25 @@ void MCServerMainWindow::on_doMainToolBarConnectDisconnect_triggered() {
 
     disconnectServer_();
   }
+}
+
+void MCServerMainWindow::on_buttonTasksAddSeedUrl_clicked() {
+  const QString& sUrl = textTasksSeedUrl->text();
+  QUrl url = MCUrlInfo::decodedUrl(sUrl);
+
+  // Invalid Url
+  if ((url.isValid() == false) || (url.host().isEmpty() == true)) {
+    ILogger::Error() << "The Url you entered is not valid.";
+    return;
+  }
+
+  // Already exists
+  if (MCApp->urlsInQueue()->addUrl(url) == false) {
+    ILogger::Error() << "The Url you entered already exists.";
+    return;
+  }
+
+  listWidgetTasksSeedUrls->addItem(url.toString(QUrl::None));
 }
 
 void MCServerMainWindow::slotProgressClientFinished(MCClientThread* client) {

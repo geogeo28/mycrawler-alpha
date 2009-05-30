@@ -58,6 +58,7 @@ public:
 private slots:
     void on_doFilePreferences_triggered();
     void on_doMainToolBarConnectDisconnect_triggered();
+    void on_buttonTasksAddSeedUrl_clicked();
 
 private slots:
     void slotProgressClientFinished(MCClientThread* client);

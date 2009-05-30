@@ -46,7 +46,7 @@ CLogTreeWidget::~CLogTreeWidget() {
 
 void CLogTreeWidget::setup() {
   setupHeader(ColumnsHeader, ColumnsHeaderCount);
-  sortByColumn(ColumnSortedIndex);
+  sortByColumn(ColumnSortedIndex, Qt::AscendingOrder);
   setPersistentColumnIndex(MessageColumn);
 }
 

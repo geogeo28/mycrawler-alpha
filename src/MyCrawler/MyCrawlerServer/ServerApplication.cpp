@@ -46,13 +46,15 @@ void MCServerApplication::destroy() {
 
 void MCServerApplication::init_() {
   m_pMainWindow = new MCServerMainWindow();
+  m_pUrlsInQueue = new MCUrlsCollection();
 }
 
 void MCServerApplication::cleanAll_() {
   MCServer::destroy();
   MCServerHistory::destroy();
 
-  if (m_pMainWindow) { delete m_pMainWindow; }
+  delete m_pMainWindow;
+  delete m_pUrlsInQueue;
 
   cleanupResources();
 }
