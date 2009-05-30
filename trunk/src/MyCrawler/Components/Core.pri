@@ -1,4 +1,5 @@
 DEPENDPATH += ../Components/
-
-HEADERS += Core/Application.h
-SOURCES += Core/Application.cpp
+HEADERS += Core/Application.h \
+    Core/DataContainer.h
+SOURCES += Core/Application.cpp \
+    Core/DataContainer.cpp

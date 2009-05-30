@@ -34,6 +34,9 @@ class MCClientThread;
 class MCServerHistory
 {  
 public:
+    typedef QMap<quint64, CNetworkInfo> ClientsNetworkInfoList;
+
+public:
     static MCServerHistory* instance();
     static void destroy();
 
@@ -62,8 +65,6 @@ public:
 
 private:
     static MCServerHistory* s_instance;
-
-    typedef QMap<quint64, CNetworkInfo> ClientsNetworkInfoList;
 
     ClientsNetworkInfoList m_lstClients;
 };

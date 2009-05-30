@@ -27,6 +27,8 @@
 #include <QPointer>
 
 #include "Core/Application.h"
+#include "UrlsCollection.h"
+
 #include "SettingsApplication.h"
 #include "ServerMainWindow.h"
 
@@ -45,6 +47,7 @@ public:
  
  public:
     MCServerMainWindow* mainWindow() { return m_pMainWindow; }
+    MCUrlsCollection* urlsInQueue() { return m_pUrlsInQueue; }
 
  // Resources
  public:
@@ -81,7 +84,9 @@ public:
 
 private:
     static MCServerApplication* s_instance;
+
     QPointer<MCServerMainWindow> m_pMainWindow;
+    QPointer<MCUrlsCollection> m_pUrlsInQueue;
 };
 
 #define MCApp         MCServerApplication::instance()

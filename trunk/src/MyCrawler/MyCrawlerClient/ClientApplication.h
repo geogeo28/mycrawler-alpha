@@ -26,6 +26,8 @@
 #include <QPointer>
 
 #include "Core/Application.h"
+//#include "UrlsCollection.h"
+
 #include "SettingsApplication.h"
 #include "ClientMainWindow.h"
 
@@ -48,6 +50,7 @@ public:
  public:
     MCClientMainWindow* mainWindow() { return m_pMainWindow; }
     CNetworkManager* networkManager() { return m_pNetworkManager; } // Crawler (must be deprecated)
+    //MCUrlsCollection* urlsInQueue() { return m_pUrlsInQueue; }
 
   // Resources
  public:
@@ -74,11 +77,14 @@ public:
 
 private:
     static MCClientApplication* s_instance;
+	
     QPointer<MCClientMainWindow> m_pMainWindow;
 
     // Crawler (must be deprecated)
     bool m_bCrawlerActivated;
     QPointer<CNetworkManager> m_pNetworkManager;
+
+    //QPointer<MCUrlsCollection> m_pUrlsInQueue;
 };
 
 #define MCApp         MCClientApplication::instance()

@@ -54,7 +54,7 @@ MCServersTreeWidget::~MCServersTreeWidget() {
 
 void MCServersTreeWidget::setup() {
   setupHeader(ColumnsHeader, ColumnsHeaderCount);
-  sortByColumn(ColumnSortedIndex);
+  sortByColumn(ColumnSortedIndex, Qt::AscendingOrder);
   setPersistentColumnIndex(NameColumn);
 
   // Construct the list of items based on the servers list

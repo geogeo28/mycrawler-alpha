@@ -60,16 +60,20 @@ void MCClientApplication::init_() {
   m_pNetworkManager->setProxy(MCClientApplication::proxy());
 
   m_pNetworkManager->setBaseRequest(request);
+
+  //m_pUrlsInQueue = new MCUrlsCollection();
 }
 
 void MCClientApplication::cleanAll_() {
   MCClient::destroy();
   MCServersList::destroy();
 
-  if (m_pMainWindow) { delete m_pMainWindow; }
+  delete m_pMainWindow;
 
   // Crawler (must be deprecated)
-  if (m_pNetworkManager) { delete m_pNetworkManager; }
+  delete m_pNetworkManager;
+
+  //delete m_pUrlsInQueue;
 
   cleanupResources();
 }
