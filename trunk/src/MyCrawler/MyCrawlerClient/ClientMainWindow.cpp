@@ -242,7 +242,7 @@ void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketErr
       .arg(
       (aborted == true)?
       "To prevent of a DoS attack, the connection with the server was aborted.":
-      "Trying recover the packet."),
+      "Packet dropped."),
     Qt::red, QFont::Bold
   );
 }

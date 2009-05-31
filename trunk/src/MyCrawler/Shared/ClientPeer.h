@@ -23,36 +23,53 @@
 #ifndef CLIENTPEER_H
 #define CLIENTPEER_H
 
-#include <QtNetwork>
-#include <QByteArray>
-#include <QDataStream>
-#include <QTime>
+#include <QTcpSocket>
 #include <QList>
+#include <QQueue>
+#include <QMap>
 
-#include "Utilities/NetworkInfo.h"
+class QString;
+class QTimerEvent;
+class QDataStream;
 
-#include "ServerInfo.h"
+class CNetworkInfo;
+class MCServerInfo;
+
+class MCClientPeerRequestInfo;
+class MCClientPeerRequestsQueuesContainer;
+
+class MCClientPeerPrivate;
 
 class MCClientPeer : public QTcpSocket
 {
     Q_OBJECT
 
 public:
+    enum {
+      SystemPacketsStart   = 0,    SystemPacketsEnd = 1023,
+      RequestPacketsStart  = 1024, RequestPacketsEnd = 2047,
+      ResponsePacketsStart = 2048, ResponsePacketsEnd = 3071,
+      MessagePacketsStart  = 3072, MessagePacketsEnd = 4096
+    };
+
     typedef enum {
       UnknownTimeoutNotify,
       ConnectTimeoutNotify,
       HandShakeTimeoutNotify,
+      PendingRequestTimeoutNotify,
       PeerTimeoutNotify,
     } TimeoutNotify;
 
     typedef enum {
       KeepAliveAcknowledgmentPacket = 0xFFFF,
-      KeepAlivePacket = 0,
+      KeepAlivePacket = SystemPacketsStart,
       AuthenticationPacket,
       ConnectionRefusedPacket,
-      ServerInfoRequestPacket = 1024, // Starting requests
+
+      ServerInfoRequestPacket = RequestPacketsStart, // Starting requests
       SeedUrlsRequestPacket,
-      ServerInfoResponsePacket = 2048, // Starting responses
+
+      ServerInfoResponsePacket = ResponsePacketsStart, // Starting responses
       SeedUrlsResponsePacket,
     } PacketType;
 
@@ -62,51 +79,58 @@ public:
       PacketTypeError,
       ProtocolIdError,
       ProtocolVersionError,
-      AuthenticationError
-    } PacketError;
+      AuthenticationError,
+      ResponseWithoutRequestError
+    } PacketError;        
 
 public:
     MCClientPeer(QObject* parent = NULL);
     ~MCClientPeer();
 
+private:
+    Q_DISABLE_COPY(MCClientPeer);
+
 public:
     static int DefaultTimeout;
     static int DefaultConnectTimeout;
     static int DefaultHandShakeTimeout;
+    static int DefaultPendingRequestTimeout;
     static int DefaultKeepAliveInterval;
     static bool DefaultRequireAuthentication;
 
 public:
-    int timeout() { return m_nTimeout; }
-    int connectTimeout() { return m_nConnectTimeout; }
-    int handShakeTimeout() { return m_nHandShakeTimeout; }
-    int keepAliveInterval() { return m_nKeepAliveInterval; }
-    bool requireAuthentication() { return m_bRequireAuthentication; } // Server mode
+    int timeout() const;
+    int connectTimeout() const;
+    int handShakeTimeout() const;
+    int pendingRequestTimeout() const;
+    int keepAliveInterval() const;
+    bool requireAuthentication() const; // Server mode
 
-    void setTimeout(int sec) { m_nTimeout = sec * 1000; }
-    void setConnectTimeout(int sec) { m_nConnectTimeout = sec * 1000; }
-    void setHandShakeTimeout(int sec) { m_nHandShakeTimeout = sec * 1000; }
-    void setKeepAliveInterval(int sec) { m_nKeepAliveInterval = sec * 1000; }
-    void setRequireAuthentication(bool requireAuthentication) { m_bRequireAuthentication = requireAuthentication;}
+    void setTimeout(int sec);
+    void setConnectTimeout(int sec);
+    void setHandShakeTimeout(int sec);
+    void setPendingRequestTimeout(int sec);
+    void setKeepAliveInterval(int sec);
+    void setRequireAuthentication(bool requireAuthentication);
 
-    bool isAuthenticated() const { return m_bAuthenticated; }
-    const CNetworkInfo& networkInfo() const { return m_networkInfo; }
-
-    void sendPacket(PacketType type, const QByteArray& data = QByteArray());
-    template <class T> void sendPacket(PacketType type, const T& data);  
+    bool isAuthenticated() const;
+    CNetworkInfo networkInfo() const;
+    const MCClientPeerRequestsQueuesContainer& pendingRequests() const;
+    QString dumpPendingRequests() const;
 
 public:
     static QString stateToString(QAbstractSocket::SocketState state);
     static QString timeoutNotifyToString(TimeoutNotify notify);
-    static QString packetTypeToString(PacketType type);
+    static QString packetTypeToString(PacketType packetType);
     static QString packetErrorToString(PacketError error);
 
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType packetType, quint32 packetSize, bool aborted);
     void handShakeReceived();
     void authenticated(const CNetworkInfo& info);
-    void packetSent(MCClientPeer::PacketType type, quint32 size);
+    void packetSent(MCClientPeer::PacketType packetType, quint32 packetSize);
+    void packetReceived(MCClientPeer::PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo requestInfo);
 
     void serverInfoRequest();
     void seedUrlsRequest();
@@ -135,6 +159,10 @@ protected:
 
 private:
     void errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
+
+    void sendPacket_(PacketType packetType, const QByteArray& data = QByteArray());
+    template <class T> void sendPacket_(PacketType packetType, const T& data);
+
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
     void sendConnectionRefusedPacket_(const QString& reason = QString());
@@ -145,49 +173,83 @@ private:
     void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
     void sendSeedUrlsResponsePacket_(const QList<QString>& urls);
 
+ private:
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
     void processConnectionRefusedPacket_(QDataStream& data);
 
     void processServerInfoRequestPacket_();
     void processSeedUrlsRequestPacket_();
 
-    void processServerInfoResponsePacket_(QDataStream& data);
-    void processSeedUrlsResponsePacket_(QDataStream& data);
+    void processServerInfoResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
+    void processSeedUrlsResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
 
 private:
+    void initConnection_();
+    void killAllTimers_();
     void connecting_();
     void connected_();
     void closing_();
     void disconnected_();
-    void processPacket_();
+    MCClientPeerRequestInfo registerRequest_(PacketType requestPacketType);
+    MCClientPeerRequestInfo unregisterRequest_(PacketType requestPacketType);
+    void processPacket_(PacketType packetType, const MCClientPeerRequestInfo& requestInfo);
 
 private:
-    int m_nTimeout;
-    int m_nConnectTimeout;
-    int m_nHandShakeTimeout;
-    int m_nKeepAliveInterval;
-    bool m_bRequireAuthentication;
-
-    int m_idTimeoutTimer;
-    int m_idKeepAliveTimer;
-    bool m_bInvalidateTimeout;
-
-    bool m_bReceivedHandShake, m_bSentHandShake;
-    quint32 m_u32PacketSize;
-    quint16 m_u16PacketType;
-
-    bool m_bAuthenticated;
-    CNetworkInfo m_networkInfo;
-    QTime m_timeStartPingRequest;
+    QSharedDataPointer<MCClientPeerPrivate> d;
+    friend class MCClientPeerPrivate;
 };
 
-template <class T> void MCClientPeer::sendPacket(PacketType type, const T& data) {
-  QByteArray bytes;
-  QDataStream in(&bytes, QIODevice::WriteOnly);
-  in.setVersion(SerializationVersion);
 
-  in << data;
-  sendPacket(type, bytes);
-}
+class MCClientPeerRequestInfoPrivate;
+
+class MCClientPeerRequestInfo
+{
+    friend class MCClientPeer;
+
+public:
+    MCClientPeerRequestInfo(); // Create an invalid request info
+    MCClientPeerRequestInfo(MCClientPeer::PacketType requestPacketType);
+    MCClientPeerRequestInfo(const MCClientPeerRequestInfo &other);
+    MCClientPeerRequestInfo& operator=(const MCClientPeerRequestInfo& requestInfo);
+    ~MCClientPeerRequestInfo();
+
+    bool isValid() const;
+
+    MCClientPeer::PacketType requestPacketType() const;
+    MCClientPeer::PacketType responsePacketType() const;
+
+    bool responseReceived() const;
+
+    QTime beginTime() const;
+    QTime endTime() const;
+    int delay() const; // -1 if the response was not received
+
+// Can only be changed by MCClientPeer
+private:
+    void responseReceivedNotify();
+
+private:
+    QSharedDataPointer<MCClientPeerRequestInfoPrivate> d;
+    friend class MCClientPeerRequestInfoPrivate;
+};
+
+class MCClientPeerRequestsQueuesContainer
+{
+public:
+    typedef QQueue<MCClientPeerRequestInfo> RequestsQueue;
+    typedef QMap<MCClientPeer::PacketType,RequestsQueue> RequestsQueuesContainer;
+
+public:
+    MCClientPeerRequestsQueuesContainer();
+
+    int requestCount(MCClientPeer::PacketType requestPacketType) const;
+    MCClientPeerRequestInfo addRequest(MCClientPeer::PacketType requestPacketType);
+    MCClientPeerRequestInfo takeRequest(MCClientPeer::PacketType requestPacketType);
+
+    QString dumpPendingRequests() const;
+
+private:
+    RequestsQueuesContainer m_requestsQueuesContainer;
+};
 
 #endif // CLIENTPEER_H

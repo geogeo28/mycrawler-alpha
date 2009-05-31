@@ -349,7 +349,7 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
       .arg(
       (aborted == true)?
       "To prevent of a DoS attack, the connection with the client was aborted.":
-      "Trying recover the packet."),
+      "Packet dropped."),
     Qt::red, QFont::Bold
   );
 }
