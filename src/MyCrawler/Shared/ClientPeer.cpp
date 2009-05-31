@@ -18,14 +18,22 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QString>
+#include <QTime>
+#include <QDataStream>
+
 #include "Config/Config.h"
+#include "Debug/Exception.h"
 #include "Debug/Logger.h"
+#include "Utilities/NetworkInfo.h"
 
 #include "ClientPeer.h"
+#include "ServerInfo.h"
 
 int MCClientPeer::DefaultTimeout = 120 * 1000;
 int MCClientPeer::DefaultConnectTimeout = 60 * 1000;
 int MCClientPeer::DefaultHandShakeTimeout = 60 * 1000;
+int MCClientPeer::DefaultPendingRequestTimeout = 60 * 1000;
 int MCClientPeer::DefaultKeepAliveInterval = 30 * 1000;
 bool MCClientPeer::DefaultRequireAuthentication = true;
 
@@ -35,17 +43,51 @@ static const quint16 ProtocolVersion = 0x0100;
 static const quint16 ProtocolHeaderSize = ProtocolIdSize + sizeof(ProtocolVersion) + 8;
 static const quint32 MinimalPacketSize = 6;
 
+class MCClientPeerPrivate : public QSharedData
+{
+  public:
+    MCClientPeerPrivate();
+
+    int timeout;
+    int connectTimeout;
+    int handShakeTimeout;
+    int pendingRequestTimeout;
+    int keepAliveInterval;
+    bool requireAuthentication;
+
+    int timeoutTimer;
+    int pendingRequestTimeoutTimer;
+    int keepAliveTimer;
+    bool invalidateTimeout;
+
+    bool receivedHandShake, sentHandShake;
+    quint32 packetSize;
+    quint16 packetType;
+
+    bool authenticated;
+    CNetworkInfo networkInfo;
+
+    MCClientPeerRequestsQueuesContainer pendingRequests;
+};
+
+MCClientPeerPrivate::MCClientPeerPrivate()
+  : timeout(MCClientPeer::DefaultTimeout),
+    connectTimeout(MCClientPeer::DefaultConnectTimeout),
+    handShakeTimeout(MCClientPeer::DefaultHandShakeTimeout),
+    pendingRequestTimeout(MCClientPeer::DefaultPendingRequestTimeout),
+    keepAliveInterval(MCClientPeer::DefaultKeepAliveInterval),
+    requireAuthentication(MCClientPeer::DefaultRequireAuthentication),
+
+    timeoutTimer(0), pendingRequestTimeoutTimer(0),
+    keepAliveTimer(0), invalidateTimeout(false),
+    receivedHandShake(false), sentHandShake(false),
+    packetSize(0), packetType(0),
+    authenticated(false)
+{}
+
 MCClientPeer::MCClientPeer(QObject* parent)
   : QTcpSocket(parent),
-    m_nTimeout(DefaultTimeout), m_nConnectTimeout(DefaultConnectTimeout), m_nHandShakeTimeout(DefaultHandShakeTimeout),
-    m_nKeepAliveInterval(DefaultKeepAliveInterval),
-    m_bRequireAuthentication(DefaultRequireAuthentication),
-
-    m_idTimeoutTimer(0),
-    m_idKeepAliveTimer(0), m_bInvalidateTimeout(false),
-    m_bReceivedHandShake(false), m_bSentHandShake(false),
-    m_u32PacketSize(0), m_u16PacketType(0),
-    m_bAuthenticated(false)
+    d(new MCClientPeerPrivate)
 {
   ILogger::Debug() << "Construct.";
 
@@ -54,32 +96,81 @@ MCClientPeer::MCClientPeer(QObject* parent)
 }
 
 MCClientPeer::~MCClientPeer() {
+  // QSharedDataPointer takes care of deleting for us
+
+  // Pending Requests Dump
+  ILogger::Debug() << dumpPendingRequests();
+
   ILogger::Debug() << "Destroyed.";
 }
 
-void MCClientPeer::sendPacket(PacketType type, const QByteArray& data) {
-  ILogger::Debug() << QString("Sending the packet : %1 (%2)...")
-                      .arg(packetTypeToString(type))
-                      .arg(type);
+int MCClientPeer::timeout() const {
+  return d->timeout;
+}
 
-  // Prepare the packet
-  QByteArray packet;
-  QDataStream out(&packet, QIODevice::WriteOnly);
-  out.setVersion(SerializationVersion);
+int MCClientPeer::connectTimeout() const {
+  return d->connectTimeout;
+}
 
-  quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
-  out << (quint32)packetSize; // Size of the packet
-  out << (quint16)type; // Type of the packet
+int MCClientPeer::handShakeTimeout() const {
+  return d->handShakeTimeout;
+}
 
-  // Send packet header
-  write(packet);
+int MCClientPeer::pendingRequestTimeout() const {
+  return d->pendingRequestTimeout;
+}
 
-  // Send packet data
-  if (data.isEmpty() == false) {
-    write(data);
-  }
+int MCClientPeer::keepAliveInterval() const {
+  return d->keepAliveInterval;
+}
 
-  emit packetSent(type, packetSize);
+bool MCClientPeer::requireAuthentication() const {
+  return d->requireAuthentication;
+}
+
+void MCClientPeer::setTimeout(int sec) {
+  Assert(sec >= 0);
+  d->timeout = sec * 1000;
+}
+
+void MCClientPeer::setConnectTimeout(int sec) {
+  Assert(sec >=0 );
+  d->connectTimeout = sec * 1000;
+}
+
+void MCClientPeer::setHandShakeTimeout(int sec) {
+  Assert(sec >= 0);
+  d->handShakeTimeout = sec * 1000;
+}
+
+void MCClientPeer::setPendingRequestTimeout(int sec) {
+  Assert(sec >=0 );
+  d->pendingRequestTimeout = sec * 1000;
+}
+
+void MCClientPeer::setKeepAliveInterval(int sec) {
+  Assert(sec >= 0);
+  d->keepAliveInterval = sec * 1000;
+}
+
+void MCClientPeer::setRequireAuthentication(bool requireAuthentication) {
+  d->requireAuthentication = requireAuthentication;
+}
+
+bool MCClientPeer::isAuthenticated() const {
+  return d->authenticated;
+}
+
+CNetworkInfo MCClientPeer::networkInfo() const {
+  return d->networkInfo;
+}
+
+const MCClientPeerRequestsQueuesContainer& MCClientPeer::pendingRequests() const {
+  return d->pendingRequests;
+}
+
+QString MCClientPeer::dumpPendingRequests() const {
+  return pendingRequests().dumpPendingRequests();
 }
 
 QString MCClientPeer::stateToString(QAbstractSocket::SocketState state) {
@@ -98,17 +189,18 @@ QString MCClientPeer::stateToString(QAbstractSocket::SocketState state) {
 
 QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
   switch (notify) {
-    case ConnectTimeoutNotify:   return QT_TRANSLATE_NOOP(MCClientPeer, "Connection timed out");
-    case HandShakeTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "Handshake timed out");
-    case PeerTimeoutNotify:      return QT_TRANSLATE_NOOP(MCClientPeer, "Peer timed out");
+    case ConnectTimeoutNotify:        return QT_TRANSLATE_NOOP(MCClientPeer, "Connection timed out");
+    case HandShakeTimeoutNotify:      return QT_TRANSLATE_NOOP(MCClientPeer, "Handshake timed out");
+    case PendingRequestTimeoutNotify: return QT_TRANSLATE_NOOP(MCClientPeer, "Pending Request timed out");
+    case PeerTimeoutNotify:           return QT_TRANSLATE_NOOP(MCClientPeer, "Peer timed out");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown timeout");
   }
 }
 
-QString MCClientPeer::packetTypeToString(PacketType type) {
-  switch (type) {
+QString MCClientPeer::packetTypeToString(PacketType packetType) {
+  switch (packetType) {
     case KeepAliveAcknowledgmentPacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive (acknowledgment)");
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
@@ -127,11 +219,12 @@ QString MCClientPeer::packetTypeToString(PacketType type) {
 
 QString MCClientPeer::packetErrorToString(PacketError error) {
   switch (error) {
-    case PacketSizeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
-    case PacketTypeError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
-    case ProtocolIdError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
-    case ProtocolVersionError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Could not establish a communication with the peer because the protocol version is different");
-    case AuthenticationError:    return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
+    case PacketSizeError:             return QT_TRANSLATE_NOOP(MCClientPeer, "Packet size error");
+    case PacketTypeError:             return QT_TRANSLATE_NOOP(MCClientPeer, "Packet type unknown");
+    case ProtocolIdError:             return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown protocol");
+    case ProtocolVersionError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Could not establish a communication with the peer because the protocol version is different");
+    case AuthenticationError:         return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
+    case ResponseWithoutRequestError: return QT_TRANSLATE_NOOP(MCClientPeer, "A response was received whereas no request has been sent");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
@@ -194,10 +287,10 @@ void MCClientPeer::connectionStateChanged_(QAbstractSocket::SocketState state) {
 }
 
 void MCClientPeer::processIncomingData_() {
-  m_bInvalidateTimeout = true;
+  d->invalidateTimeout = true;
 
   // Process Handshake
-  if (m_bReceivedHandShake == false) {
+  if (d->receivedHandShake == false) {
     // Check that we received enough data
     if (bytesAvailable() < ProtocolHeaderSize) {
       return;
@@ -224,21 +317,21 @@ void MCClientPeer::processIncomingData_() {
     (void) read(8);
 
     // Initialize keep-alive timer
-    if (!m_idKeepAliveTimer) {
-      m_idKeepAliveTimer = startTimer(m_nKeepAliveInterval);
+    if (!d->keepAliveTimer) {
+      d->keepAliveTimer = startTimer(d->keepAliveInterval);
     }
 
-    m_bReceivedHandShake = true;
+    d->receivedHandShake = true;
     emit handShakeReceived();
 
-    /*if (m_bSentHandShake == false) {
+    /*if (d->sentHandShake == false) {
       sendHandShakePacket_();
     }*/
   }
 
   do {
     // New packet
-    if (m_u32PacketSize == 0) {
+    if (d->packetSize == 0) {
       // Check that we received enough data
       if (bytesAvailable() < MinimalPacketSize) {
         return;
@@ -248,33 +341,56 @@ void MCClientPeer::processIncomingData_() {
       QDataStream data(this);
       data.setVersion(SerializationVersion);
 
-      data >> m_u32PacketSize;
-      data >> m_u16PacketType;
+      data >> d->packetSize;
+      data >> d->packetType;
 
       // Prevent of a DoS attack
-      if ((m_u32PacketSize < MinimalPacketSize) || (m_u32PacketSize > 512000)) {
+      if ((d->packetSize < MinimalPacketSize) || (d->packetSize > 512000)) {
         errorProcessingPacket_(PacketSizeError, true);
         return;
       }
     }
 
     // Attempts to have enough bytes to process the packet
-    if (bytesAvailable() < (m_u32PacketSize - MinimalPacketSize)) {
+    if (bytesAvailable() < (d->packetSize - MinimalPacketSize)) {
       return;
     }
 
-    processPacket_();
+    PacketType packetType = static_cast<PacketType>(d->packetType);
+    MCClientPeerRequestInfo requestInfo; // Invalid request info
 
-    m_u32PacketSize = 0;
+    // Response packet
+    if ((d->packetType >= ResponsePacketsStart) && (d->packetType <= ResponsePacketsEnd)) {
+      // Find the request linked with the response
+      PacketType requestPacketType = static_cast<PacketType>(
+        (d->packetType - ResponsePacketsStart) + RequestPacketsStart
+      );
+
+      requestInfo = unregisterRequest_(requestPacketType);
+
+      // A response was received when no request has been sent
+      if (requestInfo.isValid() == false) {
+        errorProcessingPacket_(ResponseWithoutRequestError, false);
+        goto LabelEndOfPacketProcessing;
+      }
+    }
+
+    // Process packet
+    processPacket_(packetType, requestInfo);
+
+    emit packetReceived(packetType, d->packetSize, requestInfo);
+
+LabelEndOfPacketProcessing:
+    d->packetSize = 0;
   } while (bytesAvailable() >= MinimalPacketSize);
 }
 
 void MCClientPeer::timerEvent(QTimerEvent *event) {
   // Timeout (Connect, Handshake, Peer)
-  if (event->timerId() == m_idTimeoutTimer) {
+  if (event->timerId() == d->timeoutTimer) {
     // Disconnect if we timed out; otherwise the timeout is restarted.
-    if (m_bInvalidateTimeout == true) {
-      m_bInvalidateTimeout = false;
+    if (d->invalidateTimeout == true) {
+      d->invalidateTimeout = false;
     }
     else {
       TimeoutNotify notify = UnknownTimeoutNotify;
@@ -282,7 +398,7 @@ void MCClientPeer::timerEvent(QTimerEvent *event) {
         notify = ConnectTimeoutNotify;
       }
       else if (state() == ConnectedState) {
-        if (m_bReceivedHandShake == false) { notify = HandShakeTimeoutNotify; }
+        if (d->receivedHandShake == false) { notify = HandShakeTimeoutNotify; }
         else { notify = PeerTimeoutNotify; }
       }
 
@@ -293,33 +409,85 @@ void MCClientPeer::timerEvent(QTimerEvent *event) {
       abort();
     }
   }
+  // Pending Request
+  else if (event->timerId() == d->pendingRequestTimeoutTimer) {
+    emit timeout(PendingRequestTimeoutNotify);
+    abort();
+  }
   // KeepAlive
-  else if (event->timerId() == m_idKeepAliveTimer) {
-    sendPacket(KeepAlivePacket);
+  else if (event->timerId() == d->keepAliveTimer) {
+    sendPacket_(KeepAlivePacket);
   }
 
   QTcpSocket::timerEvent(event);
 }
 
 void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted) {
-  PacketType packetType = static_cast<PacketType>(m_u16PacketType);
+  PacketType packetType = static_cast<PacketType>(d->packetType);
 
-  emit errorProcessingPacket(error, packetType, m_u32PacketSize, aborted);
+  emit errorProcessingPacket(error, packetType, d->packetSize, aborted);
 
   // Abort the connection
   if (aborted == true) {
     abort();
   }
+  // Packet dropped
+  else {
+    (void) read(d->packetSize - MinimalPacketSize);
+  }
+}
+
+void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
+  ILogger::Debug() << QString("Sending the packet : %1 (%2)...")
+                      .arg(packetTypeToString(packetType))
+                      .arg(packetType);
+
+  // Request packet
+  int nPacketType = static_cast<int>(packetType);
+  if ((nPacketType >= RequestPacketsStart) && (nPacketType <= RequestPacketsEnd)) {
+    (void) registerRequest_(packetType);
+  }
+
+  // Prepare the packet
+  QByteArray packet;
+  QDataStream out(&packet, QIODevice::WriteOnly);
+  out.setVersion(SerializationVersion);
+
+  quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
+  out << (quint32)packetSize; // Size of the packet
+  out << (quint16)packetType; // Type of the packet
+
+  // Send packet header
+  write(packet);
+
+  // Send packet data
+  if (data.isEmpty() == false) {
+    write(data);
+  }
+
+  emit packetSent(packetType, packetSize);
+}
+
+template <class T> void MCClientPeer::sendPacket_(PacketType packetType, const T& data) {
+  QByteArray bytes;
+  QDataStream in(&bytes, QIODevice::WriteOnly);
+  in.setVersion(SerializationVersion);
+
+  in << data;
+  sendPacket_(packetType, bytes);
 }
 
 void MCClientPeer::sendHandShakePacket_() {
-  m_bSentHandShake = true;
+  d->sentHandShake = true;
 
   // Peer timeout
-  if (m_idTimeoutTimer) {
-    killTimer(m_idTimeoutTimer);
+  if (d->timeoutTimer) {
+    killTimer(d->timeoutTimer);
+    d->timeoutTimer = 0;
   }
-  m_idTimeoutTimer = startTimer(m_nTimeout);
+  if (d->timeout > 0) {
+    d->timeoutTimer = startTimer(d->timeout);
+  }
 
   QByteArray bytes;
   QDataStream data(&bytes, QIODevice::WriteOnly);
@@ -340,28 +508,27 @@ void MCClientPeer::sendAuthenticationPacket_() {
   networkInfo.setPeerAddress(peerAddress());
   networkInfo.setPeerPort(peerPort());
 
-  sendPacket(AuthenticationPacket, networkInfo);
+  sendPacket_(AuthenticationPacket, networkInfo);
 }
 
 void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
-  sendPacket(ConnectionRefusedPacket, reason);
+  sendPacket_(ConnectionRefusedPacket, reason);
 }
 
 void MCClientPeer::sendServerInfoRequestPacket_() {
-  m_timeStartPingRequest = QTime::currentTime();
-  sendPacket(ServerInfoRequestPacket);
+  sendPacket_(ServerInfoRequestPacket);
 }
 
 void MCClientPeer::sendSeedUrlsRequestPacket_() {
-  sendPacket(SeedUrlsRequestPacket);
+  sendPacket_(SeedUrlsRequestPacket);
 }
 
 void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo) {
-  sendPacket(ServerInfoResponsePacket, serverInfo);
+  sendPacket_(ServerInfoResponsePacket, serverInfo);
 }
 
 void MCClientPeer::sendSeedUrlsResponsePacket_(const QList<QString>& urls) {
-  sendPacket(SeedUrlsResponsePacket, urls);
+  sendPacket_(SeedUrlsResponsePacket, urls);
 }
 
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
@@ -389,53 +556,112 @@ void MCClientPeer::processSeedUrlsRequestPacket_() {
   emit seedUrlsRequest();
 }
 
-void MCClientPeer::processServerInfoResponsePacket_(QDataStream& data) {
+void MCClientPeer::processServerInfoResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
   MCServerInfo serverInfo;
   data >> serverInfo;
-  serverInfo.setPing(m_timeStartPingRequest.msecsTo(QTime::currentTime()));
+  serverInfo.setPing(requestInfo.delay());
   emit serverInfoResponse(serverInfo);
 }
 
-void MCClientPeer::processSeedUrlsResponsePacket_(QDataStream& data) {
+void MCClientPeer::processSeedUrlsResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
+  Q_UNUSED(requestInfo);
+
   QList<QString> urls;
   data >> urls;
   emit seedUrlsResponse(urls);
 }
 
+void MCClientPeer::initConnection_() {
+  d->invalidateTimeout = false;
+  d->receivedHandShake = false;
+  d->sentHandShake = false;
+  d->packetType = 0;
+  d->packetSize = 0;
+  d->authenticated = false;
+  d->networkInfo = CNetworkInfo();
+}
+
+void MCClientPeer::killAllTimers_() {
+  if (d->timeoutTimer) {
+    killTimer(d->timeoutTimer);
+    d->timeoutTimer = 0;
+  }
+
+  if (d->pendingRequestTimeoutTimer) {
+    killTimer(d->pendingRequestTimeoutTimer);
+    d->pendingRequestTimeoutTimer = 0;
+  }
+
+  if (d->keepAliveTimer) {
+    killTimer(d->keepAliveTimer);
+    d->keepAliveTimer = 0;
+  }
+}
+
 // Initialize all state variable
 void MCClientPeer::connecting_() {
-  m_bInvalidateTimeout = false;
-  m_idTimeoutTimer = startTimer(m_nConnectTimeout);
+  d->invalidateTimeout = false;
+  if (d->connectTimeout > 0) {
+    d->timeoutTimer = startTimer(d->connectTimeout);
+  }
 }
 
 void MCClientPeer::connected_() {
-  m_bReceivedHandShake = false;
-  m_bSentHandShake = false;
-  m_u16PacketType = 0;
-  m_u32PacketSize = 0;
+  initConnection_();
 
-  m_idTimeoutTimer = startTimer(m_nHandShakeTimeout);
+  if (d->handShakeTimeout > 0) {
+    d->timeoutTimer = startTimer(d->handShakeTimeout);
+  }
 }
 
 void MCClientPeer::closing_() {
-  if (m_idTimeoutTimer) { killTimer(m_idTimeoutTimer); }
+  killAllTimers_();
 }
 
 // Clean all state variable
 void MCClientPeer::disconnected_() {
-  m_bInvalidateTimeout = false;
-  m_bReceivedHandShake = false;
-  m_bSentHandShake = false;
-  m_u16PacketType = 0;
-  m_u32PacketSize = 0;
+  killAllTimers_();
 
-  if (m_idTimeoutTimer) { killTimer(m_idTimeoutTimer); }
-  if (m_idKeepAliveTimer) { killTimer(m_idKeepAliveTimer); }
+  initConnection_();
 }
 
-void MCClientPeer::processPacket_() {
-  PacketType packetType = static_cast<PacketType>(m_u16PacketType);
+MCClientPeerRequestInfo MCClientPeer::registerRequest_(PacketType requestPacketType) {
+  Assert(
+       (static_cast<int>(requestPacketType) >= MCClientPeer::RequestPacketsStart)
+    && (static_cast<int>(requestPacketType) <= MCClientPeer::RequestPacketsEnd)
+  );
 
+  // Start Pending Request Timeout timer
+  if (d->pendingRequestTimeoutTimer) {
+    killTimer(d->pendingRequestTimeoutTimer);
+    d->pendingRequestTimeoutTimer = 0;
+  }
+  if (d->pendingRequestTimeout > 0) {
+    d->pendingRequestTimeoutTimer = startTimer(d->pendingRequestTimeout);
+  }
+
+  return d->pendingRequests.addRequest(requestPacketType);
+}
+
+MCClientPeerRequestInfo MCClientPeer::unregisterRequest_(PacketType requestPacketType) {
+  Assert(
+       (static_cast<int>(requestPacketType) >= MCClientPeer::RequestPacketsStart)
+    && (static_cast<int>(requestPacketType) <= MCClientPeer::RequestPacketsEnd)
+  );
+
+  // Kill Pending Request Timeout timer
+  if (d->pendingRequestTimeoutTimer) {
+    killTimer(d->pendingRequestTimeoutTimer);
+    d->pendingRequestTimeoutTimer = 0;
+  }
+
+  // Return the request proceeded
+  MCClientPeerRequestInfo requestInfo = d->pendingRequests.takeRequest(requestPacketType);
+  requestInfo.responseReceivedNotify();
+  return requestInfo;
+}
+
+void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerRequestInfo& requestInfo) {
   ILogger::Debug() << QString("Processing the packet : %1 (%2)...")
                       .arg(packetTypeToString(packetType))
                       .arg(packetType);
@@ -445,16 +671,16 @@ void MCClientPeer::processPacket_() {
   data.setVersion(SerializationVersion);
 
   // Check authentication packet (received just after HandShake message)
-  if ((m_bRequireAuthentication == true) && (m_bAuthenticated == false)) {
+  if ((d->requireAuthentication == true) && (d->authenticated == false)) {
     // Could not process the packet because no authentication message was received.
     if (packetType != AuthenticationPacket) {
       errorProcessingPacket_(AuthenticationError, true);
     }
     // Process the authentication packet
     else {
-      m_networkInfo = processAuthenticationPacket_(data);
-      m_bAuthenticated = true;
-      emit authenticated(m_networkInfo);
+      d->networkInfo = processAuthenticationPacket_(data);
+      d->authenticated = true;
+      emit authenticated(d->networkInfo);
     }
     return;
   }
@@ -464,8 +690,8 @@ void MCClientPeer::processPacket_() {
     // KeepAlive (demand)
     case KeepAlivePacket:
     {
-      m_idKeepAliveTimer = startTimer(m_nKeepAliveInterval); // Restart KeepAlive timer
-      sendPacket(KeepAliveAcknowledgmentPacket);
+      d->keepAliveTimer = startTimer(d->keepAliveInterval); // Restart KeepAlive timer
+      sendPacket_(KeepAliveAcknowledgmentPacket);
     }
     break;
 
@@ -492,14 +718,184 @@ void MCClientPeer::processPacket_() {
     /** RESPONSES */
     // Server Info Response
     case ServerInfoResponsePacket:
-      processServerInfoResponsePacket_(data);
+      processServerInfoResponsePacket_(requestInfo, data);
       break;
 
     case SeedUrlsResponsePacket:
-      processSeedUrlsResponsePacket_(data);
+      processSeedUrlsResponsePacket_(requestInfo, data);
       break;
 
     default:
       errorProcessingPacket_(PacketTypeError, true);
   }
+}
+
+
+class MCClientPeerRequestInfoPrivate : public QSharedData
+{
+public:
+    MCClientPeerRequestInfoPrivate();
+    MCClientPeerRequestInfoPrivate(MCClientPeer::PacketType packetType);
+
+    bool valid;
+    MCClientPeer::PacketType requestPacketType;
+    bool responseReceived;
+    QTime beginTime;
+    QTime endTime;
+};
+
+MCClientPeerRequestInfoPrivate::MCClientPeerRequestInfoPrivate()
+  : valid(false),
+    responseReceived(false)
+{}
+
+MCClientPeerRequestInfoPrivate::MCClientPeerRequestInfoPrivate(MCClientPeer::PacketType requestPacketType)
+  : valid(true),
+    requestPacketType(requestPacketType),
+    responseReceived(false),
+    beginTime(QTime::currentTime())
+{
+  Assert(
+       (static_cast<int>(requestPacketType) >= MCClientPeer::RequestPacketsStart)
+    && (static_cast<int>(requestPacketType) <= MCClientPeer::RequestPacketsEnd)
+  );
+}
+
+MCClientPeerRequestInfo::MCClientPeerRequestInfo()
+  : d(new MCClientPeerRequestInfoPrivate)
+{}
+
+MCClientPeerRequestInfo::MCClientPeerRequestInfo(MCClientPeer::PacketType packetType)
+  : d(new MCClientPeerRequestInfoPrivate(packetType))
+{}
+
+MCClientPeerRequestInfo::MCClientPeerRequestInfo(const MCClientPeerRequestInfo &other)
+  : d(other.d)
+{}
+
+MCClientPeerRequestInfo& MCClientPeerRequestInfo::operator=(const MCClientPeerRequestInfo& requestInfo) {
+  d = requestInfo.d;
+  return *this;
+}
+
+MCClientPeerRequestInfo::~MCClientPeerRequestInfo() {
+  // QSharedDataPointer takes care of deleting for us
+}
+
+bool MCClientPeerRequestInfo::isValid() const {
+  return d->valid;
+}
+
+MCClientPeer::PacketType MCClientPeerRequestInfo::requestPacketType() const {
+  Assert(isValid() == true);
+
+  return d->requestPacketType;
+}
+
+MCClientPeer::PacketType MCClientPeerRequestInfo::responsePacketType() const {
+  Assert(isValid() == true);
+
+  return static_cast<MCClientPeer::PacketType>(
+    (static_cast<int>(d->requestPacketType) - MCClientPeer::RequestPacketsStart) + MCClientPeer::ResponsePacketsStart
+  );
+}
+
+bool MCClientPeerRequestInfo::responseReceived() const {
+  return d->responseReceived;
+}
+
+void MCClientPeerRequestInfo::responseReceivedNotify() {
+  Assert(isValid() == true);
+
+  d->responseReceived = true;
+  d->endTime = QTime::currentTime();
+}
+
+QTime MCClientPeerRequestInfo::beginTime() const {
+  return d->beginTime;
+}
+
+QTime MCClientPeerRequestInfo::endTime() const {
+  return d->endTime;
+}
+
+int MCClientPeerRequestInfo::delay() const {
+  if (d->responseReceived == false) {
+    return -1;
+  }
+
+  return d->beginTime.msecsTo(d->endTime);
+}
+
+MCClientPeerRequestsQueuesContainer::MCClientPeerRequestsQueuesContainer()
+{}
+
+int MCClientPeerRequestsQueuesContainer::requestCount(MCClientPeer::PacketType requestPacketType) const {
+  return m_requestsQueuesContainer.value(requestPacketType).count();
+}
+
+MCClientPeerRequestInfo MCClientPeerRequestsQueuesContainer::addRequest(MCClientPeer::PacketType requestPacketType) {
+  Assert(
+       (static_cast<int>(requestPacketType) >= MCClientPeer::RequestPacketsStart)
+    && (static_cast<int>(requestPacketType) <= MCClientPeer::RequestPacketsEnd)
+  );
+
+  // Create request info
+  MCClientPeerRequestInfo requestInfo(requestPacketType);
+
+  RequestsQueuesContainer::Iterator it = m_requestsQueuesContainer.find(requestPacketType);
+
+  // Complete the queue of requests
+  if (it != m_requestsQueuesContainer.end()) {
+    it.value().enqueue(requestInfo);
+  }
+  // Add a queue of requests
+  else {
+    RequestsQueue queue;
+    queue.enqueue(requestInfo);
+    m_requestsQueuesContainer.insert(requestPacketType, queue);
+  }
+
+  return requestInfo;
+}
+
+MCClientPeerRequestInfo MCClientPeerRequestsQueuesContainer::takeRequest(MCClientPeer::PacketType requestPacketType) {
+  RequestsQueuesContainer::Iterator it = m_requestsQueuesContainer.find(requestPacketType);
+
+  // Dequeues the request info
+  if (it != m_requestsQueuesContainer.end()) {
+    MCClientPeerRequestInfo requestInfo = it.value().dequeue();
+    // Remove the entry if the queue is empty
+    if (it.value().count() == 0) {
+      m_requestsQueuesContainer.remove(requestPacketType);
+    }
+
+    return requestInfo;
+  }
+  // Returns an invalid request info
+  else {
+    return MCClientPeerRequestInfo();
+  }
+}
+
+QString MCClientPeerRequestsQueuesContainer::dumpPendingRequests() const {
+  QString s("Pending Requests Dump : ");
+  if (m_requestsQueuesContainer.isEmpty()) {
+    s += "(empty)";
+  }
+  else {
+    for (
+      RequestsQueuesContainer::ConstIterator it = m_requestsQueuesContainer.begin();
+      it != m_requestsQueuesContainer.end();
+      ++it
+    )
+    {
+       s += QString("\n%1 (%2) -> %3")
+            .arg(MCClientPeer::packetTypeToString(it.key()))
+            .arg(it.key())
+            .arg(it.value().count());
+    }
+  }
+
+  return s;
 }
