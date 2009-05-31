@@ -28,10 +28,14 @@
 #include <QPointer>
 #include <QHostAddress>
 
-#include "Utilities/NetworkInfo.h"
-
 #include "ClientPeer.h"
-#include "ServerInfo.h"
+#include "UrlsCollection.h"
+
+class CNetworkInfo;
+
+class MCUrlInfo;
+class MCServerInfo;
+class MCUrlsCollection;
 
 class MCClientThread : public QThread
 {
@@ -84,6 +88,8 @@ public:
     bool isAuthenticated() const { QMutexLocker locker(&mutex); return m_bAuthenticated; } // thread-safe
     bool isConnectionRefused() const { QMutexLocker locker(&mutex); return m_bConnectionRefused; } // thread-safe
 
+    MCUrlsCollection urlsInProgress() const { return m_urlsInProgress; }
+
 public:
     static QString connectionStateToString(ConnectionState state);
 
@@ -96,6 +102,9 @@ signals:
     void disconnected();
     void authenticated(const CNetworkInfo& info);
 
+    void urlInProgressAdded(MCUrlInfo urlInfo);
+    void urlInProgressRemoved(MCUrlInfo urlInfo);
+
 public slots:
     void sendHandShake(); // thread-safe
     void refuseConnection(const QString& reason = QString()); // thread-safe
@@ -105,6 +114,7 @@ private slots:
     void peerStateChanged_(QAbstractSocket::SocketState socketState); // thread-safe
     void peerAuthenticated_(const CNetworkInfo& networkInfo); // thread-safe
     void peerServerInfoRequest_(); // thread-safe
+    void peerSeedUrlRequest_(); // thread-safe
 
 protected:
     void run();
@@ -113,11 +123,14 @@ signals:
     void callPeerRefuseConnection_(const QString& reason);
     void callPeerSendHandShake_();
     void callPeerSendRequestDenied_(MCClientPeer::PacketType requestPacketType);
-    void callPeerServerInfoResponse_(const MCServerInfo& serverInfo);
+    void callPeerSendServerInfoResponse_(const MCServerInfo& serverInfo);
+    void callPeerSendSeedUrlResponse_(const QString& url, quint32 depth);
 
 private:
     void setError_(Error error, bool signal = true); // thread-safe
-    void setConnectionState_(ConnectionState state, bool signal); // thread-safe
+    void setConnectionState_(ConnectionState state); // thread-safe
+    void connected_();
+    void disconnected_();
 
 private:
     mutable QMutex mutex;
@@ -137,6 +150,8 @@ private:
     bool m_bAuthenticated;
 
     bool m_bConnectionRefused;
+
+    MCUrlsCollection m_urlsInProgress;
 };
 
 #endif // CLIENTTHREAD_H

@@ -23,6 +23,9 @@
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
+#include "UrlInfo.h"
+#include "ServerInfo.h"
+
 #include "Server.h"
 #include "ServerHistory.h"
 
@@ -300,6 +303,20 @@ void MCServer::clientFinished_() {
   }
 }
 
+void MCServer::clientUrlInProgressAdded_(MCUrlInfo urlInfo) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientUrlInProgressAdded(client, urlInfo);
+}
+
+void MCServer::clientUrlInProgressRemoved_(MCUrlInfo urlInfo) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  emit clientUrlInProgressRemoved(client, urlInfo);
+}
+
 void MCServer::incomingConnection(int socketDescriptor) { 
   ILogger::Trace() << "Server : New incoming connection.";
 
@@ -333,6 +350,9 @@ void MCServer::incomingConnection(int socketDescriptor) {
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
   QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(finished()), this, SLOT(clientFinished_()));
+
+  QObject::connect(client, SIGNAL(urlInProgressAdded(MCUrlInfo)), this, SLOT(clientUrlInProgressAdded_(MCUrlInfo)));
+  QObject::connect(client, SIGNAL(urlInProgressRemoved(MCUrlInfo)), this, SLOT(clientUrlInProgressRemoved_(MCUrlInfo)));
 
   // Add the client in the server
   addClient(client);

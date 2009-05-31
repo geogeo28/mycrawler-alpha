@@ -20,6 +20,7 @@
 
 #include <QFile>
 
+#include "Macros.h"
 #include "ServersList.h"
 #include "ServerInfo.h"
 
@@ -136,9 +137,8 @@ void MCServersList::save(const QString& fileName) const throw(CFileException) {
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-  QByteArray data;
-  QDataStream out(&data, QIODevice::WriteOnly);
-  out.setVersion(SerializationVersion);
+
+  MC_DATASTREAM_WRITE(data, out);
 
   out.writeRawData(ServersListFileMagic, ServersListFileMagicSize);
   out << ServersListFileVersion;
@@ -164,8 +164,7 @@ void MCServersList::load(const QString& fileName) throw(CFileException) {
   }
 
   // Prepare to read content
-  QDataStream in(&file);
-  in.setVersion(SerializationVersion);
+  MC_DATASTREAM_READ(&file, in);
 
   // Check version
   quint16 version; in >> version;

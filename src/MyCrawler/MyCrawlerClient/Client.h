@@ -46,11 +46,10 @@ public:
       ClosingState
     } ConnectionState;
 
-    /*typedef enum {
+    typedef enum {
       UnavailableState,
-      IdleState,
-      WaitForAResponseState,
-    } State;*/
+      IdleState
+    } State;
 
 public:
     static MCClient* instance();
@@ -64,6 +63,12 @@ public:
     ~MCClient();
 
 public:
+    static int DefaultSeedUrlRequestInterval;
+
+public:
+    int seedUrlRequestInterval() const { return m_nSeedUrlRequestInterval; }
+    void setSeedUrlRequestInterval(int sec) { m_nSeedUrlRequestInterval = sec * 1000; }
+
     MCServerInfo serverInfo() const { return m_serverInfo; }
 
     // Wrapper
@@ -79,7 +84,7 @@ public:
 
 public:
     static QString connectionStateToString(ConnectionState state);
-    //static QString stateToString(State state);
+    static QString stateToString(State state);
 
 signals:
     void error(QAbstractSocket::SocketError error);
@@ -88,6 +93,7 @@ signals:
     void connectionStateChanged(MCClient::ConnectionState state);
     void connected();
     void disconnected();
+    void stateChanged(MCClient::State state);
 
 public slots:
     void disconnect(int msecs = 30000);
@@ -96,20 +102,38 @@ private slots:
     void peerError_(QAbstractSocket::SocketError socketError);
     void peerStateChanged_(QAbstractSocket::SocketState socketState);
     void peerConnected_();
+    void peerRequestDenied_(MCClientPeer::PacketType requestPacketType);
     void peerHandShakeReceived_();
     void peerServerInfoResponse_(const MCServerInfo& serverInfo);
 
+protected:
+    void timerEvent(QTimerEvent *event);
+
 private:
-    void setConnectionState_(ConnectionState state, bool signal);
+    void initConnection_();
+    void killAllTimers_();
+    void connecting_();
+    void connected_();
+    void closing_();
+    void disconnected_();
+    void idle_();
+    void setConnectionState_(ConnectionState state);
+    void setState_(State state);
 
 private:
     static MCClient* s_instance;
+
     MCClientPeer m_clientPeer;
     MCServerInfo m_serverInfo;
 
     ConnectionState m_enumConnectionState;
     bool m_bHandShakeReceived;
     bool m_bConnectionRefused;
+
+    State m_enumState;
+
+    int m_nSeedUrlRequestInterval;
+    int m_idSeedUrlRequestTimer;
 };
 
 #endif // CLIENT_H

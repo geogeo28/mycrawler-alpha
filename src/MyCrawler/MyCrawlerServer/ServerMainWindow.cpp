@@ -99,7 +99,7 @@ void MCServerMainWindow::setupForms_() {
 void MCServerMainWindow::setupComponents_() {
   // Components
   m_pProgressDialogCloseClients = new QProgressDialog("Closing all connections...", QString(), 0, 0, this, Qt::Popup);
-  m_pProgressDialogCloseClients->setWindowModality(Qt::WindowModal);
+  m_pProgressDialogCloseClients->setModal(true);
 
   // Connect signals/slots
   QObject::connect(MCServer::instance(), SIGNAL(error(MCServer::Error)), this, SLOT(slotServerError(MCServer::Error)));
@@ -203,6 +203,8 @@ void MCServerMainWindow::on_buttonTasksAddSeedUrl_clicked() {
   }
 
   listWidgetTasksSeedUrls->addItem(url.toString(QUrl::None));
+
+  textTasksSeedUrl->setText("http://");
 }
 
 void MCServerMainWindow::slotProgressClientFinished(MCClientThread* client) {

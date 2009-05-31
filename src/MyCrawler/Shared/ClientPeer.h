@@ -68,10 +68,10 @@ public:
       RequestDeniedPacket,
 
       ServerInfoRequestPacket = RequestPacketsStart, // Starting requests
-      SeedUrlsRequestPacket,
+      SeedUrlRequestPacket,
 
       ServerInfoResponsePacket = ResponsePacketsStart, // Starting responses
-      SeedUrlsResponsePacket,
+      SeedUrlResponsePacket,
     } PacketType;
 
     typedef enum {
@@ -139,15 +139,15 @@ signals:
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType packetType, quint32 packetSize, MCClientPeer::ErrorBehavior errorBehavior);
     void handShakeReceived();
     void authenticated(const CNetworkInfo& info);
-    void requestDenied(PacketType requestPacketType);
+    void requestDenied(MCClientPeer::PacketType requestPacketType);
     void packetSent(MCClientPeer::PacketType packetType, quint32 packetSize);
     void packetReceived(MCClientPeer::PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo requestInfo);
 
     void serverInfoRequest();
-    void seedUrlsRequest();
+    void seedUrlRequest();
 
     void serverInfoResponse(const MCServerInfo& serverInfo);
-    void seedUrlsResponse(const QStringList& urls);
+    void seedUrlResponse(const QStringList& urls);
 
 public slots:
     void refuseConnection(const QString& reason = QString());
@@ -157,10 +157,10 @@ public slots:
     void sendRequestDenied(MCClientPeer::PacketType requestPacketType) { sendRequestDeniedPacket_(requestPacketType); }
 
     void sendServerInfoRequest() { sendServerInfoRequestPacket_(); }
-    void sendSeedUrlsRequest() { sendSeedUrlsRequestPacket_(); }
+    void sendSeedUrlRequest() { sendSeedUrlRequestPacket_(); }
 
     void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
-    void sendSeedUrlsResponse(const QStringList& urls) { sendSeedUrlsResponsePacket_(urls); }
+    void sendSeedUrlResponse(const QString& url, quint32 depth) { sendSeedUrlResponsePacket_(url, depth); }
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -181,10 +181,10 @@ private:
     void sendRequestDeniedPacket_(PacketType requestPacketType);
 
     void sendServerInfoRequestPacket_();
-    void sendSeedUrlsRequestPacket_();
+    void sendSeedUrlRequestPacket_();
 
     void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
-    void sendSeedUrlsResponsePacket_(const QStringList& urls);
+    void sendSeedUrlResponsePacket_(const QString& url, quint32 depth);
 
  private:
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
@@ -192,10 +192,10 @@ private:
     void processRequestDeniedPacket_(QDataStream& data);
 
     void processServerInfoRequestPacket_();
-    void processSeedUrlsRequestPacket_();
+    void processSeedUrlRequestPacket_();
 
     void processServerInfoResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
-    void processSeedUrlsResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
+    void processSeedUrlResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
 
 private:
     void initConnection_();

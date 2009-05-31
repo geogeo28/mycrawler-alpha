@@ -27,7 +27,9 @@
 
 #include "ClientThread.h"
 #include "ServerTableIP.h"
-#include "ServerInfo.h"
+
+class MCUrlInfo;
+class MCServerInfo;
 
 /*!
   \note An instance of MCClientThread is created in the private method 'incomingConnection'.
@@ -112,6 +114,9 @@ signals:
     void clientDisconnected(MCClientThread* client);
     void clientFinished(MCClientThread* client);
 
+    void clientUrlInProgressAdded(MCClientThread* client, MCUrlInfo urlInfo);
+    void clientUrlInProgressRemoved(MCClientThread* client, MCUrlInfo urlInfo);
+
 private slots:
     void clientError_(MCClientThread::Error error);
     void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen);
@@ -119,6 +124,9 @@ private slots:
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
     void clientDisconnected_();
     void clientFinished_();
+
+    void clientUrlInProgressAdded_(MCUrlInfo urlInfo);
+    void clientUrlInProgressRemoved_(MCUrlInfo urlInfo);
 
 protected:
     void incomingConnection(int socketDescriptor);

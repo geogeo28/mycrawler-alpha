@@ -20,8 +20,10 @@
 
 #include <QByteArray>
 #include <QCryptographicHash>
+#include <QVariant>
 
 #include "Debug/Exception.h"
+#include "Core/DataContainer.h"
 
 #include "UrlInfo.h"
 
@@ -29,19 +31,21 @@ class MCUrlInfoPrivate : public QSharedData
 {
   public:
     MCUrlInfoPrivate();
-    MCUrlInfoPrivate(const QUrl& url, int depth = 0);
+    MCUrlInfoPrivate(const QUrl& url, quint32 depth = 0);
 
     QUrl url;
-    int depth;
+    quint32 depth;
 
     QByteArray hash;
+
+    CDataContainer dataContainer;
 };
 
 MCUrlInfoPrivate::MCUrlInfoPrivate()
   : depth(0)
 {}
 
-MCUrlInfoPrivate::MCUrlInfoPrivate(const QUrl& url, int depth)
+MCUrlInfoPrivate::MCUrlInfoPrivate(const QUrl& url, quint32 depth)
   : url(url),
     depth(depth)
 {
@@ -52,17 +56,16 @@ MCUrlInfo::MCUrlInfo()
   : d(new MCUrlInfoPrivate)
 {}
 
-MCUrlInfo::MCUrlInfo(const QUrl& url, int depth)
+MCUrlInfo::MCUrlInfo(const QUrl& url, quint32 depth)
   : d(new MCUrlInfoPrivate(url, depth))
 {}
 
-MCUrlInfo::MCUrlInfo(const QString& url, int depth)
+MCUrlInfo::MCUrlInfo(const QString& url, quint32 depth)
   : d(new MCUrlInfoPrivate(MCUrlInfo::decodedUrl(url), depth))
 {}
 
 MCUrlInfo::MCUrlInfo(const MCUrlInfo &other)
-  : CDataContainer(other),
-    d(other.d)
+  : d(other.d)
 {}
 
 MCUrlInfo::MCUrlInfo& MCUrlInfo::operator=(const MCUrlInfo& urlInfo) {
@@ -87,11 +90,11 @@ QByteArray MCUrlInfo::hash() const {
   return d->hash;
 }
 
-int MCUrlInfo::depth() const {
+quint32 MCUrlInfo::depth() const {
   return d->depth;
 }
 
-void MCUrlInfo::setDepth(int depth) {
+void MCUrlInfo::setDepth(quint32 depth) {
   Assert(depth >= 0);
   d->depth = depth;
 }
@@ -100,6 +103,14 @@ MCUrlInfo MCUrlInfo::clone() const {
   MCUrlInfo copy(*this);
   copy.d.detach();
   return copy;
+}
+
+void MCUrlInfo::setData(const QString& name, const QVariant& data) {
+  d->dataContainer.setData(name, data);
+}
+
+QVariant MCUrlInfo::data(const QString& name) const {
+  return d->dataContainer.data(name);
 }
 
 QUrl MCUrlInfo::decodedUrl(const QUrl& url) {

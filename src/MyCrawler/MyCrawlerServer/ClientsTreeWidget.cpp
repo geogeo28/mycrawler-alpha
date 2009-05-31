@@ -27,12 +27,12 @@
 
 static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
   (MyQTreeWidgetHeaderItem){NULL, "Thread ID",    -1, true},
-  (MyQTreeWidgetHeaderItem){NULL, "MAC address",  -1, true},
+  (MyQTreeWidgetHeaderItem){NULL, "MAC Address",  -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "State",        -1, false},
-  (MyQTreeWidgetHeaderItem){NULL, "Peer address", -1, false},
+  (MyQTreeWidgetHeaderItem){NULL, "Peer Address", -1, false},
   (MyQTreeWidgetHeaderItem){NULL, "Peer Port",    -1, false},
-  (MyQTreeWidgetHeaderItem){NULL, "Host name",    -1, true},
-  (MyQTreeWidgetHeaderItem){NULL, "Host domain",  -1, true},
+  (MyQTreeWidgetHeaderItem){NULL, "Host Name",    -1, true},
+  (MyQTreeWidgetHeaderItem){NULL, "Host Domain",  -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "IP",           -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Gateway",      -1, true},
   (MyQTreeWidgetHeaderItem){NULL, "Broadcast",    -1, true},
