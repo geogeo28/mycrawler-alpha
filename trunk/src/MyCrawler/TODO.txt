@@ -37,6 +37,9 @@ occured too. Bug not observed with a Freebox.
 - Bug : The error 'Connection refused' is never processed because the connection is closed just after the message was emitted.
 - Don't emit the signal 'disconnected' when the connection is refused by the server or the client wasn't authenticated.
 - Avoid tables of QTreeWidgetItem* in TreeWidgets. Prefer to use a backtracker (QObject dynamic property).
+- Store order of the Url in the class MCUrlsContainer (See column order in MCUrlsInQueueWidget).
+- Prefer used Java-style iterators rather than STL-style iterators.
+- Prefer used methods take, erase... of Qt containers rather than remove, value... 
 
 
 MyCrawlerServer :
@@ -48,7 +51,7 @@ X The class MCServer must be thread-safe. Added Read/Write mutex. Keep an eye on
 (2009-05-21 Rev 132) - Clean-up the code in MCClientsTreeWidgets (factorize the code).
 (2009-05-28 Rev 149) - Bug : The peer address of a client is not showed after load the server history.
 - Bug : Column' state of the Tree Widget MCClientsTreeWidget is lost when another form is selected and the application is closed.
-
+- MCClientThread* must be const MCClientThread* in signals of MCServer.
 
 MyCrawlerClient :
 -----------------
