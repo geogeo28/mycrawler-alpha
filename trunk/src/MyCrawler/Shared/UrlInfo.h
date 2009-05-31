@@ -26,16 +26,16 @@
 #include <QSharedData>
 #include <QUrl>
 
-#include "Core/DataContainer.h"
+class QVariant;
 
 class MCUrlInfoPrivate;
 
-class MCUrlInfo : public CDataContainer
+class MCUrlInfo
 {
 public:
     MCUrlInfo();
-    explicit MCUrlInfo(const QUrl& url, int depth = 0);
-    explicit MCUrlInfo(const QString& url, int depth = 0);
+    explicit MCUrlInfo(const QUrl& url, quint32 depth = 0);
+    explicit MCUrlInfo(const QString& url, quint32 depth = 0);
 
     MCUrlInfo(const MCUrlInfo &other);
     MCUrlInfo& operator=(const MCUrlInfo& urlInfo);
@@ -45,10 +45,13 @@ public:
 
     QUrl url() const;
     QByteArray hash() const;
-    int depth() const;
-    void setDepth(int depth);
+    quint32 depth() const;
+    void setDepth(quint32 depth);
 
     MCUrlInfo clone() const;
+
+    void setData(const QString& name, const QVariant& data);
+    QVariant data(const QString& name) const;
 
 public:
     static QUrl decodedUrl(const QUrl& url);

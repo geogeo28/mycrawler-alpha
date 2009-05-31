@@ -41,6 +41,8 @@ public:
     MCUrlsCollection& operator=(const MCUrlsCollection& urlCollection);
     ~MCUrlsCollection();
 
+    bool isEmpty() const;
+
     bool urlExists(const QByteArray& hash) const;
     bool urlExists(const MCUrlInfo& urlInfo) const { return urlExists(urlInfo.hash()); }
 
@@ -48,8 +50,12 @@ public:
     bool addUrl(const QUrl& url);
     bool removeUrl(const QByteArray& hash);
     bool removeUrl(const MCUrlInfo& urlInfo) { return removeUrl(urlInfo.hash()); }
+    void removeAll();
 
     MCUrlInfo urlInfo(const QByteArray& hash) const;
+    MCUrlInfo takeOne();
+
+    void merge(const MCUrlsCollection& urls);
 
     MCUrlsCollection clone() const;
 

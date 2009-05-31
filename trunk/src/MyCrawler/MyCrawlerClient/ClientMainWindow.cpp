@@ -91,7 +91,17 @@ void MCClientMainWindow::setupForms_() {
 }
 
 void MCClientMainWindow::setupStatusBar_() {
-  statusbar->showMessage("Unconnected");
+  QObject::connect(doViewStatusBar, SIGNAL(toggled(bool)), statusBar(), SLOT(setVisible(bool)));
+
+  lblStatusBarConnectionState = new QLabel(MCClient::connectionStateToString(MCClient::UnconnectedState));
+  lblStatusBarState = new QLabel(MCClient::stateToString(MCClient::UnavailableState));
+
+  lblStatusBarConnectionState->setMinimumWidth(60);
+  lblStatusBarState->setMinimumWidth(60);
+
+  statusBar()->setContentsMargins(6, 0, 6, 0);
+  statusBar()->insertWidget(0, lblStatusBarConnectionState);
+  statusBar()->addPermanentWidget(lblStatusBarState);
 }
 
 void MCClientMainWindow::setupComponents_() {
@@ -99,10 +109,11 @@ void MCClientMainWindow::setupComponents_() {
   qRegisterMetaType<MCClient::ConnectionState>("MCClient::ConnectionState");
 
   // Connect signals/slots
-  QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)), Qt::QueuedConnection);
+  QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)));
   QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(MCClient::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClient::ConnectionState)), Qt::QueuedConnection);
+  QObject::connect(MCClient::instance(), SIGNAL(stateChanged(MCClient::State)), this, SLOT(slotClientStateChanged(MCClient::State)));
 }
 
 void MCClientMainWindow::cleanAll_() {
@@ -274,7 +285,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionSt
 
       buttonConnectDisconnect->setText("Connecting...");
 
-      statusbar->showMessage(QString("Connecting to %1...").arg(serverInfo.name()));
+      lblStatusBarConnectionState->setText(QString("Connecting to %1...").arg(serverInfo.name()));
 
       break;
     }
@@ -295,7 +306,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionSt
 
       buttonConnectDisconnect->setText("Disconnect");
 
-      statusbar->showMessage(QString("Connected to %1").arg(serverInfo.name()));
+      lblStatusBarConnectionState->setText(QString("Connected to %1").arg(serverInfo.name()));
 
       // Add the current server in the list to servers to connect (used to reconnect)
       m_bPreviouslyConnected = true;
@@ -315,7 +326,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionSt
       buttonConnectDisconnect->setText("Closing...");
       buttonConnectDisconnect->setEnabled(false);
 
-      statusbar->showMessage("Closing...");
+      lblStatusBarConnectionState->setText("Closing...");
 
       return;
     }
@@ -336,7 +347,7 @@ void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionSt
       buttonConnectDisconnect->setEnabled(true);
       buttonConnectDisconnect->setText("Connect"); 
 
-      statusbar->showMessage("Unconnected");
+      lblStatusBarConnectionState->setText("Unconnected");
 
       bool tmpPreviouslyConnected = m_bPreviouslyConnected;
       bool tmpCancelConnection = m_bCancelConnection;
@@ -367,6 +378,10 @@ void MCClientMainWindow::slotClientConnectionStateChanged(MCClient::ConnectionSt
   }
 
   treeWidgetClientLog->write(CLogTreeWidget::InformationIcon, message, color, QFont::Bold);
+}
+
+void MCClientMainWindow::slotClientStateChanged(MCClient::State state) {
+  lblStatusBarState->setText(MCClient::stateToString(state));
 }
 
 void MCClientMainWindow::closeEvent(QCloseEvent* event) {

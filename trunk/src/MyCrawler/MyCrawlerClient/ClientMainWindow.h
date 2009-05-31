@@ -25,6 +25,7 @@
 #define CLIENTMAINWINDOW_H
 
 #include <QtGui>
+#include <QPointer>
 #include <QList>
 
 #include "ui_ClientMainWindow.h"
@@ -70,6 +71,7 @@ private slots:
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
     void slotClientConnectionStateChanged(MCClient::ConnectionState state);
+    void slotClientStateChanged(MCClient::State state);
 
 protected:
     void closeEvent(QCloseEvent* event);
@@ -79,7 +81,12 @@ private:
     void disconnectClient_();
 
 private:
-    QList<MCServerInfo> m_lstServersToConnect;
+    QPointer<QLabel> lblStatusBarConnectionState;
+    QPointer<QLabel> lblStatusBarState;
+
+private:
+    QList<MCServerInfo> m_lstServersToConnect;    
+
     bool m_bPreviouslyConnected;
     bool m_bCancelConnection;
 };

@@ -22,11 +22,11 @@
 #include <QTime>
 #include <QDataStream>
 
-#include "Config/Config.h"
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 #include "Utilities/NetworkInfo.h"
 
+#include "Macros.h"
 #include "ClientPeer.h"
 #include "ServerInfo.h"
 
@@ -208,10 +208,10 @@ QString MCClientPeer::packetTypeToString(PacketType packetType) {
     case RequestDeniedPacket:           return QT_TRANSLATE_NOOP(MCClientPeer, "Request denied");
 
     case ServerInfoRequestPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Request");
-    case SeedUrlsRequestPacket:         return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Urls Request");
+    case SeedUrlRequestPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Url Request");
 
     case ServerInfoResponsePacket:      return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Response");
-    case SeedUrlsResponsePacket:        return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Urls Response");
+    case SeedUrlResponsePacket:         return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Url Response");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -317,8 +317,7 @@ void MCClientPeer::processIncomingData_() {
     }
 
     // Check the protocol version
-    QDataStream data(this);
-    data.setVersion(SerializationVersion);
+    MC_DATASTREAM_READ(this, data);
 
     quint16 ver; data >> ver;
     if (ver != ProtocolVersion) {
@@ -351,8 +350,7 @@ void MCClientPeer::processIncomingData_() {
       }
 
       // Get packet size and packet type
-      QDataStream data(this);
-      data.setVersion(SerializationVersion);
+      MC_DATASTREAM_READ(this, data);
 
       data >> d->packetSize;
       data >> d->packetType;
@@ -470,11 +468,9 @@ void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
   }
 
   // Prepare the packet
-  QByteArray packet;
-  QDataStream out(&packet, QIODevice::WriteOnly);
-  out.setVersion(SerializationVersion);
-
   quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
+
+  MC_DATASTREAM_WRITE(packet, out);
   out << (quint32)packetSize; // Size of the packet
   out << (quint16)packetType; // Type of the packet
 
@@ -490,9 +486,7 @@ void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
 }
 
 template <class T> void MCClientPeer::sendPacket_(PacketType packetType, const T& data) {
-  QByteArray bytes;
-  QDataStream in(&bytes, QIODevice::WriteOnly);
-  in.setVersion(SerializationVersion);
+  MC_DATASTREAM_WRITE(bytes, in);
 
   in << data;
   sendPacket_(packetType, bytes);
@@ -510,9 +504,8 @@ void MCClientPeer::sendHandShakePacket_() {
     d->timeoutTimer = startTimer(d->timeout);
   }
 
-  QByteArray bytes;
-  QDataStream data(&bytes, QIODevice::WriteOnly);
-  data.setVersion(SerializationVersion);
+
+  MC_DATASTREAM_WRITE(bytes, data);
 
   // Protocol
   data.writeRawData(ProtocolId, ProtocolIdSize);
@@ -547,16 +540,20 @@ void MCClientPeer::sendServerInfoRequestPacket_() {
   sendPacket_(ServerInfoRequestPacket);
 }
 
-void MCClientPeer::sendSeedUrlsRequestPacket_() {
-  sendPacket_(SeedUrlsRequestPacket);
+void MCClientPeer::sendSeedUrlRequestPacket_() {
+  sendPacket_(SeedUrlRequestPacket);
 }
 
 void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo) {
   sendPacket_(ServerInfoResponsePacket, serverInfo);
 }
 
-void MCClientPeer::sendSeedUrlsResponsePacket_(const QStringList& urls) {
-  sendPacket_(SeedUrlsResponsePacket, urls);
+void MCClientPeer::sendSeedUrlResponsePacket_(const QString& url, quint32 depth) {
+  MC_DATASTREAM_WRITE(bytes, data);
+  data << url;
+  data << depth;
+
+  sendPacket_(SeedUrlResponsePacket, bytes);
 }
 
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
@@ -604,8 +601,8 @@ void MCClientPeer::processServerInfoRequestPacket_() {
   emit serverInfoRequest();
 }
 
-void MCClientPeer::processSeedUrlsRequestPacket_() {
-  emit seedUrlsRequest();
+void MCClientPeer::processSeedUrlRequestPacket_() {
+  emit seedUrlRequest();
 }
 
 void MCClientPeer::processServerInfoResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
@@ -615,12 +612,12 @@ void MCClientPeer::processServerInfoResponsePacket_(const MCClientPeerRequestInf
   emit serverInfoResponse(serverInfo);
 }
 
-void MCClientPeer::processSeedUrlsResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
+void MCClientPeer::processSeedUrlResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
   Q_UNUSED(requestInfo);
 
   QStringList urls;
   data >> urls;
-  emit seedUrlsResponse(urls);
+  emit seedUrlResponse(urls);
 }
 
 void MCClientPeer::initConnection_() {
@@ -722,8 +719,7 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
                       .arg(packetType);
 
   // Create a data stream to read packet content
-  QDataStream data(this);
-  data.setVersion(SerializationVersion);
+  MC_DATASTREAM_READ(this, data);
 
   // Check authentication packet (received just after HandShake message)
   if ((d->requireAuthentication == true) && (d->authenticated == false)) {
@@ -772,8 +768,8 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
       break;
       
     // Seed Urls Request
-    case SeedUrlsRequestPacket:
-      processSeedUrlsRequestPacket_();
+    case SeedUrlRequestPacket:
+      processSeedUrlRequestPacket_();
       break;
 
     /** RESPONSES */
@@ -782,8 +778,8 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
       processServerInfoResponsePacket_(requestInfo, data);
       break;
 
-    case SeedUrlsResponsePacket:
-      processSeedUrlsResponsePacket_(requestInfo, data);
+    case SeedUrlResponsePacket:
+      processSeedUrlResponsePacket_(requestInfo, data);
       break;
 
     default:

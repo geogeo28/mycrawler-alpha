@@ -26,6 +26,8 @@
 #include "ServersList.h"
 #include "ServerInfo.h"
 
+int MCClient::DefaultSeedUrlRequestInterval = 30 * 1000;
+
 MCClient* MCClient::s_instance = NULL;
 
 MCClient* MCClient::instance() {
@@ -47,6 +49,9 @@ void MCClient::init_() {
   m_enumConnectionState = UnconnectedState;
   m_bHandShakeReceived = false;
   m_bConnectionRefused = false;
+  m_enumState = UnavailableState;
+  m_nSeedUrlRequestInterval = DefaultSeedUrlRequestInterval;
+  m_idSeedUrlRequestTimer = 0;
 }
 
 MCClient::MCClient(QObject* parent)
@@ -67,6 +72,7 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
   QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
+  QObject::connect(&m_clientPeer, SIGNAL(requestDenied(MCClientPeer::PacketType)), this, SLOT(peerRequestDenied_(MCClientPeer::PacketType)));
   QObject::connect(&m_clientPeer, SIGNAL(handShakeReceived()), this, SLOT(peerHandShakeReceived_()));
   QObject::connect(&m_clientPeer, SIGNAL(serverInfoResponse(const MCServerInfo&)), this, SLOT(peerServerInfoResponse_(const MCServerInfo&)));
 }
@@ -95,20 +101,25 @@ void MCClient::connectToHost(const MCServerInfo& serverInfo) {
 
 QString MCClient::connectionStateToString(ConnectionState state) {
   switch (state) {
-    case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClientThread, "Unconnected");
-    case HostLookupState:      return QT_TRANSLATE_NOOP(MCClientThread, "Host Lookup");
-    case ConnectingState:      return QT_TRANSLATE_NOOP(MCClientThread, "Connecting");
-    case ConnectedState:       return QT_TRANSLATE_NOOP(MCClientThread, "Connected");
-    case ClosingState:         return QT_TRANSLATE_NOOP(MCClientThread, "Closing");
+    case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClient, "Unconnected");
+    case HostLookupState:      return QT_TRANSLATE_NOOP(MCClient, "Host Lookup");
+    case ConnectingState:      return QT_TRANSLATE_NOOP(MCClient, "Connecting");
+    case ConnectedState:       return QT_TRANSLATE_NOOP(MCClient, "Connected");
+    case ClosingState:         return QT_TRANSLATE_NOOP(MCClient, "Closing");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientThread, "Unknown state");
   }
 }
 
-/*QString MCClient::stateToString(State state) {
+QString MCClient::stateToString(State state) {
+  switch (state) {
+    case IdleState:            return QT_TRANSLATE_NOOP(MCClient, "Idle");
 
-}*/
+    default:
+      return QT_TRANSLATE_NOOP(MCClient, "Unavailable");
+  }
+}
 
 void MCClient::disconnect(int msecs) {
   m_clientPeer.disconnect(msecs);
@@ -137,8 +148,6 @@ void MCClient::peerStateChanged_(QAbstractSocket::SocketState socketState) {
       state = HostLookupState;
       break;
     case QAbstractSocket::ConnectingState:
-      state = ConnectingState;
-      break;
     case QAbstractSocket::ConnectedState:
       state = ConnectingState;
       break;
@@ -149,12 +158,22 @@ void MCClient::peerStateChanged_(QAbstractSocket::SocketState socketState) {
   }
 
   // Emit signal state changed
-  setConnectionState_(state, true);
+  setConnectionState_(state);
 }
 
 void MCClient::peerConnected_() {
   m_clientPeer.sendHandShake(); // Send HandShake
   m_clientPeer.sendAuthentication(); // Send Authentication
+}
+
+void MCClient::peerRequestDenied_(MCClientPeer::PacketType requestPacketType) {
+  // Set Seed Urls Request Timer
+  if (requestPacketType == MCClientPeer::SeedUrlRequestPacket) {
+    if (m_idSeedUrlRequestTimer) {
+      killTimer(m_idSeedUrlRequestTimer);
+    }
+    m_idSeedUrlRequestTimer = startTimer(m_nSeedUrlRequestInterval);
+  }
 }
 
 void MCClient::peerHandShakeReceived_() {
@@ -163,7 +182,7 @@ void MCClient::peerHandShakeReceived_() {
   // Server Info request
   m_clientPeer.sendServerInfoRequest();
 
-  setConnectionState_(ConnectedState, true);
+  setConnectionState_(ConnectedState);
 }
 
 void MCClient::peerServerInfoResponse_(const MCServerInfo& serverInfo) {
@@ -175,7 +194,57 @@ void MCClient::peerServerInfoResponse_(const MCServerInfo& serverInfo) {
   MCServersList::instance()->updateServer(ip, serverInfo);
 }
 
-void MCClient::setConnectionState_(ConnectionState state, bool signal) {
+void MCClient::timerEvent(QTimerEvent *event) {
+  // Seed Urls request
+  if (event->timerId() == m_idSeedUrlRequestTimer) {
+    m_clientPeer.sendSeedUrlRequest();
+
+    killTimer(m_idSeedUrlRequestTimer);
+    m_idSeedUrlRequestTimer = 0;
+  }
+
+  QObject::timerEvent(event);
+}
+
+void MCClient::initConnection_() {
+
+}
+
+void MCClient::killAllTimers_() {
+  if (m_idSeedUrlRequestTimer) {
+    killTimer(m_idSeedUrlRequestTimer);
+    m_idSeedUrlRequestTimer = 0;
+  }
+}
+
+void MCClient::connecting_() {
+
+}
+
+void MCClient::connected_() {
+  setState_(IdleState);
+  emit connected();
+}
+
+void MCClient::closing_() {
+  killAllTimers_();
+
+  setState_(UnavailableState);
+}
+
+void MCClient::disconnected_() {
+  killAllTimers_();
+
+  setState_(UnavailableState);
+  emit disconnected();
+}
+
+void MCClient::idle_() {
+  // Send Seed Urls Request
+  m_clientPeer.sendSeedUrlRequest();
+}
+
+void MCClient::setConnectionState_(ConnectionState state) {
   // Do nothing if the connection state didn't changed
   if (state == m_enumConnectionState) {
     return;
@@ -188,31 +257,37 @@ void MCClient::setConnectionState_(ConnectionState state, bool signal) {
   m_enumConnectionState = state;
 
   // Emit signal if set
-  if (signal == true) {
-    emit MCClient::connectionStateChanged(state);
+  emit MCClient::connectionStateChanged(state);
+
+  // Manage specific states
+  switch (state) {
+    case ConnectingState:  connecting_();  break;
+    case ConnectedState:   connected_(); break;
+    case ClosingState:     closing_(); break;
+    case UnconnectedState: disconnected_(); break;
+
+    default:;
+  }
+}
+
+void MCClient::setState_(State state) {
+  // Do nothing if the state didn't changed
+  if (state == m_enumState) {
+    return;
   }
 
-  // Connected and disconnected
-  switch (state) {
-    // Connected
-    case ConnectedState:
-    {
-      if (signal == true) {
-        emit connected();
-        return;
-      }
-    }
-    break;
+  ILogger::Debug() << QString("State changed : %2 (%3).")
+                      .arg(MCClient::stateToString(state))
+                      .arg(state);
 
-    // Unconnected
-    case UnconnectedState:
-    {
-      if (signal == true) {
-        emit disconnected();
-        return;
-      }
-    }
-    break;
+  m_enumState = state;
+
+  // Emit signal if set
+  emit MCClient::stateChanged(state);
+
+  // Manage specific states
+  switch (state) {
+    case IdleState: idle_(); break;
 
     default:;
   }

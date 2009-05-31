@@ -52,14 +52,14 @@ void MCUrlsInQueueTreeWidget::setup() {
   setPersistentColumnIndex(UrlColumn);
 
   // Signals/slots connections
-  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(addUrl(MCUrlInfo)));
-  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlRemoved(MCUrlInfo)), this, SLOT(removeUrl(MCUrlInfo)));
+  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotAddUrl_(MCUrlInfo)));
+  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlRemoved(MCUrlInfo)), this, SLOT(slotRemoveUrl_(MCUrlInfo)));
 }
 
-void MCUrlsInQueueTreeWidget::addUrl(MCUrlInfo urlInfo) {
+void MCUrlsInQueueTreeWidget::slotAddUrl_(MCUrlInfo urlInfo) {
   static int lastOrder = 0;
 
-  Assert(urlInfo.isValid());
+  Assert(urlInfo.isValid() == true);
   QTreeWidgetItem* item = new QTreeWidgetItem(this);
 
   // Set backtracker
@@ -72,12 +72,12 @@ void MCUrlsInQueueTreeWidget::addUrl(MCUrlInfo urlInfo) {
 
   // Set columns content
   item->setText(HashSignatureColumn, urlInfo.hash().toHex());
-  item->setText(OrderColumn, QString::number(lastOrder));
-  item->setText(UrlColumn, urlInfo.url().toString(QUrl::None));
+  item->setText(OrderColumn,         QString::number(lastOrder));
+  item->setText(UrlColumn,           urlInfo.url().toString(QUrl::None));
 }
 
-void MCUrlsInQueueTreeWidget::removeUrl(MCUrlInfo urlInfo) {
-  Assert(urlInfo.isValid());
+void MCUrlsInQueueTreeWidget::slotRemoveUrl_(MCUrlInfo urlInfo) {
+  Assert(urlInfo.isValid() == true);
 
   QTreeWidgetItem* item = qVariantValue<QTreeWidgetItem*>(urlInfo.data("ItemInQueue"));
   AssertCheckPtr(item);

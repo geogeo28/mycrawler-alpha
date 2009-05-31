@@ -49,9 +49,9 @@ public:
 
     void setup();
 
-public slots:
-    void addUrl(MCUrlInfo urlInfo); // Set data ItemUrlInQueue
-    void removeUrl(MCUrlInfo urlInfo); // Remove data ItemUrlInQueue
+private slots:
+    void slotAddUrl_(MCUrlInfo urlInfo); // Set data ItemUrlInQueue
+    void slotRemoveUrl_(MCUrlInfo urlInfo); // Remove data ItemUrlInQueue
 };
 
 #endif // URLSINQUEUETREEWIDGET_H

@@ -22,9 +22,9 @@
 #include <QByteArray>
 #include <QDataStream>
 
-#include "Config/Config.h"
 #include "Debug/Exception.h"
 
+#include "Macros.h"
 #include "ServerHistory.h"
 #include "ClientThread.h"
 
@@ -126,9 +126,7 @@ void MCServerHistory::save(const QString& fileName) const throw(CFileException) 
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-  QByteArray data;
-  QDataStream out(&data, QIODevice::WriteOnly);
-  out.setVersion(SerializationVersion);
+  MC_DATASTREAM_WRITE(data, out);
 
   out.writeRawData(HistoryFileMagic, HistoryFileMagicSize);
   out << HistoryFileVersion;
@@ -154,8 +152,7 @@ void MCServerHistory::load(const QString& fileName) throw(CFileException) {
   }
 
   // Prepare to read content
-  QDataStream in(&file);
-  in.setVersion(SerializationVersion);
+  MC_DATASTREAM_READ(&file, in);
 
   // Check version
   quint16 version; in >> version;

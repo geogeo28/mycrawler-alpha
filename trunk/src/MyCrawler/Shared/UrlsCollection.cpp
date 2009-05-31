@@ -27,6 +27,10 @@
 class MCUrlsCollectionPrivate : public QSharedData
 {
   public:
+    typedef QHash<QByteArray, MCUrlInfo> UrlsContainer;
+    typedef QHashIterator<QByteArray, MCUrlInfo> Iterator;
+
+  public:
     MCUrlsCollectionPrivate();
 
     QHash<QByteArray, MCUrlInfo> urls;
@@ -52,7 +56,13 @@ MCUrlsCollection& MCUrlsCollection::operator=(const MCUrlsCollection& urlCollect
 
 MCUrlsCollection::~MCUrlsCollection()
 {
+  removeAll();
+
   // QExplicitlySharedDataPointer takes care of deleting for us
+}
+
+bool MCUrlsCollection::isEmpty() const {
+  return d->urls.isEmpty();
 }
 
 bool MCUrlsCollection::urlExists(const QByteArray& hash) const {
@@ -89,8 +99,46 @@ bool MCUrlsCollection::removeUrl(const QByteArray& hash) {
   return true;
 }
 
+void MCUrlsCollection::removeAll() {
+  MCUrlsCollectionPrivate::Iterator it(d->urls);
+  while (it.hasNext()) {
+    emit urlRemoved(it.next().value());
+  }
+
+  d->urls.clear();
+}
+
 MCUrlInfo MCUrlsCollection::urlInfo(const QByteArray& hash) const {
   return d->urls.value(hash);
+}
+
+MCUrlInfo MCUrlsCollection::takeOne() {
+  MCUrlsCollectionPrivate::UrlsContainer::Iterator it = d->urls.begin();
+
+  // Returns an invalid MCUrlInfo
+  if (it == d->urls.end()) {
+    return MCUrlInfo();
+  }
+
+  MCUrlInfo urlInfo = it.value();
+  (void) d->urls.erase(it);
+  emit urlRemoved(urlInfo);
+
+  return urlInfo;
+}
+
+void MCUrlsCollection::merge(const MCUrlsCollection& urls) {
+  // Warning : Multiple entries for a same Url must be impossible
+  for (
+    MCUrlsCollectionPrivate::UrlsContainer::Iterator it = urls.d->urls.begin();
+    it != urls.d->urls.end();
+    ++it
+  )
+  {
+    MCUrlInfo urlInfo = it.value();
+    d->urls.insert(urlInfo.hash(), urlInfo);
+    emit urlAdded(urlInfo);
+  }
 }
 
 MCUrlsCollection MCUrlsCollection::clone() const {

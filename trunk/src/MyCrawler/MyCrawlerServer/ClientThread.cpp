@@ -18,12 +18,18 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QUrl>
+
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 #include "Utilities/NetworkInfo.h"
 
+#include "UrlInfo.h"
+#include "ServerInfo.h"
+
 #include "ClientThread.h"
 #include "Server.h"
+#include "ServerApplication.h"
 
 MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
     : QThread(parent),
@@ -37,6 +43,10 @@ MCClientThread::MCClientThread(int socketDescriptor, QObject* parent)
   ILogger::Debug() << "Construct.";
 
   setError_(NoError, false);
+
+  // Signals/slots connections
+  QObject::connect(&m_urlsInProgress, SIGNAL(urlAdded(MCUrlInfo)), this, SIGNAL(urlInProgressAdded(MCUrlInfo)));
+  QObject::connect(&m_urlsInProgress, SIGNAL(urlRemoved(MCUrlInfo)), this, SIGNAL(urlInProgressRemoved(MCUrlInfo)));
 }
 
 MCClientThread::~MCClientThread() {
@@ -87,12 +97,14 @@ void MCClientThread::run() {
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
   QObject::connect(&clientPeer, SIGNAL(authenticated(const CNetworkInfo&)), this, SLOT(peerAuthenticated_(const CNetworkInfo&)));
   QObject::connect(&clientPeer, SIGNAL(serverInfoRequest()), this, SLOT(peerServerInfoRequest_()));
+  QObject::connect(&clientPeer, SIGNAL(seedUrlRequest()), this, SLOT(peerSeedUrlRequest_()));
 
   // Send 'message'
   QObject::connect(this, SIGNAL(callPeerRefuseConnection_(const QString&)), &clientPeer, SLOT(refuseConnection(const QString&)));
   QObject::connect(this, SIGNAL(callPeerSendHandShake_()), &clientPeer, SLOT(sendHandShake()));
   QObject::connect(this, SIGNAL(callPeerSendRequestDenied_(MCClientPeer::PacketType)), &clientPeer, SLOT(sendRequestDenied(MCClientPeer::PacketType)));
-  QObject::connect(this, SIGNAL(callPeerServerInfoResponse_(const MCServerInfo&)), &clientPeer, SLOT(sendServerInfoResponse(const MCServerInfo&)));
+  QObject::connect(this, SIGNAL(callPeerSendServerInfoResponse_(const MCServerInfo&)), &clientPeer, SLOT(sendServerInfoResponse(const MCServerInfo&)));
+  QObject::connect(this, SIGNAL(callPeerSendSeedUrlResponse_(const QString&,quint32)), &clientPeer, SLOT(sendSeedUrlResponse(const QString&,quint32)));
 
   // Could not attach the socket of the client peer from the socket descriptor
   if (!clientPeer.setSocketDescriptor(m_nSocketDescriptor, MCClientPeer::ConnectedState, MCClientPeer::ReadWrite)) {
@@ -115,7 +127,6 @@ void MCClientThread::run() {
   // Event loop
   exec();
 
-  mutex.lock();
   ILogger::Debug() << "Exit the event loop.";
 
   // Disconnection of the client peer volunteer (initiate by the client thread)
@@ -124,7 +135,6 @@ void MCClientThread::run() {
   }
 
   m_pClientPeer = NULL;
-  mutex.unlock();
 }
 
 void MCClientThread::sendHandShake() {
@@ -172,7 +182,7 @@ void MCClientThread::peerStateChanged_(QAbstractSocket::SocketState socketState)
   mutex.unlock();
 
   // Emit signal state changed
-  setConnectionState_(state, true);
+  setConnectionState_(state);
 }
 
 void MCClientThread::peerAuthenticated_(const CNetworkInfo& networkInfo) {
@@ -181,12 +191,33 @@ void MCClientThread::peerAuthenticated_(const CNetworkInfo& networkInfo) {
   m_networkInfo = networkInfo;
   mutex.unlock();
 
-  setConnectionState_(ConnectedState, true);
+  setConnectionState_(ConnectedState);
   emit authenticated(networkInfo);
 }
 
 void MCClientThread::peerServerInfoRequest_() {
-  emit callPeerServerInfoResponse_(MCServer::instance()->serverInfo());
+  emit callPeerSendServerInfoResponse_(MCServer::instance()->serverInfo());
+}
+
+void MCClientThread::peerSeedUrlRequest_() {
+  mutex.lock();
+
+  // Take an Url in queue
+  MCUrlInfo urlInfo = MCApp->urlsInQueue()->takeOne();
+
+  // Not Url in queue
+  if (urlInfo.isValid() == false) {
+    mutex.unlock();
+
+    emit callPeerSendRequestDenied_(MCClientPeer::SeedUrlRequestPacket);
+    return;
+  }
+
+  // Send Url
+  m_urlsInProgress.addUrl(urlInfo);
+  mutex.unlock();
+
+  emit callPeerSendSeedUrlResponse_(urlInfo.url().toString(QUrl::None), urlInfo.depth());
 }
 
 void MCClientThread::setError_(Error error, bool signal) {
@@ -199,7 +230,7 @@ void MCClientThread::setError_(Error error, bool signal) {
       m_sError = QT_TRANSLATE_NOOP(MCClientThread, "No error");
       break;
     case ClientPeerError:
-      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error was occurred on the client peer");
+      m_sError = QT_TRANSLATE_NOOP(MCClientThread, "An error occurred on the client peer");
       break;
     default:
       m_enumError = MCClientThread::UnknownError;
@@ -216,7 +247,7 @@ void MCClientThread::setError_(Error error, bool signal) {
   mutex.unlock();
 }
 
-void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {  
+void MCClientThread::setConnectionState_(ConnectionState state) {
   mutex.lock();
 
   // Do nothing if the connection state didn't changed
@@ -232,34 +263,29 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
 
   m_enumConnectionState = state;
 
-  // Emit signal if set
-  if (signal == true) {
-    mutex.unlock();
-    emit MCClientThread::connectionStateChanged(state);
-    mutex.lock();
-  }
+  mutex.unlock();
+  emit MCClientThread::connectionStateChanged(state);
+  mutex.lock();
 
   // Connected and disconnected
   switch (state) {
     // Connected
     case ConnectedState:
     {
-      if (signal == true) {
-        mutex.unlock();
-        emit connected();
-        return;
-      }
+      emit connected();
+      mutex.unlock();
+      connected_();
+      return;
     }
     break;
 
     // Unconnected
     case UnconnectedState:
     {
-      if (signal == true) {
-        mutex.unlock();
-        emit disconnected();
-        return;
-      }
+      disconnected_();
+      mutex.unlock();
+      emit disconnected();
+      return;
     }
     break;
 
@@ -267,4 +293,14 @@ void MCClientThread::setConnectionState_(ConnectionState state, bool signal) {
   }
 
   mutex.unlock();
+}
+
+void MCClientThread::connected_() {
+
+}
+
+void MCClientThread::disconnected_() {
+  // Restore Url in Progress
+  MCApp->urlsInQueue()->merge(m_urlsInProgress);
+  // Flush Urls in Progress is useless because when a client is disconnect, the thread is destroyed
 }
