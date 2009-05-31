@@ -105,7 +105,7 @@ signals:
 
     void clientError(MCClientThread* client, MCClientThread::Error error);
     void clientTimeout(MCClientThread* client, MCClientPeer::TimeoutNotify notifiedWhen);
-    void clientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void clientErrorProcessingPacket(MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
     void clientConnectionRefused(MCClientThread* client, const QString& reason);
     void clientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
     void clientConnected(MCClientThread* client, bool unknownClientInTheServerHistory);
@@ -115,7 +115,7 @@ signals:
 private slots:
     void clientError_(MCClientThread::Error error);
     void clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen);
-    void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
     void clientConnectionStateChanged_(MCClientThread::ConnectionState state);
     void clientDisconnected_();
     void clientFinished_();

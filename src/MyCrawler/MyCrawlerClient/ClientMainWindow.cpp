@@ -101,7 +101,7 @@ void MCClientMainWindow::setupComponents_() {
   // Connect signals/slots
   QObject::connect(MCClient::instance(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(slotClientError(QAbstractSocket::SocketError)), Qt::QueuedConnection);
   QObject::connect(MCClient::instance(), SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientPeer::TimeoutNotify)));
-  QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(MCClient::instance(), SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SLOT(slotClientErrorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(MCClient::instance(), SIGNAL(connectionStateChanged(MCClient::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClient::ConnectionState)), Qt::QueuedConnection);
 }
 
@@ -229,7 +229,11 @@ void MCClientMainWindow::slotClientTimeout(MCClientPeer::TimeoutNotify notifiedW
   );
 }
 
-void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) {
+void MCClientMainWindow::slotClientErrorProcessingPacket(
+  MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size,
+  MCClientPeer::ErrorBehavior errorBehavior
+)
+{
   treeWidgetClientLog->write(
     CLogTreeWidget::ErrorIcon,
     QString("Error processing a packet of the server.\n" \
@@ -240,9 +244,9 @@ void MCClientMainWindow::slotClientErrorProcessingPacket(MCClientPeer::PacketErr
       .arg(MCClientPeer::packetErrorToString(error))
       .arg(error)
       .arg(
-      (aborted == true)?
+      (errorBehavior == MCClientPeer::AbortBehavior)?
       "To prevent of a DoS attack, the connection with the server was aborted.":
-      "Packet dropped."),
+      MCClientPeer::errorBehaviorToString(errorBehavior)),
     Qt::red, QFont::Bold
   );
 }

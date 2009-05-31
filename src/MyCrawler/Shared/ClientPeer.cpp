@@ -205,6 +205,7 @@ QString MCClientPeer::packetTypeToString(PacketType packetType) {
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
     case ConnectionRefusedPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Connection refused");
+    case RequestDeniedPacket:           return QT_TRANSLATE_NOOP(MCClientPeer, "Request denied");
 
     case ServerInfoRequestPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Request");
     case SeedUrlsRequestPacket:         return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Urls Request");
@@ -225,9 +226,21 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
     case ProtocolVersionError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Could not establish a communication with the peer because the protocol version is different");
     case AuthenticationError:         return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
     case ResponseWithoutRequestError: return QT_TRANSLATE_NOOP(MCClientPeer, "A response was received whereas no request has been sent");
+    case InvalidPacketContentError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Invalid packet content");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
+  }
+}
+
+QString MCClientPeer::errorBehaviorToString(ErrorBehavior errorBehavior) {
+  switch (errorBehavior) {
+    case AbortBehavior:      return QT_TRANSLATE_NOOP(MCClientPeer, "Connection aborted");
+    case DropPacketBehavior: return QT_TRANSLATE_NOOP(MCClientPeer, "Packet dropped");
+    case ContinueBehavior:   return QT_TRANSLATE_NOOP(MCClientPeer, "Packet ignored");
+
+    default:
+      return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown behavior");
   }
 }
 
@@ -299,7 +312,7 @@ void MCClientPeer::processIncomingData_() {
     // Check the protocol identification
     QByteArray id = read(ProtocolIdSize);
     if (id.startsWith(ProtocolId) == false) {
-      errorProcessingPacket_(ProtocolIdError, true);
+      errorProcessingPacket_(ProtocolIdError, AbortBehavior);
       return;
     }
 
@@ -309,7 +322,7 @@ void MCClientPeer::processIncomingData_() {
 
     quint16 ver; data >> ver;
     if (ver != ProtocolVersion) {
-      errorProcessingPacket_(ProtocolVersionError, true);
+      errorProcessingPacket_(ProtocolVersionError, AbortBehavior);
       return;
     }
 
@@ -346,7 +359,7 @@ void MCClientPeer::processIncomingData_() {
 
       // Prevent of a DoS attack
       if ((d->packetSize < MinimalPacketSize) || (d->packetSize > 512000)) {
-        errorProcessingPacket_(PacketSizeError, true);
+        errorProcessingPacket_(PacketSizeError, AbortBehavior);
         return;
       }
     }
@@ -370,7 +383,7 @@ void MCClientPeer::processIncomingData_() {
 
       // A response was received when no request has been sent
       if (requestInfo.isValid() == false) {
-        errorProcessingPacket_(ResponseWithoutRequestError, false);
+        errorProcessingPacket_(ResponseWithoutRequestError, DropPacketBehavior);
         goto LabelEndOfPacketProcessing;
       }
     }
@@ -422,18 +435,26 @@ void MCClientPeer::timerEvent(QTimerEvent *event) {
   QTcpSocket::timerEvent(event);
 }
 
-void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted) {
+void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, ErrorBehavior errorBehavior) {
+  Assert(errorBehavior != UnknownBehavior);
+
   PacketType packetType = static_cast<PacketType>(d->packetType);
 
-  emit errorProcessingPacket(error, packetType, d->packetSize, aborted);
+  emit errorProcessingPacket(error, packetType, d->packetSize, errorBehavior);
 
-  // Abort the connection
-  if (aborted == true) {
-    abort();
-  }
-  // Packet dropped
-  else {
-    (void) read(d->packetSize - MinimalPacketSize);
+  switch (errorBehavior) {
+    // Packet dropped
+    case DropPacketBehavior:
+      (void) read(d->packetSize - MinimalPacketSize);
+      break;
+
+    // Continue
+    case ContinueBehavior:
+      break;
+
+    // Abort the connection
+    default:
+      abort();
   }
 }
 
@@ -515,6 +536,13 @@ void MCClientPeer::sendConnectionRefusedPacket_(const QString& reason) {
   sendPacket_(ConnectionRefusedPacket, reason);
 }
 
+void MCClientPeer::sendRequestDeniedPacket_(PacketType requestPacketType) {
+  quint16 u16PacketType = static_cast<quint16>(requestPacketType);
+
+  Assert((u16PacketType >= RequestPacketsStart) && (u16PacketType <= RequestPacketsEnd));
+  sendPacket_(RequestDeniedPacket, u16PacketType);
+}
+
 void MCClientPeer::sendServerInfoRequestPacket_() {
   sendPacket_(ServerInfoRequestPacket);
 }
@@ -527,7 +555,7 @@ void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo)
   sendPacket_(ServerInfoResponsePacket, serverInfo);
 }
 
-void MCClientPeer::sendSeedUrlsResponsePacket_(const QList<QString>& urls) {
+void MCClientPeer::sendSeedUrlsResponsePacket_(const QStringList& urls) {
   sendPacket_(SeedUrlsResponsePacket, urls);
 }
 
@@ -548,6 +576,30 @@ void MCClientPeer::processConnectionRefusedPacket_(QDataStream& data) {
   emit error(QTcpSocket::ConnectionRefusedError);
 }
 
+void MCClientPeer::processRequestDeniedPacket_(QDataStream& data) {
+  quint16 u16PacketType;
+  data >> u16PacketType;
+
+  // Invalid packet content
+  if ((u16PacketType < RequestPacketsStart) || (u16PacketType > RequestPacketsEnd)) {
+    errorProcessingPacket_(InvalidPacketContentError, ContinueBehavior);
+    return;
+  }
+
+  PacketType packetType = static_cast<PacketType>(u16PacketType);
+  MCClientPeerRequestInfo requestInfo = d->pendingRequests.takeRequest(
+    packetType, MCClientPeerRequestsQueuesContainer::LastRequest
+  );
+
+  // Request don't exist
+  if (requestInfo.isValid() == false) {
+    errorProcessingPacket_(ResponseWithoutRequestError, ContinueBehavior);
+    return;
+  }
+
+  emit requestDenied(packetType);
+}
+
 void MCClientPeer::processServerInfoRequestPacket_() {
   emit serverInfoRequest();
 }
@@ -566,7 +618,7 @@ void MCClientPeer::processServerInfoResponsePacket_(const MCClientPeerRequestInf
 void MCClientPeer::processSeedUrlsResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
   Q_UNUSED(requestInfo);
 
-  QList<QString> urls;
+  QStringList urls;
   data >> urls;
   emit seedUrlsResponse(urls);
 }
@@ -656,7 +708,10 @@ MCClientPeerRequestInfo MCClientPeer::unregisterRequest_(PacketType requestPacke
   }
 
   // Return the request proceeded
-  MCClientPeerRequestInfo requestInfo = d->pendingRequests.takeRequest(requestPacketType);
+  MCClientPeerRequestInfo requestInfo = d->pendingRequests.takeRequest(
+    requestPacketType, MCClientPeerRequestsQueuesContainer::FirstRequest
+  );
+
   requestInfo.responseReceivedNotify();
   return requestInfo;
 }
@@ -674,7 +729,7 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
   if ((d->requireAuthentication == true) && (d->authenticated == false)) {
     // Could not process the packet because no authentication message was received.
     if (packetType != AuthenticationPacket) {
-      errorProcessingPacket_(AuthenticationError, true);
+      errorProcessingPacket_(AuthenticationError, AbortBehavior);
     }
     // Process the authentication packet
     else {
@@ -687,6 +742,7 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
 
   // Packet type
   switch (packetType) {
+    /** SYSTEM */
     // KeepAlive (demand)
     case KeepAlivePacket:
     {
@@ -702,6 +758,11 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
     // Connection Refused
     case ConnectionRefusedPacket:
       processConnectionRefusedPacket_(data);
+      break;
+
+    // Request Denied
+    case RequestDeniedPacket:
+      processRequestDeniedPacket_(data);
       break;
 
     /** REQUESTS */
@@ -726,7 +787,7 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
       break;
 
     default:
-      errorProcessingPacket_(PacketTypeError, true);
+      errorProcessingPacket_(PacketTypeError, AbortBehavior);
   }
 }
 
@@ -859,12 +920,22 @@ MCClientPeerRequestInfo MCClientPeerRequestsQueuesContainer::addRequest(MCClient
   return requestInfo;
 }
 
-MCClientPeerRequestInfo MCClientPeerRequestsQueuesContainer::takeRequest(MCClientPeer::PacketType requestPacketType) {
+MCClientPeerRequestInfo MCClientPeerRequestsQueuesContainer::takeRequest(MCClientPeer::PacketType requestPacketType, RequestPosition requestPosition) {
   RequestsQueuesContainer::Iterator it = m_requestsQueuesContainer.find(requestPacketType);
 
   // Dequeues the request info
   if (it != m_requestsQueuesContainer.end()) {
-    MCClientPeerRequestInfo requestInfo = it.value().dequeue();
+    MCClientPeerRequestInfo requestInfo;
+
+    // Dequeue
+    if (requestPosition == FirstRequest) {
+      requestInfo = it.value().dequeue();
+    }
+    // Pop
+    else {
+      requestInfo = it.value().takeLast();
+    }
+
     // Remove the entry if the queue is empty
     if (it.value().count() == 0) {
       m_requestsQueuesContainer.remove(requestPacketType);
