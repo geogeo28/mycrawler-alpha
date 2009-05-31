@@ -68,7 +68,7 @@ private slots:
 private slots:
     void slotClientError(QAbstractSocket::SocketError error);
     void slotClientTimeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void slotClientErrorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
     void slotClientConnectionStateChanged(MCClient::ConnectionState state);
 
 protected:

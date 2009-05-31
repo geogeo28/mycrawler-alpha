@@ -76,13 +76,14 @@ void MCClientThread::run() {
   qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
   qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
+  qRegisterMetaType<MCClientPeer::ErrorBehavior>("MCClientPeer::ErrorBehavior");
   qRegisterMetaType<CNetworkInfo>("CNetworkInfo");
   qRegisterMetaType<MCServerInfo>("MCServerInfo");
 
   // Receive 'message'
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
-  QObject::connect(&clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(&clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(&clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
   QObject::connect(&clientPeer, SIGNAL(authenticated(const CNetworkInfo&)), this, SLOT(peerAuthenticated_(const CNetworkInfo&)));
   QObject::connect(&clientPeer, SIGNAL(serverInfoRequest()), this, SLOT(peerServerInfoRequest_()));
@@ -90,6 +91,7 @@ void MCClientThread::run() {
   // Send 'message'
   QObject::connect(this, SIGNAL(callPeerRefuseConnection_(const QString&)), &clientPeer, SLOT(refuseConnection(const QString&)));
   QObject::connect(this, SIGNAL(callPeerSendHandShake_()), &clientPeer, SLOT(sendHandShake()));
+  QObject::connect(this, SIGNAL(callPeerSendRequestDenied_(MCClientPeer::PacketType)), &clientPeer, SLOT(sendRequestDenied(MCClientPeer::PacketType)));
   QObject::connect(this, SIGNAL(callPeerServerInfoResponse_(const MCServerInfo&)), &clientPeer, SLOT(sendServerInfoResponse(const MCServerInfo&)));
 
   // Could not attach the socket of the client peer from the socket descriptor

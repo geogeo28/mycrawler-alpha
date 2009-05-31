@@ -24,7 +24,7 @@
 #define CLIENTPEER_H
 
 #include <QTcpSocket>
-#include <QList>
+#include <QStringList>
 #include <QQueue>
 #include <QMap>
 
@@ -46,10 +46,10 @@ class MCClientPeer : public QTcpSocket
 
 public:
     enum {
-      SystemPacketsStart   = 0,    SystemPacketsEnd = 1023,
-      RequestPacketsStart  = 1024, RequestPacketsEnd = 2047,
+      SystemPacketsStart   = 0,    SystemPacketsEnd   = 1023,
+      RequestPacketsStart  = 1024, RequestPacketsEnd  = 2047,
       ResponsePacketsStart = 2048, ResponsePacketsEnd = 3071,
-      MessagePacketsStart  = 3072, MessagePacketsEnd = 4096
+      MessagePacketsStart  = 3072, MessagePacketsEnd  = 4096
     };
 
     typedef enum {
@@ -65,6 +65,7 @@ public:
       KeepAlivePacket = SystemPacketsStart,
       AuthenticationPacket,
       ConnectionRefusedPacket,
+      RequestDeniedPacket,
 
       ServerInfoRequestPacket = RequestPacketsStart, // Starting requests
       SeedUrlsRequestPacket,
@@ -80,8 +81,16 @@ public:
       ProtocolIdError,
       ProtocolVersionError,
       AuthenticationError,
-      ResponseWithoutRequestError
-    } PacketError;        
+      ResponseWithoutRequestError,
+      InvalidPacketContentError
+    } PacketError;
+
+    typedef enum {
+      UnknownBehavior,
+      AbortBehavior,
+      DropPacketBehavior,
+      ContinueBehavior
+    } ErrorBehavior;
 
 public:
     MCClientPeer(QObject* parent = NULL);
@@ -123,12 +132,14 @@ public:
     static QString timeoutNotifyToString(TimeoutNotify notify);
     static QString packetTypeToString(PacketType packetType);
     static QString packetErrorToString(PacketError error);
+    static QString errorBehaviorToString(ErrorBehavior errorBehavior);
 
 signals:
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType packetType, quint32 packetSize, bool aborted);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType packetType, quint32 packetSize, MCClientPeer::ErrorBehavior errorBehavior);
     void handShakeReceived();
     void authenticated(const CNetworkInfo& info);
+    void requestDenied(PacketType requestPacketType);
     void packetSent(MCClientPeer::PacketType packetType, quint32 packetSize);
     void packetReceived(MCClientPeer::PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo requestInfo);
 
@@ -136,19 +147,20 @@ signals:
     void seedUrlsRequest();
 
     void serverInfoResponse(const MCServerInfo& serverInfo);
-    void seedUrlsResponse(const QList<QString>& urls);
+    void seedUrlsResponse(const QStringList& urls);
 
 public slots:
     void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
     void sendHandShake() { sendHandShakePacket_(); }
     void sendAuthentication() { sendAuthenticationPacket_(); }
+    void sendRequestDenied(MCClientPeer::PacketType requestPacketType) { sendRequestDeniedPacket_(requestPacketType); }
 
     void sendServerInfoRequest() { sendServerInfoRequestPacket_(); }
     void sendSeedUrlsRequest() { sendSeedUrlsRequestPacket_(); }
 
     void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
-    void sendSeedUrlsResponse(const QList<QString>& urls) { sendSeedUrlsResponsePacket_(urls); }
+    void sendSeedUrlsResponse(const QStringList& urls) { sendSeedUrlsResponsePacket_(urls); }
 
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
@@ -158,7 +170,7 @@ protected:
     void timerEvent(QTimerEvent *event);
 
 private:
-    void errorProcessingPacket_(MCClientPeer::PacketError error, bool aborted = true);
+    void errorProcessingPacket_(MCClientPeer::PacketError error, ErrorBehavior errorBehavior = AbortBehavior);
 
     void sendPacket_(PacketType packetType, const QByteArray& data = QByteArray());
     template <class T> void sendPacket_(PacketType packetType, const T& data);
@@ -166,16 +178,18 @@ private:
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
     void sendConnectionRefusedPacket_(const QString& reason = QString());
+    void sendRequestDeniedPacket_(PacketType requestPacketType);
 
     void sendServerInfoRequestPacket_();
     void sendSeedUrlsRequestPacket_();
 
     void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
-    void sendSeedUrlsResponsePacket_(const QList<QString>& urls);
+    void sendSeedUrlsResponsePacket_(const QStringList& urls);
 
  private:
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
     void processConnectionRefusedPacket_(QDataStream& data);
+    void processRequestDeniedPacket_(QDataStream& data);
 
     void processServerInfoRequestPacket_();
     void processSeedUrlsRequestPacket_();
@@ -239,12 +253,17 @@ public:
     typedef QQueue<MCClientPeerRequestInfo> RequestsQueue;
     typedef QMap<MCClientPeer::PacketType,RequestsQueue> RequestsQueuesContainer;
 
+    typedef enum {
+      FirstRequest,
+      LastRequest
+    } RequestPosition;
+
 public:
     MCClientPeerRequestsQueuesContainer();
 
     int requestCount(MCClientPeer::PacketType requestPacketType) const;
     MCClientPeerRequestInfo addRequest(MCClientPeer::PacketType requestPacketType);
-    MCClientPeerRequestInfo takeRequest(MCClientPeer::PacketType requestPacketType);
+    MCClientPeerRequestInfo takeRequest(MCClientPeer::PacketType requestPacketType, RequestPosition requestPosition);
 
     QString dumpPendingRequests() const;
 

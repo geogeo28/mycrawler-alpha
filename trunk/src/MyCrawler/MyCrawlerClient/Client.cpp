@@ -65,7 +65,7 @@ MCClient::MCClient(QObject* parent)
   // Other connections
   QObject::connect(&m_clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
   QObject::connect(&m_clientPeer, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SIGNAL(timeout(MCClientPeer::TimeoutNotify)));
-  QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(&m_clientPeer, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(&m_clientPeer, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(peerStateChanged_(QAbstractSocket::SocketState)));
   QObject::connect(&m_clientPeer, SIGNAL(handShakeReceived()), this, SLOT(peerHandShakeReceived_()));
   QObject::connect(&m_clientPeer, SIGNAL(serverInfoResponse(const MCServerInfo&)), this, SLOT(peerServerInfoResponse_(const MCServerInfo&)));
@@ -105,6 +105,10 @@ QString MCClient::connectionStateToString(ConnectionState state) {
       return QT_TRANSLATE_NOOP(MCClientThread, "Unknown state");
   }
 }
+
+/*QString MCClient::stateToString(State state) {
+
+}*/
 
 void MCClient::disconnect(int msecs) {
   m_clientPeer.disconnect(msecs);

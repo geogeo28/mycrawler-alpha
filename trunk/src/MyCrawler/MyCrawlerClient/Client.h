@@ -46,6 +46,12 @@ public:
       ClosingState
     } ConnectionState;
 
+    /*typedef enum {
+      UnavailableState,
+      IdleState,
+      WaitForAResponseState,
+    } State;*/
+
 public:
     static MCClient* instance();
     static void destroy();   
@@ -73,11 +79,12 @@ public:
 
 public:
     static QString connectionStateToString(ConnectionState state);
+    //static QString stateToString(State state);
 
 signals:
     void error(QAbstractSocket::SocketError error);
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
-    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted);
+    void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
     void connectionStateChanged(MCClient::ConnectionState state);
     void connected();
     void disconnected();

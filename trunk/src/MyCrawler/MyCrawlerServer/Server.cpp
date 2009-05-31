@@ -187,11 +187,11 @@ void MCServer::clientTimeout_(MCClientPeer::TimeoutNotify notifiedWhen) {
   emit clientTimeout(client, notifiedWhen);
 }
 
-void MCServer::clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, bool aborted) {
+void MCServer::clientErrorProcessingPacket_(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior) {
   MCClientThread* client = senderClientThread_();
   AssertCheckPtr(client);
 
-  emit clientErrorProcessingPacket(client, error, type, size, aborted);
+  emit clientErrorProcessingPacket(client, error, type, size, errorBehavior);
 }
 
 void MCServer::clientConnectionStateChanged_(MCClientThread::ConnectionState state) {
@@ -324,11 +324,12 @@ void MCServer::incomingConnection(int socketDescriptor) {
   qRegisterMetaType<MCClientPeer::TimeoutNotify>("MCClientPeer::TimeoutNotify");
   qRegisterMetaType<MCClientPeer::PacketType>("MCClientPeer::PacketType");
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
+  qRegisterMetaType<MCClientPeer::ErrorBehavior>("MCClientPeer::ErrorBehavior");
   qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
 
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
-  QObject::connect(client, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(clientErrorProcessingPacket_(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(client, SIGNAL(errorProcessingPacket(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SLOT(clientErrorProcessingPacket_(MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(client, SIGNAL(connectionStateChanged(MCClientThread::ConnectionState)), this, SLOT(clientConnectionStateChanged_(MCClientThread::ConnectionState)));
   QObject::connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected_()));
   QObject::connect(client, SIGNAL(finished()), this, SLOT(clientFinished_()));

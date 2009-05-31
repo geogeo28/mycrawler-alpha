@@ -106,7 +106,7 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(stateChanged(MCServer::State)), this, SLOT(slotServerStateChanged(MCServer::State)));
   QObject::connect(MCServer::instance(), SIGNAL(clientError(MCClientThread*, MCClientThread::Error)), this, SLOT(slotClientError(MCClientThread*, MCClientThread::Error)));
   QObject::connect(MCServer::instance(), SIGNAL(clientTimeout(MCClientThread*, MCClientPeer::TimeoutNotify)), this, SLOT(slotClientTimeout(MCClientThread*,MCClientPeer::TimeoutNotify)));
-  QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,bool)));
+  QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionRefused(MCClientThread*,QString)), this, SLOT(slotClientConnectionRefused(MCClientThread*,QString)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
 }
@@ -333,7 +333,7 @@ void MCServerMainWindow::slotClientTimeout(MCClientThread* client, MCClientPeer:
 
 void MCServerMainWindow::slotClientErrorProcessingPacket(
   MCClientThread* client, MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size,
-  bool aborted
+  MCClientPeer::ErrorBehavior errorBehavior
 )
 {
   treeWidgetServerLog->write(
@@ -347,9 +347,9 @@ void MCServerMainWindow::slotClientErrorProcessingPacket(
       .arg(MCClientPeer::packetErrorToString(error))
       .arg(error)
       .arg(
-      (aborted == true)?
+      (errorBehavior == MCClientPeer::AbortBehavior)?
       "To prevent of a DoS attack, the connection with the client was aborted.":
-      "Packet dropped."),
+      MCClientPeer::errorBehaviorToString(errorBehavior)),
     Qt::red, QFont::Bold
   );
 }
