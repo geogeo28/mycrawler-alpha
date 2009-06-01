@@ -53,8 +53,10 @@ X The class MCServer must be thread-safe. Added Read/Write mutex. Keep an eye on
 - Bug : Column' state of the Tree Widget MCClientsTreeWidget is lost when another form is selected and the application is closed.
 - MCClientThread* must be const MCClientThread* in signals of MCServer.
 
+
 MyCrawlerClient :
 -----------------
 X Store MCServerInfo in each item of MCServersTreeWidget.
 (2009-05-26 Rev 144) - Load the proxy settings before call the method 'connectToHost' of MCClient.
 (2009-05-26 Rev 144) - Add an enumerate type 'Connection states' in MCClient (Connecting even during authenticating...).
+- When a client is disconnected to the server, the urls in queue must be clear... ?
