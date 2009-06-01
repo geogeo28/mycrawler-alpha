@@ -111,7 +111,6 @@ void MCServersTreeWidget::on_connectToServer() {
   QString name = item->text(NameColumn);
 
   MCClientApplication::instance()->mainWindow()->flushServersToConnectList();
-  MCApp->loadSettingsProxyConfiguration();
   MCClient::instance()->connectToHost(MCServerInfo(QHostAddress(ip), port, name));
 }
 

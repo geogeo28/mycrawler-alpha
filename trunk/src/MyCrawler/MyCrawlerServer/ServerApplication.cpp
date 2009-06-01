@@ -157,6 +157,9 @@ void MCServerApplication::saveSettingsServerConnection(
     settings()->setValue("Name", name);
     settings()->setValue("MaxConnections", maxConnections);
   settings()->endGroup();
+
+  // Load settings saved
+  loadSettingsServerConnection();
 }
 
 void MCServerApplication::loadSettingsProxyConfiguration() {
@@ -193,6 +196,9 @@ void MCServerApplication::saveSettingsProxyConfiguration(
     settings()->setValue("UserName", userName);
     settings()->setValue("UserPassword", password.toUtf8().toBase64());
   settings()->endGroup();
+
+  // Load settings saved
+  loadSettingsProxyConfiguration();
 }
 
 void MCServerApplication::loadSettingsServerHistory() {

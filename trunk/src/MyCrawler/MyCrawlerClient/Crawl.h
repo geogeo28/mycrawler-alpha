@@ -25,14 +25,35 @@
 
 #include <QObject>
 
+#include "UrlInfo.h"
+#include "UrlsCollection.h"
+
+class NetworkManagerThread;
+class CNetworkManager;
+
 class MCCrawl : public QObject
 {
     Q_OBJECT
 
 public:
-    MCCrawl* instance();
+    MCCrawl(CNetworkManager* networkManager, quint32 depth = 5, QObject* parent = NULL);
 
-    MCCrawl(QObject* parent = NULL);
+public slots:
+    //void start();
+    //void stop();
+
+private slots:
+    void queueUrlAdded_(MCUrlInfo urlInfo);
+    void networkManagerFinished_(const NetworkManagerThread* networkThread);
+
+private:
+    void analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent);
+
+private:
+    CNetworkManager* m_pNetworkManager;
+
+    quint32 m_u32Depth;
+    bool m_bStarted;
 };
 
 #endif // CRAWL_H

@@ -91,6 +91,10 @@ void MCClientMainWindow::setupForms_() {
   MCSettings->loadLayout<QTreeWidget>(treeWidgetCrawlerUrlsInQueue, "CrawlerUrlsInQueueTreeWidget");
   treeWidgetCrawlerUrlsInQueue->setupHeaderContextMenu();
 
+  treeWidgetCrawlerUrlsCrawled->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetCrawlerUrlsCrawled, "CrawlerUrlsCrawledTreeWidget");
+  treeWidgetCrawlerUrlsCrawled->setupHeaderContextMenu();
+
   treeWidgetThreadsInfos->setup(MCClientApplication::instance()->networkManager()); // (must be deprecated)
 }
 
@@ -131,6 +135,7 @@ void MCClientMainWindow::closeWindow_() {
   MCSettings->saveLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetCrawlerUrlsInQueue, "CrawlerUrlsInQueueTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetCrawlerUrlsCrawled, "CrawlerUrlsCrawledTreeWidget");
   MCSettings->saveLayout(this, "ClientMainWindow"); // Window layout
 
   MCApp->saveSettings();
@@ -395,7 +400,6 @@ void MCClientMainWindow::closeEvent(QCloseEvent* event) {
 }
 
 void MCClientMainWindow::connectClient_(const MCServerInfo& serverInfo) {
-  MCApp->loadSettingsProxyConfiguration();
   MCClient::instance()->connectToHost(serverInfo);
 }
 
