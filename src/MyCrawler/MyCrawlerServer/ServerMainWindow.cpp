@@ -394,9 +394,6 @@ void MCServerMainWindow::closeEvent(QCloseEvent* event) {
 }
 
 bool MCServerMainWindow::connectServer_() {
-  MCApp->loadSettingsServerConnection();
-  MCApp->loadSettingsProxyConfiguration();
-
   if (MCServer::instance()->listenAddress().isNull()) {
     QMessageBox::critical(
       this, QApplication::applicationName(),

@@ -47,6 +47,7 @@ void MCClientApplication::destroy() {
 void MCClientApplication::init_() {
   m_pMainWindow = new MCClientMainWindow();
   m_pUrlsInQueue = new MCUrlsCollection();
+  m_pUrlsCrawled = new MCUrlsCollection();
 
   // Crawler (must be deprecated)
   m_bCrawlerActivated = false;
@@ -61,6 +62,8 @@ void MCClientApplication::init_() {
   m_pNetworkManager->setProxy(MCClientApplication::proxy());
 
   m_pNetworkManager->setBaseRequest(request);
+
+  m_pCrawl = new MCCrawl(m_pNetworkManager);
 }
 
 void MCClientApplication::cleanAll_() {
@@ -69,9 +72,11 @@ void MCClientApplication::cleanAll_() {
 
   delete m_pMainWindow;
   delete m_pUrlsInQueue;
+  delete m_pUrlsCrawled;
 
-  // Crawler (must be deprecated)
+  // (must be deprecated)
   delete m_pNetworkManager;
+  delete m_pCrawl;
 
   cleanupResources();
 }
@@ -165,7 +170,9 @@ void MCClientApplication::loadSettingsProxyConfiguration() {
       proxy.setType(QNetworkProxy::HttpProxy);
     }
   settings()->endGroup();
+
   IApplication::setProxy(proxy);
+  m_pNetworkManager->setProxy(QNetworkProxy(proxy.type(), proxy.hostName(), proxy.port(), proxy.user(), proxy.password()));
 }
 
 void MCClientApplication::saveSettingsProxyConfiguration(
@@ -184,6 +191,9 @@ void MCClientApplication::saveSettingsProxyConfiguration(
     settings()->setValue("UserName", userName);
     settings()->setValue("UserPassword", password.toUtf8().toBase64());
   settings()->endGroup();
+
+  // Load settings saved
+  loadSettingsProxyConfiguration();
 }
 
 void MCClientApplication::run() {

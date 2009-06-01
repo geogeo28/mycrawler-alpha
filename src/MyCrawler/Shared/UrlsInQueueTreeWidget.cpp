@@ -37,7 +37,7 @@ static const MyQTreeWidgetHeaderItem ColumnsHeader[] = {
   (MyQTreeWidgetHeaderItem){NULL, "Url",             -1, false}
 };
 static const int ColumnsHeaderCount = 4;
-static const int ColumnSortedIndex = MCUrlsInQueueTreeWidget::OrderColumn;
+static const int ColumnSortedIndex = -1;
 
 void MCUrlsInQueueTreeWidget::cleanAll_() {
 

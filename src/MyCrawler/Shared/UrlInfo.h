@@ -34,8 +34,8 @@ class MCUrlInfo
 {
 public:
     MCUrlInfo();
-    explicit MCUrlInfo(const QUrl& url, quint32 depth = 0);
-    explicit MCUrlInfo(const QString& url, quint32 depth = 0);
+    explicit MCUrlInfo(const QUrl& url, quint32 depth = 0, MCUrlInfo parent = MCUrlInfo());
+    explicit MCUrlInfo(const QString& url, quint32 depth = 0, MCUrlInfo parent = MCUrlInfo());
 
     MCUrlInfo(const MCUrlInfo &other);
     MCUrlInfo& operator=(const MCUrlInfo& urlInfo);
@@ -48,6 +48,8 @@ public:
     quint32 depth() const;
     void setDepth(quint32 depth);
 
+    MCUrlInfo parent() const;
+
     MCUrlInfo clone() const;
 
     void setData(const QString& name, const QVariant& data);
@@ -57,6 +59,9 @@ public:
     static QUrl decodedUrl(const QUrl& url);
     static QUrl decodedUrl(const QString& url);
     static QUrl absoluteUrl(const QString& base, const QString& relative);
+
+private:
+    MCUrlInfo(const QExplicitlySharedDataPointer<MCUrlInfoPrivate>& d);
 
 private:
     QExplicitlySharedDataPointer<MCUrlInfoPrivate> d;

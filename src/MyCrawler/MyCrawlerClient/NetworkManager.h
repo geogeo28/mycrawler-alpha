@@ -51,6 +51,8 @@ class NetworkManagerThread {
     void start(QNetworkReply* reply, MCUrlInfo urlInfo);
     void end();
 
+    MCUrlInfo urlInfo() const { return m_urlInfo; }
+
   private:
     bool m_bInProcess;
     int m_nId;
@@ -78,6 +80,8 @@ class CNetworkManager : public QObject
   public:
     CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int threads = 5, QObject* parent = NULL);
     virtual ~CNetworkManager();
+
+    MCUrlsCollection& pendingRequestsCollection() const { return m_lstPendingRequests; }
 
     QNetworkRequest& baseRequest() {return m_baseRequest;}
     void setBaseRequest(const QNetworkRequest& baseRequest) {m_baseRequest = baseRequest;}
@@ -123,8 +127,6 @@ class CNetworkManager : public QObject
     void slotNetworkReplyError(QNetworkReply::NetworkError error);
     void slotNetworkReplyFinished(QNetworkReply* reply);
     void slotTransferRateUpdated();
-
-    void slotAddUrl_(MCUrlInfo urlInfo);
 
   private:
     NetworkManagerThread* thread_(const QNetworkReply* reply) {return qVariantValue<NetworkManagerThread*>(reply->property("Thread"));}

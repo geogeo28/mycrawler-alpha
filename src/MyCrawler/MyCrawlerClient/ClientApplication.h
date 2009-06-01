@@ -33,6 +33,7 @@
 
 // Crawler (must be deprecated)
 #include "NetworkManager.h"
+#include "Crawl.h"
 
 class MCClientApplication : public IApplication
 {
@@ -49,8 +50,10 @@ public:
 
  public:
     MCClientMainWindow* mainWindow() { return m_pMainWindow; }
-    CNetworkManager* networkManager() { return m_pNetworkManager; } // Crawler (must be deprecated)
     MCUrlsCollection* urlsInQueue() { return m_pUrlsInQueue; }
+    MCUrlsCollection* urlsCrawled() { return m_pUrlsCrawled; }
+    CNetworkManager* networkManager() { return m_pNetworkManager; } // (must be deprecated)
+    MCCrawl* crawl() { return m_pCrawl; } // (must be deprecated)
 
   // Resources
  public:
@@ -80,10 +83,12 @@ private:
 	
     QPointer<MCClientMainWindow> m_pMainWindow;
     QPointer<MCUrlsCollection> m_pUrlsInQueue;
+    QPointer<MCUrlsCollection> m_pUrlsCrawled;
 
-    // Crawler (must be deprecated)
+    // (must be deprecated)
     bool m_bCrawlerActivated;
     QPointer<CNetworkManager> m_pNetworkManager;
+    QPointer<MCCrawl> m_pCrawl;
 };
 
 #define MCApp         MCClientApplication::instance()

@@ -90,10 +90,6 @@ CNetworkManager::CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int th
     m_pNetworkManager, SIGNAL(finished(QNetworkReply*)),
     this, SLOT(slotNetworkReplyFinished(QNetworkReply*))
   );
-
-  qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
-
-  QObject::connect(&m_lstPendingRequests, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotAddUrl_(MCUrlInfo)), Qt::QueuedConnection);
 }
 
 CNetworkManager::~CNetworkManager() {
@@ -160,7 +156,7 @@ void CNetworkManager::slotSslErrors(QNetworkReply* reply, const QList<QSslError>
 }
 
 void CNetworkManager::slotNetworkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal) {
-  qDebug() << "NetworkManager download progress";
+  //qDebug() << "NetworkManager download progress";
   QNetworkReply* reply = qobject_cast<QNetworkReply*>(this->sender());
   //transferRateManager(reply)->start();
 
@@ -180,15 +176,18 @@ void CNetworkManager::slotNetworkReplyDownloadProgress(qint64 bytesReceived, qin
     // Gestion redirection
     QUrl urlRedirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
     if (!urlRedirection.isEmpty()) {
-      urlRedirection = reply->url().resolved(urlRedirection);
+      urlRedirection = reply->url().resolved(urlRedirection);     
 
       // Si redirection différente
-      if (urlRedirection!=reply->url()) {
-        emit redirection(urlRedirection, thread_(reply));
-        m_lstReplies.removeOne(reply);
-        reply->abort(); // On annule la requête en cours
+      if (urlRedirection!=reply->url()) {        
+        // Only the HTTP protocol is supported
+        if (urlRedirection.scheme().toLower() == "http") {
+          emit redirection(urlRedirection, thread_(reply));
+          m_lstReplies.removeOne(reply);
+          reply->abort(); // On annule la requête en cours
 
-        return;
+          return;
+        }
       }
     }
 
@@ -226,22 +225,26 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
   m_lstReplies.removeOne(reply);
   if (!m_lstReplies.removeOne(reply) && urlRedirection.isValid()) {
     urlRedirection = reply->url().resolved(urlRedirection);
-    QNetworkReply* newReply = this->doRequest_(urlRedirection);
 
-    // Copie les propriétés
-    foreach (const QByteArray& propertyName, reply->dynamicPropertyNames())
-      newReply->setProperty(propertyName, reply->property(propertyName));
-    pThread->setReply(newReply);
+    // Only the HTTP protocol is supported
+    if (urlRedirection.scheme().toLower() == "http") {
+      QNetworkReply* newReply = this->doRequest_(urlRedirection);
 
-    reply->setProperty("Thread", QVariant());
-    reply->setProperty("ThreadId", QVariant());
+      // Copie les propriétés
+      foreach (const QByteArray& propertyName, reply->dynamicPropertyNames())
+        newReply->setProperty(propertyName, reply->property(propertyName));
+      pThread->setReply(newReply);
 
-    reply->close();
-    reply->deleteLater();
-    reply = NULL;
+      reply->setProperty("Thread", QVariant());
+      reply->setProperty("ThreadId", QVariant());
 
-    emit started(pThread);
-    return;
+      reply->close();
+      reply->deleteLater();
+      reply = NULL;
+
+      emit started(pThread);
+      return;
+    }
   }
 
   if (!reply->error())
@@ -274,10 +277,6 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
     nextPendingRequest_(pThread->id());
 }
 
-void CNetworkManager::slotAddUrl_(MCUrlInfo urlInfo) {
-  setProcessingPendingRequests(true);
-}
-
 void CNetworkManager::slotTransferRateUpdated() {
   const CTransferRate* transferRateManager = qobject_cast<const CTransferRate*>(this->sender());
   const QNetworkReply* reply = qobject_cast<QNetworkReply*>(transferRateManager->parent());
@@ -289,7 +288,7 @@ QNetworkReply* CNetworkManager::doRequest_(const QUrl& url) {
   m_baseRequest.setUrl(url);
 
   // Check proxy !
-  m_pNetworkManager->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, "proxyweb.utc.fr", 3128));
+  //m_pNetworkManager->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, "proxyweb.utc.fr", 3128));
   QNetworkReply* reply = m_pNetworkManager->get(m_baseRequest);
   Q_CHECK_PTR(reply); // Normalement cela ne doit jamais se produire !
 
