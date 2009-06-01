@@ -615,9 +615,10 @@ void MCClientPeer::processServerInfoResponsePacket_(const MCClientPeerRequestInf
 void MCClientPeer::processSeedUrlResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data) {
   Q_UNUSED(requestInfo);
 
-  QStringList urls;
-  data >> urls;
-  emit seedUrlResponse(urls);
+  QString url;   data >> url;
+  quint32 depth; data >> depth;
+
+  emit seedUrlResponse(url, depth);
 }
 
 void MCClientPeer::initConnection_() {

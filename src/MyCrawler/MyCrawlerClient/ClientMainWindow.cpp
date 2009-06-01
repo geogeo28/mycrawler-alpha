@@ -86,8 +86,12 @@ void MCClientMainWindow::setupForms_() {
   MCSettings->loadLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
   treeWidgetServers->setupHeaderContextMenu();
 
-  // Crawler (must be deprecated)
-  treeWidgetThreadsInfos->setup(MCClientApplication::instance()->networkManager());
+  // Crawler
+  treeWidgetCrawlerUrlsInQueue->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetCrawlerUrlsInQueue, "CrawlerUrlsInQueueTreeWidget");
+  treeWidgetCrawlerUrlsInQueue->setupHeaderContextMenu();
+
+  treeWidgetThreadsInfos->setup(MCClientApplication::instance()->networkManager()); // (must be deprecated)
 }
 
 void MCClientMainWindow::setupStatusBar_() {
@@ -126,6 +130,7 @@ void MCClientMainWindow::closeWindow_() {
 
   MCSettings->saveLayout<QTreeWidget>(treeWidgetClientLog, "ClientLogTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetServers, "ServersTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetCrawlerUrlsInQueue, "CrawlerUrlsInQueueTreeWidget");
   MCSettings->saveLayout(this, "ClientMainWindow"); // Window layout
 
   MCApp->saveSettings();

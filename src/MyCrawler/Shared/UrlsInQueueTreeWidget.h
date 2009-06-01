@@ -1,5 +1,5 @@
 /****************************************************************************
- * @(#) MyCrawler server. Tree Widget of urls in queue.
+ * @(#) Tree Widget of urls in queue.
  * GUI interface
  *
  * Copyright (C) 2009 by ANNEHEIM Geoffrey and PORTEJOIE Julien

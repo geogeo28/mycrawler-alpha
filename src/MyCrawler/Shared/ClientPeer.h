@@ -147,7 +147,7 @@ signals:
     void seedUrlRequest();
 
     void serverInfoResponse(const MCServerInfo& serverInfo);
-    void seedUrlResponse(const QStringList& urls);
+    void seedUrlResponse(const QString& url, quint32 depth);
 
 public slots:
     void refuseConnection(const QString& reason = QString());

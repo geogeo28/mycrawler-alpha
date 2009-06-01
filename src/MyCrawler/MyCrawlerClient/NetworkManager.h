@@ -28,11 +28,18 @@
 #include <QQueue>
 #include <qsslconfiguration.h>
 
+#include "UrlInfo.h"
+#include "UrlsCollection.h"
+
+#include "ClientApplication.h"
+
 class CTransferRate;
+
+class MCUrlsCollection;
 
 class NetworkManagerThread {
   public:
-    NetworkManagerThread(int id = -1, QNetworkReply* reply = NULL);
+    NetworkManagerThread(int id = -1, QNetworkReply* reply = NULL, MCUrlInfo urlInfo = MCUrlInfo());
 
     int id() const {return m_nId;}
     void setId(int id) {m_nId = id;}
@@ -41,7 +48,7 @@ class NetworkManagerThread {
     int count() const {return m_nCount;}
     bool inProcess() const {return m_bInProcess;}
 
-    void start(QNetworkReply* reply);
+    void start(QNetworkReply* reply, MCUrlInfo urlInfo);
     void end();
 
   private:
@@ -49,6 +56,8 @@ class NetworkManagerThread {
     int m_nId;
     int m_nCount;
     QNetworkReply* m_pReply;
+
+    MCUrlInfo m_urlInfo;
 };
 
 Q_DECLARE_METATYPE(NetworkManagerThread*)
@@ -67,21 +76,21 @@ class CNetworkManager : public QObject
     void setProxy(const QNetworkProxy& proxy) {m_pNetworkManager->setProxy(proxy);}
 
   public:
-    CNetworkManager(int threads = 0, QObject* parent = NULL);
+    CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int threads = 5, QObject* parent = NULL);
     virtual ~CNetworkManager();
 
     QNetworkRequest& baseRequest() {return m_baseRequest;}
     void setBaseRequest(const QNetworkRequest& baseRequest) {m_baseRequest = baseRequest;}
     const RepliesList& replies() const {return m_lstReplies;}
-    QNetworkReply* doRequest(const QUrl& url);
+    //QNetworkReply* doRequest(const QUrl& url);
 
     static CTransferRate* transferRateManager(QNetworkReply* reply);
 
     int numberOfThreads() const {return m_nThreads;}
-    bool addPendingRequest(const QUrl& url);
+    //bool addPendingRequest(const QUrl& url);
     bool processingPendingRequests() const {return m_bProcessingPendingRequests;}
-    void clearPendingRequests() {m_lstPendingRequests.clear();}
-    const QList<QUrl>& pendingRequests() const {return m_lstPendingRequests;}
+    //void clearPendingRequests() {m_lstPendingRequests.clear();}
+    //const QList<QUrl>& pendingRequests() const {return m_lstPendingRequests;}
     bool hasPendingRequests() const {return !m_lstPendingRequests.isEmpty();}
     const NetworkManagerThread* thread(int thread) const;
     const NetworkManagerThread* thread(const QNetworkReply* reply) const;
@@ -115,6 +124,8 @@ class CNetworkManager : public QObject
     void slotNetworkReplyFinished(QNetworkReply* reply);
     void slotTransferRateUpdated();
 
+    void slotAddUrl_(MCUrlInfo urlInfo);
+
   private:
     NetworkManagerThread* thread_(const QNetworkReply* reply) {return qVariantValue<NetworkManagerThread*>(reply->property("Thread"));}
     NetworkManagerThread* thread_(int thread) {Q_ASSERT((thread>=0) && (thread < numberOfThreads())); return &m_lstThreads[thread];}
@@ -129,10 +140,11 @@ class CNetworkManager : public QObject
     RepliesList m_lstReplies;
 
     int m_nThreads;
-    QQueue<QUrl> m_lstPendingRequests;
+    //QQueue<QUrl> m_lstPendingRequests;
     NetworkManagerThread* m_lstThreads;
     bool m_bProcessingPendingRequests;
 
+    MCUrlsCollection& m_lstPendingRequests;
 
   private:
     CNetworkManager(const CNetworkManager& other);
