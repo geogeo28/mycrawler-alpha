@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabClientLog">
        <attribute name="title">
@@ -364,7 +364,85 @@
           </property>
           <layout class="QVBoxLayout">
            <item>
-            <widget class="QListView" name="listViewCrawlerUrlsInQueue"/>
+            <widget class="MCUrlsInQueueTreeWidget" name="treeWidgetCrawlerUrlsInQueue">
+             <property name="autoScroll">
+              <bool>false</bool>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::NoSelection</enum>
+             </property>
+             <property name="rootIsDecorated">
+              <bool>false</bool>
+             </property>
+             <property name="itemsExpandable">
+              <bool>false</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+             <property name="animated">
+              <bool>true</bool>
+             </property>
+             <property name="allColumnsShowFocus">
+              <bool>true</bool>
+             </property>
+             <property name="expandsOnDoubleClick">
+              <bool>false</bool>
+             </property>
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBoxCrawlerUrlsCrawled">
+          <property name="title">
+           <string>Urls crawled</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QTreeWidget" name="treeWidgetCrawlerUrlsCrawled">
+             <property name="autoScroll">
+              <bool>false</bool>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::NoSelection</enum>
+             </property>
+             <property name="rootIsDecorated">
+              <bool>true</bool>
+             </property>
+             <property name="itemsExpandable">
+              <bool>false</bool>
+             </property>
+             <property name="sortingEnabled">
+              <bool>true</bool>
+             </property>
+             <property name="animated">
+              <bool>true</bool>
+             </property>
+             <property name="allColumnsShowFocus">
+              <bool>true</bool>
+             </property>
+             <property name="expandsOnDoubleClick">
+              <bool>false</bool>
+             </property>
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -731,6 +809,11 @@
    <class>TreeWidgetThreadsInfos</class>
    <extends>QTreeWidget</extends>
    <header>TreeWidgetThreadsInfos.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsInQueueTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Shared/UrlsInQueueTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

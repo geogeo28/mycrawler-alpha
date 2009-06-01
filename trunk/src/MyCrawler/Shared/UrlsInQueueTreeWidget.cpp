@@ -21,7 +21,12 @@
 #include "Debug/Exception.h"
 
 #include "UrlsInQueueTreeWidget.h"
-#include "ServerApplication.h"
+
+#ifdef MYCRAWLER_SERVER
+  #include "ServerApplication.h"
+#else
+  #include "ClientApplication.h"
+#endif
 
 Q_DECLARE_METATYPE(QTreeWidgetItem*);
 
@@ -52,8 +57,10 @@ void MCUrlsInQueueTreeWidget::setup() {
   setPersistentColumnIndex(UrlColumn);
 
   // Signals/slots connections
-  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotAddUrl_(MCUrlInfo)));
-  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlRemoved(MCUrlInfo)), this, SLOT(slotRemoveUrl_(MCUrlInfo)));
+  qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
+
+  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotAddUrl_(MCUrlInfo)), Qt::QueuedConnection);
+  QObject::connect(MCApp->urlsInQueue(), SIGNAL(urlRemoved(MCUrlInfo)), this, SLOT(slotRemoveUrl_(MCUrlInfo)), Qt::QueuedConnection);
 }
 
 void MCUrlsInQueueTreeWidget::slotAddUrl_(MCUrlInfo urlInfo) {

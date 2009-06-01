@@ -265,9 +265,12 @@
               <bool>false</bool>
              </property>
              <property name="selectionMode">
-              <enum>QAbstractItemView::ExtendedSelection</enum>
+              <enum>QAbstractItemView::NoSelection</enum>
              </property>
              <property name="rootIsDecorated">
+              <bool>false</bool>
+             </property>
+             <property name="itemsExpandable">
               <bool>false</bool>
              </property>
              <property name="sortingEnabled">
@@ -341,7 +344,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QGroupBox" name="groupBoxTasksUrlsAnalyzed">
+         <widget class="QGroupBox" name="groupBoxTasksUrlsCrawled">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -355,11 +358,11 @@
            </size>
           </property>
           <property name="title">
-           <string>Urls analyzed</string>
+           <string>Urls crawled</string>
           </property>
           <layout class="QVBoxLayout">
            <item>
-            <widget class="QTreeWidget" name="treeWidgetTasksUrlsAnalyzed">
+            <widget class="QTreeWidget" name="treeWidgetTasksUrlsCrawled">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -376,7 +379,7 @@
               <bool>false</bool>
              </property>
              <property name="selectionMode">
-              <enum>QAbstractItemView::ExtendedSelection</enum>
+              <enum>QAbstractItemView::NoSelection</enum>
              </property>
              <property name="rootIsDecorated">
               <bool>false</bool>
@@ -680,14 +683,14 @@
    </slots>
   </customwidget>
   <customwidget>
-   <class>MCUrlsInQueueTreeWidget</class>
-   <extends>QTreeWidget</extends>
-   <header>UrlsInQueueTreeWidget.h</header>
-  </customwidget>
-  <customwidget>
    <class>MCUrlsInProgressTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>UrlsInProgressTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsInQueueTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Shared/UrlsInQueueTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

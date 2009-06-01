@@ -105,6 +105,7 @@ private slots:
     void peerRequestDenied_(MCClientPeer::PacketType requestPacketType);
     void peerHandShakeReceived_();
     void peerServerInfoResponse_(const MCServerInfo& serverInfo);
+    void peerSeedUrlResponse_(const QString& url, quint32 depth);
 
 protected:
     void timerEvent(QTimerEvent *event);

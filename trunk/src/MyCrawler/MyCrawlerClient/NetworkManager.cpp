@@ -21,17 +21,26 @@
 #include "NetworkManager.h"
 #include "TransferRate.h"
 
-NetworkManagerThread::NetworkManagerThread(int id, QNetworkReply* reply)
-  : m_bInProcess(false), m_nId(id), m_nCount(0), m_pReply(NULL)
+#include "Debug/Exception.h"
+
+#include "UrlsCollection.h"
+
+NetworkManagerThread::NetworkManagerThread(int id, QNetworkReply* reply, MCUrlInfo urlInfo)
+  : m_bInProcess(false), m_nId(id), m_nCount(0), m_pReply(NULL), m_urlInfo(urlInfo)
 {
-  if (reply) start(reply);
+  if (reply) {
+    Assert(urlInfo.isValid() == true);
+    start(reply, urlInfo);
+  }
 }
 
-void NetworkManagerThread::start(QNetworkReply* reply) {
+void NetworkManagerThread::start(QNetworkReply* reply, MCUrlInfo urlInfo) {
   Q_CHECK_PTR(reply);
+  Assert(urlInfo.isValid() == true);
   Q_ASSERT(m_bInProcess==false);
 
   m_pReply = reply;
+  m_urlInfo = urlInfo;
   m_bInProcess = true;
   ++m_nCount;
 }
@@ -41,10 +50,11 @@ void NetworkManagerThread::end() {
   m_bInProcess = false;
 }
 
-CNetworkManager::CNetworkManager(int threads, QObject* parent)
+CNetworkManager::CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int threads, QObject* parent)
   : QObject(parent),
     m_nThreads(threads), m_lstThreads(NULL),
-    m_bProcessingPendingRequests(false)
+    m_bProcessingPendingRequests(false),
+    m_lstPendingRequests(queueOfPendingRequest)
 {
   Q_ASSERT(threads>=0);
 
@@ -80,6 +90,10 @@ CNetworkManager::CNetworkManager(int threads, QObject* parent)
     m_pNetworkManager, SIGNAL(finished(QNetworkReply*)),
     this, SLOT(slotNetworkReplyFinished(QNetworkReply*))
   );
+
+  qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
+
+  QObject::connect(&m_lstPendingRequests, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotAddUrl_(MCUrlInfo)), Qt::QueuedConnection);
 }
 
 CNetworkManager::~CNetworkManager() {
@@ -87,7 +101,7 @@ CNetworkManager::~CNetworkManager() {
 }
 
 
-QNetworkReply* CNetworkManager::doRequest(const QUrl& url) {
+/*QNetworkReply* CNetworkManager::doRequest(const QUrl& url) {
   QNetworkReply* reply = doRequest_(url);
   reply->setProperty("Thread", qVariantFromValue(new NetworkManagerThread(-1, reply)));
   reply->setProperty("ThreadId", -1);
@@ -95,7 +109,7 @@ QNetworkReply* CNetworkManager::doRequest(const QUrl& url) {
 
   emit started(thread_(reply));
   return reply;
-}
+}*/
 
 void CNetworkManager::abortAll() {
   foreach (QNetworkReply* reply, m_lstReplies)
@@ -106,7 +120,7 @@ CTransferRate* CNetworkManager::transferRateManager(QNetworkReply* reply) {
   return reply->findChild<CTransferRate*>();
 }
 
-bool CNetworkManager::addPendingRequest(const QUrl& url) {
+/*bool CNetworkManager::addPendingRequest(const QUrl& url) {
   Q_ASSERT(numberOfThreads());
 
   if (m_lstPendingRequests.contains(url))
@@ -115,7 +129,7 @@ bool CNetworkManager::addPendingRequest(const QUrl& url) {
   m_lstPendingRequests.enqueue(url);
 
   return true;
-}
+}*/
 
 void CNetworkManager::setProcessingPendingRequests(bool processing) {
   //Q_ASSERT(m_bProcessingPendingRequests!=processing);
@@ -260,6 +274,10 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
     nextPendingRequest_(pThread->id());
 }
 
+void CNetworkManager::slotAddUrl_(MCUrlInfo urlInfo) {
+  setProcessingPendingRequests(true);
+}
+
 void CNetworkManager::slotTransferRateUpdated() {
   const CTransferRate* transferRateManager = qobject_cast<const CTransferRate*>(this->sender());
   const QNetworkReply* reply = qobject_cast<QNetworkReply*>(transferRateManager->parent());
@@ -269,6 +287,9 @@ void CNetworkManager::slotTransferRateUpdated() {
 
 QNetworkReply* CNetworkManager::doRequest_(const QUrl& url) {
   m_baseRequest.setUrl(url);
+
+  // Check proxy !
+  m_pNetworkManager->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, "proxyweb.utc.fr", 3128));
   QNetworkReply* reply = m_pNetworkManager->get(m_baseRequest);
   Q_CHECK_PTR(reply); // Normalement cela ne doit jamais se produire !
 
@@ -298,16 +319,18 @@ void CNetworkManager::nextPendingRequest_(int thread) {
   int thread_free = (thread==-1)?threadInWaiting_():thread;
   Q_ASSERT((processingPendingRequests()==true) && !m_lstPendingRequests.isEmpty() && (thread_free!=-1));
 
-  QUrl url = m_lstPendingRequests.dequeue();
+  MCUrlInfo urlInfo = m_lstPendingRequests.takeOne();
+  Assert(urlInfo.isValid() == true);
+
   if (m_lstPendingRequests.isEmpty())
     setProcessingPendingRequests(false);
 
-  QNetworkReply* reply = doRequest_(url);
-  m_lstThreads[thread_free].start(reply);
+  QNetworkReply* reply = doRequest_(urlInfo.url());
+  m_lstThreads[thread_free].start(reply, urlInfo);
 
   reply->setProperty("Thread", qVariantFromValue(&m_lstThreads[thread_free]));
   reply->setProperty("ThreadId", thread_free);
-  reply->setProperty("BaseUrl", url);
+  reply->setProperty("BaseUrl", urlInfo.url());
 
   emit started(&m_lstThreads[thread_free]);
 }

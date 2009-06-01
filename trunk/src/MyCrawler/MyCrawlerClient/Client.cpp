@@ -22,9 +22,12 @@
 #include "Debug/Logger.h"
 #include "Utilities/NetworkInfo.h"
 
-#include "Client.h"
-#include "ServersList.h"
 #include "ServerInfo.h"
+#include "UrlInfo.h"
+
+#include "Client.h"
+#include "ClientApplication.h"
+#include "ServersList.h"
 
 int MCClient::DefaultSeedUrlRequestInterval = 30 * 1000;
 
@@ -75,6 +78,7 @@ MCClient::MCClient(QObject* parent)
   QObject::connect(&m_clientPeer, SIGNAL(requestDenied(MCClientPeer::PacketType)), this, SLOT(peerRequestDenied_(MCClientPeer::PacketType)));
   QObject::connect(&m_clientPeer, SIGNAL(handShakeReceived()), this, SLOT(peerHandShakeReceived_()));
   QObject::connect(&m_clientPeer, SIGNAL(serverInfoResponse(const MCServerInfo&)), this, SLOT(peerServerInfoResponse_(const MCServerInfo&)));
+  QObject::connect(&m_clientPeer, SIGNAL(seedUrlResponse(const QString&,quint32)), this, SLOT(peerSeedUrlResponse_(QString,quint32)));
 }
 
 MCClient::~MCClient() {
@@ -192,6 +196,25 @@ void MCClient::peerServerInfoResponse_(const MCServerInfo& serverInfo) {
   // Set servers list information
   quint32 ip = m_clientPeer.peerAddress().toIPv4Address();
   MCServersList::instance()->updateServer(ip, serverInfo);
+}
+
+void MCClient::peerSeedUrlResponse_(const QString& url, quint32 depth) {
+  // Useless to wait another seed url.
+  if (m_idSeedUrlRequestTimer) {
+    killTimer(m_idSeedUrlRequestTimer);
+    m_idSeedUrlRequestTimer = 0;
+  }
+
+  MCUrlInfo urlInfo = MCUrlInfo(url, depth);
+
+  // Invalid Url received
+  if (urlInfo.isValid() == false) {
+    ILogger::Notice() << QString("The Url '%1' received is not valid. It couldn't be crawled.")
+                         .arg(url);
+    return;
+  }
+
+  MCApp->urlsInQueue()->addUrl(urlInfo);
 }
 
 void MCClient::timerEvent(QTimerEvent *event) {

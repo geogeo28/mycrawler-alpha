@@ -5,6 +5,8 @@ CONFIG += qt \
     thread \
     exception
 
+DEFINES += MYCRAWLER_SERVER
+
 # Debug build options
 CONFIG(debug, debug|release):CONFIG += console # Enable a read-only console window (i.e. for printf etc.)
 INCLUDEPATH += .

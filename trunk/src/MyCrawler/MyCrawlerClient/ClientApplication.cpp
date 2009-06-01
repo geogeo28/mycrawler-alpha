@@ -46,10 +46,11 @@ void MCClientApplication::destroy() {
 
 void MCClientApplication::init_() {
   m_pMainWindow = new MCClientMainWindow();
+  m_pUrlsInQueue = new MCUrlsCollection();
 
   // Crawler (must be deprecated)
   m_bCrawlerActivated = false;
-  m_pNetworkManager = new CNetworkManager(5);
+  m_pNetworkManager = new CNetworkManager(*m_pUrlsInQueue, 5);
 
   QNetworkRequest request;
   request.setRawHeader("Accept", "text/html");
@@ -60,8 +61,6 @@ void MCClientApplication::init_() {
   m_pNetworkManager->setProxy(MCClientApplication::proxy());
 
   m_pNetworkManager->setBaseRequest(request);
-
-  //m_pUrlsInQueue = new MCUrlsCollection();
 }
 
 void MCClientApplication::cleanAll_() {
@@ -69,11 +68,10 @@ void MCClientApplication::cleanAll_() {
   MCServersList::destroy();
 
   delete m_pMainWindow;
+  delete m_pUrlsInQueue;
 
   // Crawler (must be deprecated)
   delete m_pNetworkManager;
-
-  //delete m_pUrlsInQueue;
 
   cleanupResources();
 }
