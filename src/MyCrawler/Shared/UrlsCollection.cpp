@@ -18,7 +18,7 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QHash>
+#include <QMap>
 
 #include "Debug/Exception.h"
 
@@ -63,6 +63,10 @@ MCUrlsCollection::~MCUrlsCollection()
 
 bool MCUrlsCollection::isEmpty() const {
   return d->urls.isEmpty();
+}
+
+int MCUrlsCollection::count() const {
+  return d->urls.count();
 }
 
 bool MCUrlsCollection::urlExists(const QByteArray& hash) const {

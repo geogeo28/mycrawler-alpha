@@ -47,6 +47,7 @@ void MCServerApplication::destroy() {
 void MCServerApplication::init_() {
   m_pMainWindow = new MCServerMainWindow();
   m_pUrlsInQueue = new MCUrlsCollection();
+  m_pUrlsCrawled = new MCUrlsCollection();
 }
 
 void MCServerApplication::cleanAll_() {
@@ -55,6 +56,7 @@ void MCServerApplication::cleanAll_() {
 
   delete m_pMainWindow;
   delete m_pUrlsInQueue;
+  delete m_pUrlsCrawled;
 
   cleanupResources();
 }

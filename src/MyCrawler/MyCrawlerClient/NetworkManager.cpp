@@ -23,8 +23,6 @@
 
 #include "Debug/Exception.h"
 
-#include "UrlsCollection.h"
-
 NetworkManagerThread::NetworkManagerThread(int id, QNetworkReply* reply, MCUrlInfo urlInfo)
   : m_bInProcess(false), m_nId(id), m_nCount(0), m_pReply(NULL), m_urlInfo(urlInfo)
 {
@@ -50,11 +48,10 @@ void NetworkManagerThread::end() {
   m_bInProcess = false;
 }
 
-CNetworkManager::CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int threads, QObject* parent)
+CNetworkManager::CNetworkManager(int threads, QObject* parent)
   : QObject(parent),
     m_nThreads(threads), m_lstThreads(NULL),
-    m_bProcessingPendingRequests(false),
-    m_lstPendingRequests(queueOfPendingRequest)
+    m_bProcessingPendingRequests(false)
 {
   Q_ASSERT(threads>=0);
 
@@ -116,26 +113,24 @@ CTransferRate* CNetworkManager::transferRateManager(QNetworkReply* reply) {
   return reply->findChild<CTransferRate*>();
 }
 
-/*bool CNetworkManager::addPendingRequest(const QUrl& url) {
-  Q_ASSERT(numberOfThreads());
+void CNetworkManager::addPendingRequest(const MCUrlInfo& urlInfo) {
+  m_lstPendingRequests.enqueue(urlInfo);
 
-  if (m_lstPendingRequests.contains(url))
-    return false;
-
-  m_lstPendingRequests.enqueue(url);
-
-  return true;
-}*/
+  if (m_bProcessingPendingRequests == true) {
+    int iThread = threadInWaiting_();
+    if (iThread != -1) {
+      nextPendingRequest_(iThread);
+    }
+  }
+}
 
 void CNetworkManager::setProcessingPendingRequests(bool processing) {
   //Q_ASSERT(m_bProcessingPendingRequests!=processing);
   m_bProcessingPendingRequests = processing;
 
-  if (processing==true) {
-    Q_ASSERT(!m_lstPendingRequests.isEmpty());
-
+  if ((processing == true) && hasPendingRequests()) {
     // Distribue les requêtes de la file dans les threads en attente
-    for (int i = 0; (i < numberOfThreads()) && !m_lstPendingRequests.isEmpty(); ++i) {
+    for (int i = 0; (i < numberOfThreads()) && hasPendingRequests(); ++i) {
       if (m_lstThreads[i].inProcess()==false)
         nextPendingRequest_(i);
     }
@@ -198,14 +193,14 @@ void CNetworkManager::slotNetworkReplyDownloadProgress(qint64 bytesReceived, qin
 }
 
 void CNetworkManager::slotNetworkReplyError(QNetworkReply::NetworkError error) {
-  qDebug() << "NetworkManager error" << error;
+  //qDebug() << "NetworkManager error" << error;
 
   const QNetworkReply* reply = qobject_cast<QNetworkReply*>(this->sender());
   emit requestError(error, thread_(reply));
 }
 
 void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
-  qDebug() << "NetworkManager finished" << reply->url();
+  //qDebug() << "NetworkManager finished" << reply->url();
 
   // TODO : Bug Qt 4.4.0
   if (!reply->property("Thread").isValid()) {
@@ -273,7 +268,7 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
     emit allDone();
 
   // Exécute une autre requête en attente dans la file
-  if ((pThread->id()!=-1) && (processingPendingRequests()==true) && !m_lstPendingRequests.isEmpty())
+  if ((pThread->id() != -1) && (processingPendingRequests() == true) && hasPendingRequests())
     nextPendingRequest_(pThread->id());
 }
 
@@ -316,13 +311,10 @@ int CNetworkManager::threadInWaiting_() const {
 
 void CNetworkManager::nextPendingRequest_(int thread) {
   int thread_free = (thread==-1)?threadInWaiting_():thread;
-  Q_ASSERT((processingPendingRequests()==true) && !m_lstPendingRequests.isEmpty() && (thread_free!=-1));
+  Q_ASSERT((processingPendingRequests()==true) && hasPendingRequests() && (thread_free!=-1));
 
-  MCUrlInfo urlInfo = m_lstPendingRequests.takeOne();
+  MCUrlInfo urlInfo = m_lstPendingRequests.dequeue();
   Assert(urlInfo.isValid() == true);
-
-  if (m_lstPendingRequests.isEmpty())
-    setProcessingPendingRequests(false);
 
   QNetworkReply* reply = doRequest_(urlInfo.url());
   m_lstThreads[thread_free].start(reply, urlInfo);

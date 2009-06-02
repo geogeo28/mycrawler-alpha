@@ -36,7 +36,16 @@ class MCCrawl : public QObject
     Q_OBJECT
 
 public:
-    MCCrawl(CNetworkManager* networkManager, quint32 depth = 5, QObject* parent = NULL);
+    MCCrawl(
+      MCUrlsCollection* urlsInQueue, MCUrlsCollection* urlsNeighbor, MCUrlsCollection* urlsCrawled,
+      CNetworkManager* networkManager, quint32 depth = 5,
+      QObject* parent = NULL
+    );
+
+public:
+    MCUrlsCollection* urlsInQueue() const { return m_pUrlsInQueue; }   // Urls ready to be crawled
+    MCUrlsCollection* urlsNeighbor() const { return m_pUrlsNeighbor; } // Urls with a depth equal to m_u32Depth
+    MCUrlsCollection* urlsCrawled() const { return m_pUrlsCrawled; } // Urls already crawled
 
 public slots:
     //void start();
@@ -50,8 +59,11 @@ private:
     void analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent);
 
 private:
-    CNetworkManager* m_pNetworkManager;
+    MCUrlsCollection* m_pUrlsInQueue;
+    MCUrlsCollection* m_pUrlsNeighbor;
+    MCUrlsCollection* m_pUrlsCrawled;
 
+    CNetworkManager* m_pNetworkManager;
     quint32 m_u32Depth;
     bool m_bStarted;
 };

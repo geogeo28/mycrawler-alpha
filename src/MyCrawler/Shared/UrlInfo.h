@@ -25,6 +25,7 @@
 
 #include <QSharedData>
 #include <QUrl>
+#include <QList>
 
 class QVariant;
 
@@ -34,8 +35,8 @@ class MCUrlInfo
 {
 public:
     MCUrlInfo();
-    explicit MCUrlInfo(const QUrl& url, quint32 depth = 0, MCUrlInfo parent = MCUrlInfo());
-    explicit MCUrlInfo(const QString& url, quint32 depth = 0, MCUrlInfo parent = MCUrlInfo());
+    explicit MCUrlInfo(const QUrl& url, quint32 depth = 0);
+    explicit MCUrlInfo(const QString& url, quint32 depth = 0);
 
     MCUrlInfo(const MCUrlInfo &other);
     MCUrlInfo& operator=(const MCUrlInfo& urlInfo);
@@ -48,7 +49,11 @@ public:
     quint32 depth() const;
     void setDepth(quint32 depth);
 
-    MCUrlInfo parent() const;
+    void addSuccessor(MCUrlInfo urlInfo); // This method don't check if urlInfo is already a successor
+    void addAncestor(MCUrlInfo urlInfo); // This method don't check if urlInfo is already an ancestor
+
+    QList<MCUrlInfo> successors() const;
+    QList<MCUrlInfo> ancestors() const;
 
     MCUrlInfo clone() const;
 
@@ -59,9 +64,6 @@ public:
     static QUrl decodedUrl(const QUrl& url);
     static QUrl decodedUrl(const QString& url);
     static QUrl absoluteUrl(const QString& base, const QString& relative);
-
-private:
-    MCUrlInfo(const QExplicitlySharedDataPointer<MCUrlInfoPrivate>& d);
 
 private:
     QExplicitlySharedDataPointer<MCUrlInfoPrivate> d;

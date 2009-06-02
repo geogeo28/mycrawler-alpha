@@ -35,6 +35,8 @@
 #include "NetworkManager.h"
 #include "Crawl.h"
 
+//#include "UrlsCrawledPoolManager.h"
+
 class MCClientApplication : public IApplication
 {
 private:
@@ -49,11 +51,15 @@ public:
     ~MCClientApplication();
 
  public:
-    MCClientMainWindow* mainWindow() { return m_pMainWindow; }
-    MCUrlsCollection* urlsInQueue() { return m_pUrlsInQueue; }
-    MCUrlsCollection* urlsCrawled() { return m_pUrlsCrawled; }
-    CNetworkManager* networkManager() { return m_pNetworkManager; } // (must be deprecated)
-    MCCrawl* crawl() { return m_pCrawl; } // (must be deprecated)
+    MCClientMainWindow* mainWindow() const { return m_pMainWindow; }
+    MCUrlsCollection* urlsInQueue() const { return m_pUrlsInQueue; }
+    MCUrlsCollection* urlsNeighbor() const { return m_pUrlsNeighbor; }
+    MCUrlsCollection* urlsCrawled() const { return m_pUrlsCrawled; }
+
+    CNetworkManager* networkManager() const { return m_pNetworkManager; } // (must be deprecated)
+    MCCrawl* crawl() const { return m_pCrawl; } // (must be deprecated)
+
+    //MCUrlsCrawledPoolManager* urlsCrawledPoolManager() const { return m_pUrlsCrawledPoolManager; }
 
   // Resources
  public:
@@ -83,12 +89,15 @@ private:
 	
     QPointer<MCClientMainWindow> m_pMainWindow;
     QPointer<MCUrlsCollection> m_pUrlsInQueue;
+    QPointer<MCUrlsCollection> m_pUrlsNeighbor;
     QPointer<MCUrlsCollection> m_pUrlsCrawled;
 
     // (must be deprecated)
     bool m_bCrawlerActivated;
     QPointer<CNetworkManager> m_pNetworkManager;
     QPointer<MCCrawl> m_pCrawl;
+
+    //QPointer<MCUrlsCrawledPoolManager> m_pUrlsCrawledPoolManager;
 };
 
 #define MCApp         MCClientApplication::instance()

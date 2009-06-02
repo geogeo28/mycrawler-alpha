@@ -73,13 +73,15 @@ void MCUrlsInQueueTreeWidget::slotAddUrl_(MCUrlInfo urlInfo) {
   urlInfo.setData("ItemInQueue", qVariantFromValue<QTreeWidgetItem*>(item));
 
   // Set columns data
-  item->setData(OrderColumn, Qt::UserRole, ++lastOrder);
-  item->setData(DepthColumn, Qt::UserRole, urlInfo.depth());
-  item->setData(UrlColumn,   Qt::UserRole, qVariantFromValue<MCUrlInfo>(urlInfo));
+  item->setData(HashSignatureColumn, Qt::UserRole, urlInfo.hash());
+  item->setData(OrderColumn,         Qt::UserRole, ++lastOrder);
+  item->setData(DepthColumn,         Qt::UserRole, urlInfo.depth());
+  item->setData(UrlColumn,           Qt::UserRole, qVariantFromValue<MCUrlInfo>(urlInfo));
 
   // Set columns content
   item->setText(HashSignatureColumn, urlInfo.hash().toHex());
   item->setText(OrderColumn,         QString::number(lastOrder));
+  item->setText(DepthColumn,         QString::number(urlInfo.depth()));
   item->setText(UrlColumn,           urlInfo.url().toString(QUrl::None));
 }
 

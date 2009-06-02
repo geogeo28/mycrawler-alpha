@@ -38,6 +38,7 @@ public:
       OrderColumn,
       DepthColumn,
       UrlColumn,
+      ParentColumn
     };
 
 private:

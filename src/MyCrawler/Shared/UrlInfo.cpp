@@ -33,26 +33,25 @@ class MCUrlInfoPrivate : public QSharedData
 {
   public:
     MCUrlInfoPrivate();
-    MCUrlInfoPrivate(const QUrl& url, quint32 depth = 0, MCUrlInfo& parent = MCUrlInfo());
+    MCUrlInfoPrivate(const QUrl& url, quint32 depth = 0);
 
     QUrl url;
     QByteArray hash;
     quint32 depth;
 
-    QExplicitlySharedDataPointer<MCUrlInfoPrivate> parent;
+    QList<MCUrlInfo> successors;
+    QList<MCUrlInfo> ancestors;
 
     CDataContainer dataContainer;
 };
 
 MCUrlInfoPrivate::MCUrlInfoPrivate()
-  : depth(0),
-    parent(NULL)
+  : depth(0)
 {}
 
-MCUrlInfoPrivate::MCUrlInfoPrivate(const QUrl& url, quint32 depth, MCUrlInfo& parent)
+MCUrlInfoPrivate::MCUrlInfoPrivate(const QUrl& url, quint32 depth)
   : url(url),
-    depth(depth),
-    parent(parent.d)
+    depth(depth)
 {
   hash = QCryptographicHash::hash(url.toEncoded(QUrl::None), QCryptographicHash::Sha1);
 }
@@ -61,12 +60,12 @@ MCUrlInfo::MCUrlInfo()
   : d(new MCUrlInfoPrivate)
 {}
 
-MCUrlInfo::MCUrlInfo(const QUrl& url, quint32 depth, MCUrlInfo parent)
-  : d(new MCUrlInfoPrivate(url, depth, parent))
+MCUrlInfo::MCUrlInfo(const QUrl& url, quint32 depth)
+  : d(new MCUrlInfoPrivate(url, depth))
 {}
 
-MCUrlInfo::MCUrlInfo(const QString& url, quint32 depth, MCUrlInfo parent)
-  : d(new MCUrlInfoPrivate(MCUrlInfo::decodedUrl(url), depth, parent))
+MCUrlInfo::MCUrlInfo(const QString& url, quint32 depth)
+  : d(new MCUrlInfoPrivate(MCUrlInfo::decodedUrl(url), depth))
 {}
 
 MCUrlInfo::MCUrlInfo(const MCUrlInfo &other)
@@ -104,12 +103,22 @@ void MCUrlInfo::setDepth(quint32 depth) {
   d->depth = depth;
 }
 
-MCUrlInfo MCUrlInfo::parent() const {
-  if (d->parent.constData() == NULL) {
-    return MCUrlInfo();
-  }
+void MCUrlInfo::addSuccessor(MCUrlInfo urlInfo) {
+  d->successors.append(urlInfo);
+  urlInfo.d->ancestors.append(*this);
+}
 
-  return MCUrlInfo(d->parent);
+void MCUrlInfo::addAncestor(MCUrlInfo urlInfo) {
+  d->ancestors.append(urlInfo);
+  urlInfo.d->successors.append(*this);
+}
+
+QList<MCUrlInfo> MCUrlInfo::successors() const {
+  return d->successors;
+}
+
+QList<MCUrlInfo> MCUrlInfo::ancestors() const {
+  return d->ancestors;
 }
 
 MCUrlInfo MCUrlInfo::clone() const {
@@ -137,10 +146,4 @@ QUrl MCUrlInfo::decodedUrl(const QString& url) {
 
 QUrl MCUrlInfo::absoluteUrl(const QString& base, const QString& relative) {
   return QUrl(base).resolved(QUrl(relative));
-}
-
-MCUrlInfo::MCUrlInfo(const QExplicitlySharedDataPointer<MCUrlInfoPrivate>& d)
-  : d(d)
-{
-  AssertCheckPtr(d.constData());
 }

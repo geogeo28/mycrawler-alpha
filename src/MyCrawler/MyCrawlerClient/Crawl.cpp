@@ -24,18 +24,27 @@
 #include "UrlsCollection.h"
 
 #include "Crawl.h"
-#include "ClientApplication.h"
 
-MCCrawl::MCCrawl(CNetworkManager* networkManager, quint32 depth, QObject* parent)
+MCCrawl::MCCrawl(
+  MCUrlsCollection* urlsInQueue, MCUrlsCollection* urlsNeighbor, MCUrlsCollection* urlsCrawled,
+  CNetworkManager* networkManager, quint32 depth,
+  QObject* parent
+)
   : QObject(parent),
+    m_pUrlsInQueue(urlsInQueue),
+    m_pUrlsNeighbor(urlsNeighbor),
+    m_pUrlsCrawled(urlsCrawled),
     m_pNetworkManager(networkManager),
     m_u32Depth(depth),
     m_bStarted(false)
 {
+  AssertCheckPtr(urlsInQueue);
+  AssertCheckPtr(urlsNeighbor);
+  AssertCheckPtr(urlsCrawled);
   AssertCheckPtr(networkManager);
 
   qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
-  QObject::connect(&(m_pNetworkManager->pendingRequestsCollection()), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)), Qt::QueuedConnection);
+  QObject::connect(m_pUrlsInQueue, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)), Qt::QueuedConnection);
 
   QObject::connect(m_pNetworkManager, SIGNAL(success(const NetworkManagerThread*)), this, SLOT(networkManagerFinished_(const NetworkManagerThread*)));
 }
@@ -56,7 +65,7 @@ MCCrawl::MCCrawl(CNetworkManager* networkManager, quint32 depth, QObject* parent
 
 void MCCrawl::queueUrlAdded_(MCUrlInfo urlInfo) {
   //if (m_bStarted == true) {
-    m_pNetworkManager->setProcessingPendingRequests(true);
+  m_pNetworkManager->addPendingRequest(urlInfo);
   //}
 }
 
@@ -72,13 +81,20 @@ void MCCrawl::networkManagerFinished_(const NetworkManagerThread* networkThread)
   analyzeContent_(reply, networkThread->urlInfo());
 }
 
-void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){
+void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){ 
+  m_pUrlsCrawled->addUrl(urlInfoParent);
+  
+  // Don't crawl successors
+  quint32 nextDepth = urlInfoParent.depth() + 1;
+  
   QTextStream textStream(device);
   QString str = textStream.readAll();
 
   QRegExp oRegex("<a\\s+href=[\"']?([^\"'>]+)[\"'>]", Qt::CaseInsensitive);  // Lien Url
   int pos = 0;
   while ((pos = oRegex.indexIn(str, pos))!=-1) {
+    QApplication::processEvents();
+
     QString parsedUrl = oRegex.cap(1).simplified();
     pos += oRegex.matchedLength();
 
@@ -91,26 +107,34 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){
       url = MCUrlInfo::absoluteUrl(urlInfoParent.url().toString(QUrl::None), parsedUrl);
     }
 
-    MCApp->urlsCrawled()->addUrl(urlInfoParent);
-
-    // Check depth
-    if (urlInfoParent.depth() == m_u32Depth) {
-      continue;
-    }
-
     // Only the HTTP protocol is supported
     if (url.scheme().toLower() != "http") {
       continue;
     }
 
     // Create a new url info and add in queue
-    MCUrlInfo newUrlInfo(url, urlInfoParent.depth() + 1, urlInfoParent);
-
-    // Url already crawled
-    if (MCApp->urlsCrawled()->urlExists(newUrlInfo) == true) {
+    MCUrlInfo newUrlInfo(url, nextDepth);
+    if (newUrlInfo.isValid() == false) {
+      ILogger::Trace() << "Invalid url : " << url.toString(QUrl::None);
       continue;
     }
 
-    MCApp->urlsInQueue()->addUrl(newUrlInfo);
+    // Url already crawled
+    if (m_pUrlsCrawled->urlExists(newUrlInfo) == true) {
+      MCUrlInfo urlCrawled = m_pUrlsCrawled->urlInfo(newUrlInfo.hash());
+      urlCrawled.addAncestor(urlInfoParent);
+      continue;
+    }
+
+    urlInfoParent.addSuccessor(newUrlInfo);
+
+    // Neighbor url
+    if (nextDepth == m_u32Depth) {
+      m_pUrlsNeighbor->addUrl(newUrlInfo);
+    }
+    // Url ready to be crawled
+    else {
+      m_pUrlsInQueue->addUrl(newUrlInfo);
+    }
   }
 }
