@@ -362,7 +362,7 @@
           </property>
           <layout class="QVBoxLayout">
            <item>
-            <widget class="QTreeWidget" name="treeWidgetTasksUrlsCrawled">
+            <widget class="MCUrlsCrawledTreeWidget" name="treeWidgetTasksUrlsCrawled">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -691,6 +691,11 @@
    <class>MCUrlsInQueueTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>../Shared/UrlsInQueueTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsCrawledTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Shared/UrlsCrawledTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -46,8 +46,9 @@ public:
     ~MCServerApplication();
  
  public:
-    MCServerMainWindow* mainWindow() { return m_pMainWindow; }
-    MCUrlsCollection* urlsInQueue() { return m_pUrlsInQueue; }
+    MCServerMainWindow* mainWindow() const { return m_pMainWindow; }
+    MCUrlsCollection* urlsInQueue() const { return m_pUrlsInQueue; }
+    MCUrlsCollection* urlsCrawled() const { return m_pUrlsCrawled; }
 
  // Resources
  public:
@@ -87,6 +88,7 @@ private:
 
     QPointer<MCServerMainWindow> m_pMainWindow;
     QPointer<MCUrlsCollection> m_pUrlsInQueue;
+    QPointer<MCUrlsCollection> m_pUrlsCrawled;
 };
 
 #define MCApp         MCServerApplication::instance()

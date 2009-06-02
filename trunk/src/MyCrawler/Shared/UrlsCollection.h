@@ -42,6 +42,7 @@ public:
     ~MCUrlsCollection();
 
     bool isEmpty() const;
+    int count() const;
 
     bool urlExists(const QByteArray& hash) const;
     bool urlExists(const MCUrlInfo& urlInfo) const { return urlExists(urlInfo.hash()); }

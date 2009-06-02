@@ -29,7 +29,6 @@
 #include <qsslconfiguration.h>
 
 #include "UrlInfo.h"
-#include "UrlsCollection.h"
 
 #include "ClientApplication.h"
 
@@ -78,10 +77,8 @@ class CNetworkManager : public QObject
     void setProxy(const QNetworkProxy& proxy) {m_pNetworkManager->setProxy(proxy);}
 
   public:
-    CNetworkManager(MCUrlsCollection& queueOfPendingRequest, int threads = 5, QObject* parent = NULL);
+    CNetworkManager(int threads = 5, QObject* parent = NULL);
     virtual ~CNetworkManager();
-
-    MCUrlsCollection& pendingRequestsCollection() const { return m_lstPendingRequests; }
 
     QNetworkRequest& baseRequest() {return m_baseRequest;}
     void setBaseRequest(const QNetworkRequest& baseRequest) {m_baseRequest = baseRequest;}
@@ -91,7 +88,7 @@ class CNetworkManager : public QObject
     static CTransferRate* transferRateManager(QNetworkReply* reply);
 
     int numberOfThreads() const {return m_nThreads;}
-    //bool addPendingRequest(const QUrl& url);
+    void addPendingRequest(const MCUrlInfo& url);
     bool processingPendingRequests() const {return m_bProcessingPendingRequests;}
     //void clearPendingRequests() {m_lstPendingRequests.clear();}
     //const QList<QUrl>& pendingRequests() const {return m_lstPendingRequests;}
@@ -142,11 +139,9 @@ class CNetworkManager : public QObject
     RepliesList m_lstReplies;
 
     int m_nThreads;
-    //QQueue<QUrl> m_lstPendingRequests;
+    QQueue<MCUrlInfo> m_lstPendingRequests;
     NetworkManagerThread* m_lstThreads;
     bool m_bProcessingPendingRequests;
-
-    MCUrlsCollection& m_lstPendingRequests;
 
   private:
     CNetworkManager(const CNetworkManager& other);

@@ -94,6 +94,10 @@ void MCServerMainWindow::setupForms_() {
   treeWidgetTasksUrlsInProgress->setup();
   MCSettings->loadLayout<QTreeWidget>(treeWidgetTasksUrlsInProgress, "TasksUrlsInProgressTreeWidget");
   treeWidgetTasksUrlsInProgress->setupHeaderContextMenu();
+
+  treeWidgetTasksUrlsCrawled->setup();
+  MCSettings->loadLayout<QTreeWidget>(treeWidgetTasksUrlsCrawled, "TasksUrlsCrawledTreeWidget");
+  treeWidgetTasksUrlsCrawled->setupHeaderContextMenu();
 }
 
 void MCServerMainWindow::setupComponents_() {
@@ -123,6 +127,7 @@ void MCServerMainWindow::closeWindow_() {
   MCSettings->saveLayout<QTreeWidget>(treeWidgetClients, "ClientsTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetTasksUrlsInQueue, "TasksUrlsInQueueTreeWidget");
   MCSettings->saveLayout<QTreeWidget>(treeWidgetTasksUrlsInProgress, "TasksUrlsInProgressTreeWidget");
+  MCSettings->saveLayout<QTreeWidget>(treeWidgetTasksUrlsCrawled, "TasksUrlsCrawledTreeWidget");
   MCSettings->saveLayout(this, "ServerMainWindow"); // Window layout
 
   MCApp->saveSettings();
