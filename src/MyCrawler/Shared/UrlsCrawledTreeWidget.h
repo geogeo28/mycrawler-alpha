@@ -53,6 +53,9 @@ public:
 private slots:
     void slotAddUrl_(MCUrlInfo urlInfo); // Set data ItemUrlInQueue
     void slotRemoveUrl_(MCUrlInfo urlInfo); // Remove data ItemUrlInQueue
+
+private slots:
+    void on_itemDoubleClicked(QTreeWidgetItem* item, int column);
 };
 
 #endif // URLSCRAWLEDTREEWIDGET_H

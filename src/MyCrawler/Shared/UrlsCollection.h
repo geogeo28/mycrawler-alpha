@@ -57,6 +57,7 @@ public:
     MCUrlInfo takeOne();
 
     void merge(const MCUrlsCollection& urls);
+    QList<MCUrlInfo> urls() const;
 
     MCUrlsCollection clone() const;
 

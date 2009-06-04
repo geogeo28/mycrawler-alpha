@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/MainToolBar" >
+    <file alias="StorageIcon" >icons/MainToolBar/Storage.png</file>
     <file alias="ClientsIcon" >icons/MainToolBar/Clients.png</file>
     <file alias="TasksIcon" >icons/MainToolBar/Tasks.png</file>
   </qresource>

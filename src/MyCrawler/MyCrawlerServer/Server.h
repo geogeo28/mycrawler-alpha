@@ -24,9 +24,12 @@
 #define SERVER_H
 
 #include <QtNetwork>
+#include <QList>
 
 #include "ClientThread.h"
 #include "ServerTableIP.h"
+
+class QByteArray;
 
 class MCUrlInfo;
 class MCServerInfo;
@@ -127,6 +130,9 @@ private slots:
 
     void clientUrlInProgressAdded_(MCUrlInfo urlInfo);
     void clientUrlInProgressRemoved_(MCUrlInfo urlInfo);
+
+    void clientDataNodesMessage_(const QList<MCUrlInfo>& nodes);
+    void clientLinkNodesMessage_(const QByteArray& hashParent, const QList<QByteArray>& hashChildren);
 
 protected:
     void incomingConnection(int socketDescriptor);

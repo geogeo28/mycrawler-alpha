@@ -21,6 +21,7 @@
 #include "Debug/Exception.h"
 
 #include "UrlsCrawledTreeWidget.h"
+#include "../QtGraph/graphwidget.h"
 
 #ifdef MYCRAWLER_SERVER
   #include "ServerApplication.h"
@@ -45,7 +46,9 @@ void MCUrlsCrawledTreeWidget::cleanAll_() {
 
 MCUrlsCrawledTreeWidget::MCUrlsCrawledTreeWidget(QWidget* parent)
   : MyQTreeWidget(parent)
-{}
+{
+  QObject::connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(on_itemDoubleClicked(QTreeWidgetItem*,int)));
+}
 
 MCUrlsCrawledTreeWidget::~MCUrlsCrawledTreeWidget() {
   cleanAll_();
@@ -92,4 +95,21 @@ void MCUrlsCrawledTreeWidget::slotRemoveUrl_(MCUrlInfo urlInfo) {
   AssertCheckPtr(item);
 
   delete item;
+}
+
+void MCUrlsCrawledTreeWidget::on_itemDoubleClicked(QTreeWidgetItem* item, int column) {
+  Q_UNUSED(column);
+
+  AssertCheckPtr(item);
+
+  MCUrlInfo urlInfo = qVariantValue<MCUrlInfo>(item->data(UrlColumn, Qt::UserRole));
+  Assert(urlInfo.isValid() == true);
+
+  QVBoxLayout* vlayout = new QVBoxLayout();
+  vlayout->addWidget(new GraphWidget(urlInfo, 1));
+
+  QDialog* d = new QDialog();
+  d->setLayout(vlayout);
+  d->show();
+  QObject::connect(d, SIGNAL(finished(int)), d, SLOT(deleteLater()));
 }

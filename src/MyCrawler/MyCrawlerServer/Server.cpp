@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <QCoreApplication>
+#include <QByteArray>
 
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
@@ -28,6 +29,7 @@
 
 #include "Server.h"
 #include "ServerHistory.h"
+#include "ServerApplication.h"
 
 const int DefaultMaxConnections = 5;
 
@@ -317,6 +319,47 @@ void MCServer::clientUrlInProgressRemoved_(MCUrlInfo urlInfo) {
   emit clientUrlInProgressRemoved(client, urlInfo);
 }
 
+void MCServer::clientDataNodesMessage_(const QList<MCUrlInfo>& nodes) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  Q_UNUSED(client);
+
+  // Add the node into the list of urls crawled
+  foreach (const MCUrlInfo& node, nodes) {
+    MCApp->urlsCrawled()->addUrl(node);
+  }
+}
+
+void MCServer::clientLinkNodesMessage_(const QByteArray& hashParent, const QList<QByteArray>& hashChildren) {
+  MCClientThread* client = senderClientThread_();
+  AssertCheckPtr(client);
+
+  Q_UNUSED(client);
+
+  // Try to find the parent node
+  MCUrlInfo parent = MCApp->urlsCrawled()->urlInfo(hashParent);
+  if (parent.isValid() == false) {
+    ILogger::Trace() << QString("The hash signature '%1' doesn't match any known url. All links were thrown.")
+                        .arg(QString(hashParent.toHex()));
+    return;
+  }
+
+  // Create links
+  foreach (const QByteArray& hashChild, hashChildren) {
+    // Try to find the node which match the hash signature
+    MCUrlInfo child = MCApp->urlsCrawled()->urlInfo(hashChild);
+    if (child.isValid() == false) {
+      ILogger::Trace() << QString("The hash signature '%1' doesn't match any known url. Link was thrown.")
+                          .arg(QString(hashChild.toHex()));
+      continue;
+    }
+
+    // Add to parent node this successor
+    parent.addSuccessor(child);
+  }
+}
+
 void MCServer::incomingConnection(int socketDescriptor) { 
   ILogger::Trace() << "Server : New incoming connection.";
 
@@ -343,6 +386,9 @@ void MCServer::incomingConnection(int socketDescriptor) {
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
   qRegisterMetaType<MCClientPeer::ErrorBehavior>("MCClientPeer::ErrorBehavior");
   qRegisterMetaType<MCClientThread::ConnectionState>("MCClientThread::ConnectionState");
+  qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
+  qRegisterMetaType<QList<MCUrlInfo> >("QList<MCUrlInfo>");
+  qRegisterMetaType<QList<QByteArray> >("QList<QByteArray>");
 
   QObject::connect(client, SIGNAL(error(MCClientThread::Error)), this, SLOT(clientError_(MCClientThread::Error)));
   QObject::connect(client, SIGNAL(timeout(MCClientPeer::TimeoutNotify)), this, SLOT(clientTimeout_(MCClientPeer::TimeoutNotify)));
@@ -353,6 +399,9 @@ void MCServer::incomingConnection(int socketDescriptor) {
 
   QObject::connect(client, SIGNAL(urlInProgressAdded(MCUrlInfo)), this, SLOT(clientUrlInProgressAdded_(MCUrlInfo)));
   QObject::connect(client, SIGNAL(urlInProgressRemoved(MCUrlInfo)), this, SLOT(clientUrlInProgressRemoved_(MCUrlInfo)));
+
+  QObject::connect(client, SIGNAL(dataNodesMessage(const QList<MCUrlInfo>&)), this, SLOT(clientDataNodesMessage_(const QList<MCUrlInfo>&)));
+  QObject::connect(client, SIGNAL(linkNodesMessage(const QByteArray&,const QList<QByteArray>&)), this, SLOT(clientLinkNodesMessage_(const QByteArray&,const QList<QByteArray>&)));
 
   // Add the client in the server
   addClient(client);

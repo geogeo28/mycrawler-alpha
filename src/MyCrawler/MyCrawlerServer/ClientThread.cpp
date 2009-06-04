@@ -18,7 +18,9 @@
  * RCSID $Id$
  ****************************************************************************/
 
-#include <QUrl>
+#include <QMutex>
+#include <QHostAddress>
+#include <QByteArray>
 
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
@@ -88,7 +90,8 @@ void MCClientThread::run() {
   qRegisterMetaType<MCClientPeer::PacketError>("MCClientPeer::PacketError");
   qRegisterMetaType<MCClientPeer::ErrorBehavior>("MCClientPeer::ErrorBehavior");
   qRegisterMetaType<CNetworkInfo>("CNetworkInfo");
-  qRegisterMetaType<MCServerInfo>("MCServerInfo");
+  qRegisterMetaType<QList<MCUrlInfo> >("QList<MCUrlInfo>");
+  qRegisterMetaType<QList<QByteArray> >("QList<QByteArray>");
 
   // Receive 'message'
   QObject::connect(&clientPeer, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(peerError_(QAbstractSocket::SocketError)));
@@ -99,7 +102,13 @@ void MCClientThread::run() {
   QObject::connect(&clientPeer, SIGNAL(serverInfoRequest()), this, SLOT(peerServerInfoRequest_()));
   QObject::connect(&clientPeer, SIGNAL(seedUrlRequest()), this, SLOT(peerSeedUrlRequest_()));
 
+  QObject::connect(&clientPeer, SIGNAL(dataNodesMessage(const QList<MCUrlInfo>&)), this, SIGNAL(dataNodesMessage(const QList<MCUrlInfo>&)));
+  QObject::connect(&clientPeer, SIGNAL(linkNodesMessage(const QByteArray&,const QList<QByteArray>&)), this, SIGNAL(linkNodesMessage(const QByteArray&,const QList<QByteArray>&)));
+
+
   // Send 'message'
+  qRegisterMetaType<MCServerInfo>("MCServerInfo");
+
   QObject::connect(this, SIGNAL(callPeerRefuseConnection_(const QString&)), &clientPeer, SLOT(refuseConnection(const QString&)));
   QObject::connect(this, SIGNAL(callPeerSendHandShake_()), &clientPeer, SLOT(sendHandShake()));
   QObject::connect(this, SIGNAL(callPeerSendRequestDenied_(MCClientPeer::PacketType)), &clientPeer, SLOT(sendRequestDenied(MCClientPeer::PacketType)));

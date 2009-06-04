@@ -103,6 +103,14 @@ void MCClient::connectToHost(const MCServerInfo& serverInfo) {
   m_clientPeer.connectToHost(serverInfo.ip(), serverInfo.port());
 }
 
+void MCClient::sendDataNodes(int n, const QByteArray& nodes) {
+  m_clientPeer.sendDataNodesMessage(n, nodes);
+}
+
+void MCClient::sendLinkNodes(int n, const QByteArray& links) {
+  m_clientPeer.sendLinkNodesMessage(n, links);
+}
+
 QString MCClient::connectionStateToString(ConnectionState state) {
   switch (state) {
     case UnconnectedState:     return QT_TRANSLATE_NOOP(MCClient, "Unconnected");

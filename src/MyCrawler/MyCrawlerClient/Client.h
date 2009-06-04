@@ -26,6 +26,7 @@
 #include <QObject>
 #include <QAbstractSocket>
 #include <QHostAddress>
+#include <QByteArray>
 
 #include "ClientPeer.h"
 #include "ServerInfo.h"
@@ -81,6 +82,9 @@ public:
     ConnectionState connectionState() const { return m_enumConnectionState; }
     bool hasHandShakeReceived() const { return m_bHandShakeReceived; }
     bool isConnectionRefused() const { return m_bConnectionRefused; }
+
+    void sendDataNodes(int n, const QByteArray& nodes);
+    void sendLinkNodes(int n, const QByteArray& links);
 
 public:
     static QString connectionStateToString(ConnectionState state);

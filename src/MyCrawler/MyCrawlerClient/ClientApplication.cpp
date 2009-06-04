@@ -67,7 +67,7 @@ void MCClientApplication::init_() {
 
   m_pCrawl = new MCCrawl(m_pUrlsInQueue, m_pUrlsNeighbor, m_pUrlsCrawled, m_pNetworkManager, 2);
 
-  //m_pUrlsCrawledPoolManager = new MCUrlsCrawledPoolManager(*m_pUrlsCrawled, 100);
+  m_pUrlsCrawledPoolManager = new MCUrlsCrawledPoolManager(m_pUrlsCrawled, 20);
 }
 
 void MCClientApplication::cleanAll_() {
@@ -83,7 +83,7 @@ void MCClientApplication::cleanAll_() {
   delete m_pNetworkManager;
   delete m_pCrawl;
 
-  //delete m_pUrlsCrawledPoolManager;
+  delete m_pUrlsCrawledPoolManager;
 
   cleanupResources();
 }

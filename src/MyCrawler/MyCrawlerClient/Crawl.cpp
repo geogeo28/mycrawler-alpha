@@ -122,7 +122,7 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){
     // Url already crawled
     if (m_pUrlsCrawled->urlExists(newUrlInfo) == true) {
       MCUrlInfo urlCrawled = m_pUrlsCrawled->urlInfo(newUrlInfo.hash());
-      urlCrawled.addAncestor(urlInfoParent);
+      //urlCrawled.addAncestor(urlInfoParent);
       continue;
     }
 
