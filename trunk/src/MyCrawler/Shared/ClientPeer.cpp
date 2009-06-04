@@ -20,6 +20,7 @@
 
 #include <QString>
 #include <QTime>
+#include <QByteArray>
 #include <QDataStream>
 
 #include "Debug/Exception.h"
@@ -29,6 +30,7 @@
 #include "Macros.h"
 #include "ClientPeer.h"
 #include "ServerInfo.h"
+#include "UrlInfo.h"
 
 int MCClientPeer::DefaultTimeout = 120 * 1000;
 int MCClientPeer::DefaultConnectTimeout = 60 * 1000;
@@ -41,7 +43,7 @@ static const char ProtocolId[] = "MyCrawler Protocol";
 static const char ProtocolIdSize = 18;
 static const quint16 ProtocolVersion = 0x0100;
 static const quint16 ProtocolHeaderSize = ProtocolIdSize + sizeof(ProtocolVersion) + 8;
-static const quint32 MinimalPacketSize = 6;
+static const quint32 PacketHeaderSize = 6;
 
 class MCClientPeerPrivate : public QSharedData
 {
@@ -201,17 +203,24 @@ QString MCClientPeer::timeoutNotifyToString(TimeoutNotify notify) {
 
 QString MCClientPeer::packetTypeToString(PacketType packetType) {
   switch (packetType) {
+    // SYSTEM
     case KeepAliveAcknowledgmentPacket: return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive (acknowledgment)");
     case KeepAlivePacket:               return QT_TRANSLATE_NOOP(MCClientPeer, "KeepAlive");
     case AuthenticationPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Authentication");
     case ConnectionRefusedPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Connection refused");
     case RequestDeniedPacket:           return QT_TRANSLATE_NOOP(MCClientPeer, "Request denied");
 
+    // REQUESTS
     case ServerInfoRequestPacket:       return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Request");
     case SeedUrlRequestPacket:          return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Url Request");
 
+    // RESPONSES
     case ServerInfoResponsePacket:      return QT_TRANSLATE_NOOP(MCClientPeer, "Server Info Response");
     case SeedUrlResponsePacket:         return QT_TRANSLATE_NOOP(MCClientPeer, "Seed Url Response");
+
+    // COMPRESSED MESSAGES
+    case DataNodesMessagePacket:        return QT_TRANSLATE_NOOP(MCClientPeer, "Data Nodes message (compressed)");
+    case LinkNodesMessagePacket:        return QT_TRANSLATE_NOOP(MCClientPeer, "Link Nodes message (compressed)");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet type");
@@ -226,7 +235,8 @@ QString MCClientPeer::packetErrorToString(PacketError error) {
     case ProtocolVersionError:        return QT_TRANSLATE_NOOP(MCClientPeer, "Could not establish a communication with the peer because the protocol version is different");
     case AuthenticationError:         return QT_TRANSLATE_NOOP(MCClientPeer, "No authentication message was received");
     case ResponseWithoutRequestError: return QT_TRANSLATE_NOOP(MCClientPeer, "A response was received whereas no request has been sent");
-    case InvalidPacketContentError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Invalid packet content");
+    case InvalidPacketContentError:   return QT_TRANSLATE_NOOP(MCClientPeer, "Invalid Packet Content");
+    case CorruptedDataPacketError:    return QT_TRANSLATE_NOOP(MCClientPeer, "Corrupted Data Packet");
 
     default:
       return QT_TRANSLATE_NOOP(MCClientPeer, "Unknown packet error");
@@ -259,7 +269,7 @@ void MCClientPeer::disconnect(int msecs) {
   }
   // Force to close the connection properly
   else if (state() != MCClientPeer::UnconnectedState) {
-    ILogger::Debug() << "Disconnect the client peer.";
+    ILogger::Debug() << "Disconnect the peer.";
     disconnectFromHost();
 
     if ((msecs > 0) && (state() != MCClientPeer::UnconnectedState)) {
@@ -345,7 +355,7 @@ void MCClientPeer::processIncomingData_() {
     // New packet
     if (d->packetSize == 0) {
       // Check that we received enough data
-      if (bytesAvailable() < MinimalPacketSize) {
+      if (bytesAvailable() < PacketHeaderSize) {
         return;
       }
 
@@ -356,14 +366,14 @@ void MCClientPeer::processIncomingData_() {
       data >> d->packetType;
 
       // Prevent of a DoS attack
-      if ((d->packetSize < MinimalPacketSize) || (d->packetSize > 512000)) {
+      if ((d->packetSize < PacketHeaderSize) || (d->packetSize > 512000)) {
         errorProcessingPacket_(PacketSizeError, AbortBehavior);
         return;
       }
     }
 
     // Attempts to have enough bytes to process the packet
-    if (bytesAvailable() < (d->packetSize - MinimalPacketSize)) {
+    if (bytesAvailable() < (d->packetSize - PacketHeaderSize)) {
       return;
     }
 
@@ -387,13 +397,13 @@ void MCClientPeer::processIncomingData_() {
     }
 
     // Process packet
-    processPacket_(packetType, requestInfo);
+    processPacket_(packetType, d->packetSize, requestInfo);
 
     emit packetReceived(packetType, d->packetSize, requestInfo);
 
 LabelEndOfPacketProcessing:
     d->packetSize = 0;
-  } while (bytesAvailable() >= MinimalPacketSize);
+  } while (bytesAvailable() >= PacketHeaderSize);
 }
 
 void MCClientPeer::timerEvent(QTimerEvent *event) {
@@ -443,7 +453,7 @@ void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, Error
   switch (errorBehavior) {
     // Packet dropped
     case DropPacketBehavior:
-      (void) read(d->packetSize - MinimalPacketSize);
+      (void) read(d->packetSize - PacketHeaderSize); // Drop packet data
       break;
 
     // Continue
@@ -454,42 +464,6 @@ void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, Error
     default:
       abort();
   }
-}
-
-void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
-  ILogger::Debug() << QString("Sending the packet : %1 (%2)...")
-                      .arg(packetTypeToString(packetType))
-                      .arg(packetType);
-
-  // Request packet
-  int nPacketType = static_cast<int>(packetType);
-  if ((nPacketType >= RequestPacketsStart) && (nPacketType <= RequestPacketsEnd)) {
-    (void) registerRequest_(packetType);
-  }
-
-  // Prepare the packet
-  quint32 packetSize = ((quint32)data.size()) + MinimalPacketSize;
-
-  MC_DATASTREAM_WRITE(packet, out);
-  out << (quint32)packetSize; // Size of the packet
-  out << (quint16)packetType; // Type of the packet
-
-  // Send packet header
-  write(packet);
-
-  // Send packet data
-  if (data.isEmpty() == false) {
-    write(data);
-  }
-
-  emit packetSent(packetType, packetSize);
-}
-
-template <class T> void MCClientPeer::sendPacket_(PacketType packetType, const T& data) {
-  MC_DATASTREAM_WRITE(bytes, in);
-
-  in << data;
-  sendPacket_(packetType, bytes);
 }
 
 void MCClientPeer::sendHandShakePacket_() {
@@ -556,6 +530,18 @@ void MCClientPeer::sendSeedUrlResponsePacket_(const QString& url, quint32 depth)
   sendPacket_(SeedUrlResponsePacket, bytes);
 }
 
+void MCClientPeer::sendDataNodesMessagePacket_(int n, const QByteArray& nodes) {
+  Q_UNUSED(n);
+
+  sendPacket_(DataNodesMessagePacket, qCompress(nodes));
+}
+
+void MCClientPeer::sendLinkNodesMessagePacket_(int n, const QByteArray& links) {
+  Q_UNUSED(n);
+
+  sendPacket_(LinkNodesMessagePacket, qCompress(links));
+}
+
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
   CNetworkInfo networkInfo;
   data >> networkInfo;
@@ -619,6 +605,53 @@ void MCClientPeer::processSeedUrlResponsePacket_(const MCClientPeerRequestInfo& 
   quint32 depth; data >> depth;
 
   emit seedUrlResponse(url, depth);
+}
+
+void MCClientPeer::processDataNodesMessagePacket_(QDataStream& data) {  
+  QList<MCUrlInfo> nodes;
+
+  while ((data.atEnd() == false) && (data.status() == QDataStream::Ok)) {
+    QString url;   data >> url;
+    quint32 depth; data >> depth;
+
+    // Invalid url
+    MCUrlInfo urlInfo(url, depth);
+    if (urlInfo.isValid() == false) {
+      errorProcessingPacket_(InvalidPacketContentError, ContinueBehavior);
+    }
+
+    nodes.append(urlInfo);
+  }
+
+  // Corrupted Data Packet
+  if (data.status() != QDataStream::Ok) {
+    errorProcessingPacket_(CorruptedDataPacketError, DropPacketBehavior);
+    return;
+  }
+
+  emit dataNodesMessage(nodes);
+}
+
+void MCClientPeer::processLinkNodesMessagePacket_(QDataStream& data) {
+  QList<QByteArray> hashChildren;
+
+  QByteArray hashParent;  data >> hashParent;
+  ILogger::Trace() << "Start " << QString(hashParent.toHex());
+
+  while ((data.atEnd() == false) && (data.status() == QDataStream::Ok)) {
+    QByteArray hashChild; data >> hashChild;
+    ILogger::Trace() << "Link " << QString(hashChild.toHex());
+
+    hashChildren.append(hashChild);
+  }
+
+  // Corrupted Data Packet
+  if (data.status() != QDataStream::Ok) {
+    errorProcessingPacket_(CorruptedDataPacketError, DropPacketBehavior);
+    return;
+  }
+
+  emit linkNodesMessage(hashParent, hashChildren);
 }
 
 void MCClientPeer::initConnection_() {
@@ -714,13 +747,64 @@ MCClientPeerRequestInfo MCClientPeer::unregisterRequest_(PacketType requestPacke
   return requestInfo;
 }
 
-void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerRequestInfo& requestInfo) {
-  ILogger::Debug() << QString("Processing the packet : %1 (%2)...")
+void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
+  quint32 packetSize = ((quint32)data.size()) + PacketHeaderSize;
+
+  ILogger::Debug() << QString("Sending the packet : %1 - %2 bytes (%3)...")
                       .arg(packetTypeToString(packetType))
+                      .arg(packetSize)
                       .arg(packetType);
 
+  // Request packet
+  int nPacketType = static_cast<int>(packetType);
+  if ((nPacketType >= RequestPacketsStart) && (nPacketType <= RequestPacketsEnd)) {
+    (void) registerRequest_(packetType);
+  }
+
+  MC_DATASTREAM_WRITE(packet, out);
+  out << (quint32)packetSize; // Size of the packet
+  out << (quint16)packetType; // Type of the packet
+
+  // Send packet header
+  write(packet);
+
+  // Send packet data
+  if (data.isEmpty() == false) {
+    write(data);
+  }
+
+  emit packetSent(packetType, packetSize);
+}
+
+template <class T> void MCClientPeer::sendPacket_(PacketType packetType, const T& data) {
+  MC_DATASTREAM_WRITE(bytes, in);
+
+  in << data;
+  sendPacket_(packetType, bytes);
+}
+
+void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo& requestInfo) {
+  ILogger::Debug() << QString("Processing the packet : %1 - %2 bytes (%3)...")
+                      .arg(packetTypeToString(packetType))
+                      .arg(packetSize)
+                      .arg(packetType);
+
+  // Extract packet data
+  QByteArray rawBytes = read(packetSize - PacketHeaderSize);
+  QByteArray bytes;
+
+  // Uncompress if necessary
+  int nPacketType = static_cast<int>(packetType);
+  if ((nPacketType >= CompressedMessagePacketsStart) && (nPacketType <= CompressedMessagePacketsEnd)) {
+    bytes = qUncompress(rawBytes);
+  }
+  // Raw bytes
+  else {
+    bytes = rawBytes;
+  }
+
   // Create a data stream to read packet content
-  MC_DATASTREAM_READ(this, data);
+  MC_DATASTREAM_READ(bytes, data);
 
   // Check authentication packet (received just after HandShake message)
   if ((d->requireAuthentication == true) && (d->authenticated == false)) {
@@ -783,11 +867,19 @@ void MCClientPeer::processPacket_(PacketType packetType, const MCClientPeerReque
       processSeedUrlResponsePacket_(requestInfo, data);
       break;
 
+    /** MESSAGES */
+    case DataNodesMessagePacket:
+      processDataNodesMessagePacket_(data);
+      break;
+
+    case LinkNodesMessagePacket:
+      processLinkNodesMessagePacket_(data);
+      break;
+
     default:
       errorProcessingPacket_(PacketTypeError, AbortBehavior);
   }
 }
-
 
 class MCClientPeerRequestInfoPrivate : public QSharedData
 {

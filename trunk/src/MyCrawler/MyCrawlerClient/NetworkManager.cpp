@@ -193,7 +193,7 @@ void CNetworkManager::slotNetworkReplyDownloadProgress(qint64 bytesReceived, qin
 }
 
 void CNetworkManager::slotNetworkReplyError(QNetworkReply::NetworkError error) {
-  //qDebug() << "NetworkManager error" << error;
+  qDebug() << "NetworkManager error" << error;
 
   const QNetworkReply* reply = qobject_cast<QNetworkReply*>(this->sender());
   emit requestError(error, thread_(reply));

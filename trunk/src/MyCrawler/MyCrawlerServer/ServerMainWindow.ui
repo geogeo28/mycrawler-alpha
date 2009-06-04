@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tabServerLog">
        <attribute name="title">
@@ -343,8 +343,15 @@
           </layout>
          </widget>
         </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabStorage">
+       <attribute name="title">
+        <string>Storage</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QGroupBox" name="groupBoxTasksUrlsCrawled">
+         <widget class="QGroupBox" name="groupBoxStorageUrlsCrawled">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -360,9 +367,9 @@
           <property name="title">
            <string>Urls crawled</string>
           </property>
-          <layout class="QVBoxLayout">
+          <layout class="QVBoxLayout" name="_2">
            <item>
-            <widget class="MCUrlsCrawledTreeWidget" name="treeWidgetTasksUrlsCrawled">
+            <widget class="MCUrlsCrawledTreeWidget" name="treeWidgetStorageUrlsCrawled">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -488,6 +495,7 @@
    <addaction name="doMainToolBarServerLog"/>
    <addaction name="doMainToolBarClients"/>
    <addaction name="doMainToolBarTasks"/>
+   <addaction name="doMainToolBarStorage"/>
    <addaction name="doMainToolBarPreferences"/>
    <addaction name="doMainToolBarExit"/>
   </widget>
@@ -658,6 +666,24 @@
    </property>
    <property name="FormIndex" stdset="0">
     <number>2</number>
+   </property>
+  </action>
+  <action name="doMainToolBarStorage">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/MainToolBar/StorageIcon</normaloff>:/MainToolBar/StorageIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Storage</string>
+   </property>
+   <property name="toolTip">
+    <string>Storage</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>3</number>
    </property>
   </action>
  </widget>

@@ -35,7 +35,7 @@
 #include "NetworkManager.h"
 #include "Crawl.h"
 
-//#include "UrlsCrawledPoolManager.h"
+#include "UrlsCrawledPoolManager.h"
 
 class MCClientApplication : public IApplication
 {
@@ -59,7 +59,7 @@ public:
     CNetworkManager* networkManager() const { return m_pNetworkManager; } // (must be deprecated)
     MCCrawl* crawl() const { return m_pCrawl; } // (must be deprecated)
 
-    //MCUrlsCrawledPoolManager* urlsCrawledPoolManager() const { return m_pUrlsCrawledPoolManager; }
+    MCUrlsCrawledPoolManager* urlsCrawledPoolManager() const { return m_pUrlsCrawledPoolManager; }
 
   // Resources
  public:
@@ -97,7 +97,7 @@ private:
     QPointer<CNetworkManager> m_pNetworkManager;
     QPointer<MCCrawl> m_pCrawl;
 
-    //QPointer<MCUrlsCrawledPoolManager> m_pUrlsCrawledPoolManager;
+    QPointer<MCUrlsCrawledPoolManager> m_pUrlsCrawledPoolManager;
 };
 
 #define MCApp         MCClientApplication::instance()

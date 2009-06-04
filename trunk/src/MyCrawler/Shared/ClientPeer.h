@@ -24,16 +24,18 @@
 #define CLIENTPEER_H
 
 #include <QTcpSocket>
-#include <QStringList>
 #include <QQueue>
 #include <QMap>
+#include <QList>
 
 class QString;
 class QTimerEvent;
+class QByteArray;
 class QDataStream;
 
 class CNetworkInfo;
 class MCServerInfo;
+class MCUrlInfo;
 
 class MCClientPeerRequestInfo;
 class MCClientPeerRequestsQueuesContainer;
@@ -49,7 +51,8 @@ public:
       SystemPacketsStart   = 0,    SystemPacketsEnd   = 1023,
       RequestPacketsStart  = 1024, RequestPacketsEnd  = 2047,
       ResponsePacketsStart = 2048, ResponsePacketsEnd = 3071,
-      MessagePacketsStart  = 3072, MessagePacketsEnd  = 4096
+      MessagePacketsStart  = 3072, MessagePacketsEnd  = 4095,
+      CompressedMessagePacketsStart  = 4096, CompressedMessagePacketsEnd = 5119,
     };
 
     typedef enum {
@@ -72,6 +75,9 @@ public:
 
       ServerInfoResponsePacket = ResponsePacketsStart, // Starting responses
       SeedUrlResponsePacket,
+
+      DataNodesMessagePacket = CompressedMessagePacketsStart, // Starting messages compressed
+      LinkNodesMessagePacket
     } PacketType;
 
     typedef enum {
@@ -82,7 +88,8 @@ public:
       ProtocolVersionError,
       AuthenticationError,
       ResponseWithoutRequestError,
-      InvalidPacketContentError
+      InvalidPacketContentError,
+      CorruptedDataPacketError
     } PacketError;
 
     typedef enum {
@@ -149,6 +156,9 @@ signals:
     void serverInfoResponse(const MCServerInfo& serverInfo);
     void seedUrlResponse(const QString& url, quint32 depth);
 
+    void dataNodesMessage(const QList<MCUrlInfo>& nodes);
+    void linkNodesMessage(const QByteArray& hashParent, const QList<QByteArray>& hashChildren);
+
 public slots:
     void refuseConnection(const QString& reason = QString());
     void disconnect(int msecs = 30000);
@@ -162,6 +172,9 @@ public slots:
     void sendServerInfoResponse(const MCServerInfo& serverInfo) { sendServerInfoResponsePacket_(serverInfo); }
     void sendSeedUrlResponse(const QString& url, quint32 depth) { sendSeedUrlResponsePacket_(url, depth); }
 
+    void sendDataNodesMessage(int n, const QByteArray& nodes) { sendDataNodesMessagePacket_(n, nodes); }
+    void sendLinkNodesMessage(int n, const QByteArray& links) { sendLinkNodesMessagePacket_(n, links); }
+
 private slots:
     void connectionStateChanged_(QAbstractSocket::SocketState state);
     void processIncomingData_();
@@ -171,9 +184,6 @@ protected:
 
 private:
     void errorProcessingPacket_(MCClientPeer::PacketError error, ErrorBehavior errorBehavior = AbortBehavior);
-
-    void sendPacket_(PacketType packetType, const QByteArray& data = QByteArray());
-    template <class T> void sendPacket_(PacketType packetType, const T& data);
 
     void sendHandShakePacket_();
     void sendAuthenticationPacket_();
@@ -186,6 +196,9 @@ private:
     void sendServerInfoResponsePacket_(const MCServerInfo& serverInfo);
     void sendSeedUrlResponsePacket_(const QString& url, quint32 depth);
 
+    void sendDataNodesMessagePacket_(int n, const QByteArray& nodes);
+    void sendLinkNodesMessagePacket_(int n, const QByteArray& links);
+
  private:
     CNetworkInfo processAuthenticationPacket_(QDataStream& data);
     void processConnectionRefusedPacket_(QDataStream& data);
@@ -197,6 +210,9 @@ private:
     void processServerInfoResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
     void processSeedUrlResponsePacket_(const MCClientPeerRequestInfo& requestInfo, QDataStream& data);
 
+    void processDataNodesMessagePacket_(QDataStream& data);
+    void processLinkNodesMessagePacket_(QDataStream& data);
+
 private:
     void initConnection_();
     void killAllTimers_();
@@ -206,7 +222,9 @@ private:
     void disconnected_();
     MCClientPeerRequestInfo registerRequest_(PacketType requestPacketType);
     MCClientPeerRequestInfo unregisterRequest_(PacketType requestPacketType);
-    void processPacket_(PacketType packetType, const MCClientPeerRequestInfo& requestInfo);
+    void sendPacket_(PacketType packetType, const QByteArray& data = QByteArray());
+    template <class T> void sendPacket_(PacketType packetType, const T& data);
+    void processPacket_(PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo& requestInfo);
 
 private:
     QSharedDataPointer<MCClientPeerPrivate> d;

@@ -24,12 +24,15 @@
 #define CLIENTTHREAD_H
 
 #include <QThread>
-#include <QMutex>
 #include <QPointer>
-#include <QHostAddress>
+#include <QList>
 
 #include "ClientPeer.h"
 #include "UrlsCollection.h"
+
+class QMutex;
+class QHostAddress;
+class QByteArray;
 
 class CNetworkInfo;
 
@@ -94,6 +97,10 @@ public:
     static QString connectionStateToString(ConnectionState state);
 
 signals:
+    void urlInProgressAdded(MCUrlInfo);
+    void urlInProgressRemoved(MCUrlInfo);
+
+signals:
     void error(MCClientThread::Error error);
     void timeout(MCClientPeer::TimeoutNotify notifiedWhen);
     void errorProcessingPacket(MCClientPeer::PacketError error, MCClientPeer::PacketType type, quint32 size, MCClientPeer::ErrorBehavior errorBehavior);
@@ -102,8 +109,8 @@ signals:
     void disconnected();
     void authenticated(const CNetworkInfo& info);
 
-    void urlInProgressAdded(MCUrlInfo urlInfo);
-    void urlInProgressRemoved(MCUrlInfo urlInfo);
+    void dataNodesMessage(const QList<MCUrlInfo>& nodes);
+    void linkNodesMessage(const QByteArray& hashParent, const QList<QByteArray>& hashChildren);
 
 public slots:
     void sendHandShake(); // thread-safe

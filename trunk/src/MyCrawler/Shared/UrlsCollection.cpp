@@ -145,6 +145,10 @@ void MCUrlsCollection::merge(const MCUrlsCollection& urls) {
   }
 }
 
+QList<MCUrlInfo> MCUrlsCollection::urls() const {
+  return d->urls.values();
+}
+
 MCUrlsCollection MCUrlsCollection::clone() const {
   MCUrlsCollection copy(*this);
   copy.d.detach();
