@@ -40,6 +40,9 @@ occured too. Bug not observed with a Freebox.
 - Store order of the Url in the class MCUrlsContainer (See column order in MCUrlsInQueueWidget).
 - Prefer used Java-style iterators rather than STL-style iterators.
 - Prefer used methods take, erase... of Qt containers rather than remove, value... 
+- MCClientPeer must known how data are stored into messages DataNodesMessage and LinkNodesMessage.
+- Create typedefs for template classes. For instance QList<MCUrlInfo> -> MCUrlInfoList...
+- Add a method urlString into the class MCUrlInfo. Avoid to do url().toString(QUrl::None).
 
 
 MyCrawlerServer :
