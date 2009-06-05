@@ -225,6 +225,7 @@ private:
     void sendPacket_(PacketType packetType, const QByteArray& data = QByteArray());
     template <class T> void sendPacket_(PacketType packetType, const T& data);
     void processPacket_(PacketType packetType, quint32 packetSize, const MCClientPeerRequestInfo& requestInfo);
+    void dropPacket_(quint32 bytesPreviouslyReaden = 0);
 
 private:
     QSharedDataPointer<MCClientPeerPrivate> d;
