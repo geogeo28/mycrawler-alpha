@@ -327,9 +327,9 @@ void MCClientPeer::processIncomingData_() {
     }
 
     // Check the protocol version
-    MC_DATASTREAM_READ(this, data);
+    MC_DATASTREAM_READ(this, in);
 
-    quint16 ver; data >> ver;
+    quint16 ver; in >> ver;
     if (ver != ProtocolVersion) {
       errorProcessingPacket_(ProtocolVersionError, AbortBehavior);
       return;
@@ -360,10 +360,10 @@ void MCClientPeer::processIncomingData_() {
       }
 
       // Get packet size and packet type
-      MC_DATASTREAM_READ(this, data);
+      MC_DATASTREAM_READ(this, in);
 
-      data >> d->packetSize;
-      data >> d->packetType;
+      in >> d->packetSize;
+      in >> d->packetType;
 
       // Prevent of a DoS attack
       if ((d->packetSize < PacketHeaderSize) || (d->packetSize > 512000)) {
@@ -479,11 +479,11 @@ void MCClientPeer::sendHandShakePacket_() {
   }
 
 
-  MC_DATASTREAM_WRITE(bytes, data);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
 
   // Protocol
-  data.writeRawData(ProtocolId, ProtocolIdSize);
-  data << ProtocolVersion;
+  out.writeRawData(ProtocolId, ProtocolIdSize);
+  out << ProtocolVersion;
 
   // Write protocol data
   write(bytes);
@@ -523,9 +523,9 @@ void MCClientPeer::sendServerInfoResponsePacket_(const MCServerInfo& serverInfo)
 }
 
 void MCClientPeer::sendSeedUrlResponsePacket_(const QString& url, quint32 depth) {
-  MC_DATASTREAM_WRITE(bytes, data);
-  data << url;
-  data << depth;
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
+  out << url;
+  out << depth;
 
   sendPacket_(SeedUrlResponsePacket, bytes);
 }
@@ -533,13 +533,13 @@ void MCClientPeer::sendSeedUrlResponsePacket_(const QString& url, quint32 depth)
 void MCClientPeer::sendDataNodesMessagePacket_(int n, const QByteArray& nodes) {
   Q_UNUSED(n);
 
-  sendPacket_(DataNodesMessagePacket, qCompress(nodes));
+  sendPacket_(DataNodesMessagePacket, nodes);
 }
 
 void MCClientPeer::sendLinkNodesMessagePacket_(int n, const QByteArray& links) {
   Q_UNUSED(n);
 
-  sendPacket_(LinkNodesMessagePacket, qCompress(links));
+  sendPacket_(LinkNodesMessagePacket, links);
 }
 
 CNetworkInfo MCClientPeer::processAuthenticationPacket_(QDataStream& data) {
@@ -635,13 +635,12 @@ void MCClientPeer::processDataNodesMessagePacket_(QDataStream& data) {
 void MCClientPeer::processLinkNodesMessagePacket_(QDataStream& data) {
   QList<QByteArray> hashChildren;
 
-  QByteArray hashParent;  data >> hashParent;
-  ILogger::Trace() << "Start " << QString(hashParent.toHex());
+  QByteArray hashParent;
+  data >> hashParent;
 
   while ((data.atEnd() == false) && (data.status() == QDataStream::Ok)) {
-    QByteArray hashChild; data >> hashChild;
-    ILogger::Trace() << "Link " << QString(hashChild.toHex());
-
+    QByteArray hashChild;
+    data >> hashChild;
     hashChildren.append(hashChild);
   }
 
@@ -748,7 +747,20 @@ MCClientPeerRequestInfo MCClientPeer::unregisterRequest_(PacketType requestPacke
 }
 
 void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
-  quint32 packetSize = ((quint32)data.size()) + PacketHeaderSize;
+  QByteArray bytesData;
+
+  int nPacketType = static_cast<int>(packetType);
+
+  // Compress data if necessary
+  if ((nPacketType >= CompressedMessagePacketsStart) && (nPacketType <= CompressedMessagePacketsEnd)) {
+    bytesData = /*qCompress(*/data/*)*/;
+  }
+  // Not compressed data
+  else {
+    bytesData = data;
+  }
+
+  quint32 packetSize = ((quint32)bytesData.size()) + PacketHeaderSize;
 
   ILogger::Debug() << QString("Sending the packet : %1 - %2 bytes (%3)...")
                       .arg(packetTypeToString(packetType))
@@ -756,30 +768,29 @@ void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
                       .arg(packetType);
 
   // Request packet
-  int nPacketType = static_cast<int>(packetType);
   if ((nPacketType >= RequestPacketsStart) && (nPacketType <= RequestPacketsEnd)) {
     (void) registerRequest_(packetType);
   }
 
-  MC_DATASTREAM_WRITE(packet, out);
+  MC_DATASTREAM_WRITE(buffer, bytesHeader, out);
   out << (quint32)packetSize; // Size of the packet
   out << (quint16)packetType; // Type of the packet
 
   // Send packet header
-  write(packet);
+  write(bytesHeader);
 
   // Send packet data
-  if (data.isEmpty() == false) {
-    write(data);
+  if (bytesData.isEmpty() == false) {
+    write(bytesData);
   }
 
   emit packetSent(packetType, packetSize);
 }
 
 template <class T> void MCClientPeer::sendPacket_(PacketType packetType, const T& data) {
-  MC_DATASTREAM_WRITE(bytes, in);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
 
-  in << data;
+  out << data;
   sendPacket_(packetType, bytes);
 }
 
@@ -791,12 +802,19 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
 
   // Extract packet data
   QByteArray rawBytes = read(packetSize - PacketHeaderSize);
+
+  // Inconsistent size
+  if ((quint32)rawBytes.size() != (packetSize - PacketHeaderSize)) {
+    errorProcessingPacket_(PacketSizeError, DropPacketBehavior);
+    return;
+  }
+
   QByteArray bytes;
 
   // Uncompress if necessary
   int nPacketType = static_cast<int>(packetType);
   if ((nPacketType >= CompressedMessagePacketsStart) && (nPacketType <= CompressedMessagePacketsEnd)) {
-    bytes = qUncompress(rawBytes);
+    bytes = /*qUncompress(*/rawBytes/*)*/;
   }
   // Raw bytes
   else {
@@ -804,7 +822,7 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
   }
 
   // Create a data stream to read packet content
-  MC_DATASTREAM_READ(bytes, data);
+  MC_DATASTREAM_READ(bytes, in);
 
   // Check authentication packet (received just after HandShake message)
   if ((d->requireAuthentication == true) && (d->authenticated == false)) {
@@ -814,7 +832,7 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
     }
     // Process the authentication packet
     else {
-      d->networkInfo = processAuthenticationPacket_(data);
+      d->networkInfo = processAuthenticationPacket_(in);
       d->authenticated = true;
       emit authenticated(d->networkInfo);
     }
@@ -838,12 +856,12 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
 
     // Connection Refused
     case ConnectionRefusedPacket:
-      processConnectionRefusedPacket_(data);
+      processConnectionRefusedPacket_(in);
       break;
 
     // Request Denied
     case RequestDeniedPacket:
-      processRequestDeniedPacket_(data);
+      processRequestDeniedPacket_(in);
       break;
 
     /** REQUESTS */
@@ -860,20 +878,20 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
     /** RESPONSES */
     // Server Info Response
     case ServerInfoResponsePacket:
-      processServerInfoResponsePacket_(requestInfo, data);
+      processServerInfoResponsePacket_(requestInfo, in);
       break;
 
     case SeedUrlResponsePacket:
-      processSeedUrlResponsePacket_(requestInfo, data);
+      processSeedUrlResponsePacket_(requestInfo, in);
       break;
 
     /** MESSAGES */
     case DataNodesMessagePacket:
-      processDataNodesMessagePacket_(data);
+      processDataNodesMessagePacket_(in);
       break;
 
     case LinkNodesMessagePacket:
-      processLinkNodesMessagePacket_(data);
+      processLinkNodesMessagePacket_(in);
       break;
 
     default:

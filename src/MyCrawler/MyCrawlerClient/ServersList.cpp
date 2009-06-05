@@ -137,14 +137,13 @@ void MCServersList::save(const QString& fileName) const throw(CFileException) {
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-
-  MC_DATASTREAM_WRITE(data, out);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
 
   out.writeRawData(ServersListFileMagic, ServersListFileMagicSize);
   out << ServersListFileVersion;
   this->write(out);
 
-  file.write(data);
+  file.write(bytes);
 }
 
 void MCServersList::load(const QString& fileName) throw(CFileException) {
