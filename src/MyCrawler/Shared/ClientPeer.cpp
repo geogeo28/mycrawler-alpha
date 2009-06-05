@@ -391,6 +391,7 @@ void MCClientPeer::processIncomingData_() {
 
       // A response was received when no request has been sent
       if (requestInfo.isValid() == false) {
+        dropPacket_(0);
         errorProcessingPacket_(ResponseWithoutRequestError, DropPacketBehavior);
         goto LabelEndOfPacketProcessing;
       }
@@ -451,12 +452,8 @@ void MCClientPeer::errorProcessingPacket_(MCClientPeer::PacketError error, Error
   emit errorProcessingPacket(error, packetType, d->packetSize, errorBehavior);
 
   switch (errorBehavior) {
-    // Packet dropped
+    // Packet dropped or Continue
     case DropPacketBehavior:
-      (void) read(d->packetSize - PacketHeaderSize); // Drop packet data
-      break;
-
-    // Continue
     case ContinueBehavior:
       break;
 
@@ -897,6 +894,10 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
     default:
       errorProcessingPacket_(PacketTypeError, AbortBehavior);
   }
+}
+
+void MCClientPeer::dropPacket_(quint32 bytesPreviouslyReaden) {
+  (void) read(d->packetSize - PacketHeaderSize - bytesPreviouslyReaden);
 }
 
 class MCClientPeerRequestInfoPrivate : public QSharedData
