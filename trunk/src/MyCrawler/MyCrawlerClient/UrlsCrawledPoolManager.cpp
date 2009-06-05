@@ -52,19 +52,21 @@ void MCUrlsCrawledPoolManager::urlCrawledAdded_(MCUrlInfo urlInfo) {
 }
 
 void MCUrlsCrawledPoolManager::sendDataNodes_(int n) {
-  MC_DATASTREAM_WRITE(bytes, data);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
   int nPackaged = 0;
 
   QListIterator<MCUrlInfo> it(m_lstUrlsToTransfer);
   for (int nTotal = 0; (it.hasNext() && (nTotal < n)); ++nTotal) {
     const MCUrlInfo& urlInfo = it.next();
-    data << urlInfo.url().toString(QUrl::None);
-    data << urlInfo.depth();
+    out << urlInfo.url().toString(QUrl::None);
+    out << urlInfo.depth();
     ++nPackaged;
 
-    if ((quint32)bytes.size() >= packetAverageSize()) {
+    if ((quint32)buffer.bytesAvailable() >= packetAverageSize()) {
       MCClient::instance()->sendDataNodes(nPackaged, bytes);
+
       bytes.clear();
+      buffer.reset();
       nPackaged = 0;
     }
   }
@@ -75,43 +77,40 @@ void MCUrlsCrawledPoolManager::sendDataNodes_(int n) {
 }
 
 void MCUrlsCrawledPoolManager::sendLinkNodes_(int n) {
-  MC_DATASTREAM_WRITE(bytes, data);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
 
   QListIterator<MCUrlInfo> it(m_lstUrlsToTransfer);
   for (int nTotal = 0; (it.hasNext() && nTotal < n); ++nTotal) {
     const MCUrlInfo& parent = it.next();
-    data << parent.hash();
-
-    ILogger::Trace() << "Start " << QString(parent.hash().toHex());
+    out << parent.hash();
 
     int nPackaged = 0;
     QListIterator<MCUrlInfo> itSucc(parent.successors());
     while (itSucc.hasNext()) {
       const MCUrlInfo& succ = itSucc.next();
-      data << succ.hash();
+      out << succ.hash();
       ++nPackaged;
 
-      ILogger::Trace() << "Link " << QString(succ.hash().toHex());
-
-      if ((quint32)bytes.size() >= packetAverageSize()) {
+      if ((quint32)buffer.bytesAvailable() >= packetAverageSize()) {
         MCClient::instance()->sendLinkNodes(nPackaged, bytes);
-        ILogger::Trace() << "Send";
 
         bytes.clear();
+        buffer.reset();
         nPackaged = 0;
 
         // Prepare the next packet
-        data << parent.hash();
+        out << parent.hash();
       }
     }
 
     // The buffer contains some links to transfer
     if (nPackaged != 0) {
       MCClient::instance()->sendLinkNodes(nPackaged, bytes);
-      ILogger::Trace() << "Send";
-
-      bytes.clear();
     }
+
+    // Prepare buffer for the next node
+    bytes.clear();
+    buffer.reset();
   }
 }
 

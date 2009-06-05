@@ -18,6 +18,9 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QSet>
+#include <QByteArray>
+
 #include "Debug/Exception.h"
 
 #include "NetworkManager.h"
@@ -84,8 +87,8 @@ void MCCrawl::networkManagerFinished_(const NetworkManagerThread* networkThread)
 void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){ 
   m_pUrlsCrawled->addUrl(urlInfoParent);
   
-  // Don't crawl successors
   quint32 nextDepth = urlInfoParent.depth() + 1;
+  QSet<QByteArray> lstUrlsInPage;
   
   QTextStream textStream(device);
   QString str = textStream.readAll();
@@ -115,26 +118,44 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){
     // Create a new url info and add in queue
     MCUrlInfo newUrlInfo(url, nextDepth);
     if (newUrlInfo.isValid() == false) {
-      ILogger::Trace() << "Invalid url : " << url.toString(QUrl::None);
+      ILogger::Notice() << "Invalid url : " << url.toString(QUrl::None);
+      continue;
+    }
+
+    // Url already analyzed
+    if (lstUrlsInPage.contains(newUrlInfo.hash()) == true) {
+      continue;
+    }
+
+    // Add new url in the list of urls already analyzed
+    lstUrlsInPage.insert(newUrlInfo.hash());
+
+    // Recursif link
+    if (newUrlInfo.hash() == urlInfoParent.hash()) {
       continue;
     }
 
     // Url already crawled
     if (m_pUrlsCrawled->urlExists(newUrlInfo) == true) {
       MCUrlInfo urlCrawled = m_pUrlsCrawled->urlInfo(newUrlInfo.hash());
-      //urlCrawled.addAncestor(urlInfoParent);
+      urlCrawled.addAncestor(urlInfoParent);
       continue;
     }
 
-    urlInfoParent.addSuccessor(newUrlInfo);
+    // Url already in neighbor
+    // TODO : To complete
 
     // Neighbor url
     if (nextDepth == m_u32Depth) {
-      m_pUrlsNeighbor->addUrl(newUrlInfo);
+      //m_pUrlsNeighbor->addUrl(newUrlInfo);
+      continue;
     }
     // Url ready to be crawled
     else {
       m_pUrlsInQueue->addUrl(newUrlInfo);
     }
+
+    // Create edge
+    urlInfoParent.addSuccessor(newUrlInfo);
   }
 }

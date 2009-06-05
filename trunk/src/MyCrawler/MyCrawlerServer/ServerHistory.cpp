@@ -126,13 +126,13 @@ void MCServerHistory::save(const QString& fileName) const throw(CFileException) 
     ThrowFileAccessException(fileName, file.errorString());
   }
 
-  MC_DATASTREAM_WRITE(data, out);
+  MC_DATASTREAM_WRITE(buffer, bytes, out);
 
   out.writeRawData(HistoryFileMagic, HistoryFileMagicSize);
   out << HistoryFileVersion;
   this->write(out);
 
-  file.write(data);
+  file.write(bytes);
 }
 
 void MCServerHistory::load(const QString& fileName) throw(CFileException) {

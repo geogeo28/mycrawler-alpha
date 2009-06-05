@@ -340,8 +340,8 @@ void MCServer::clientLinkNodesMessage_(const QByteArray& hashParent, const QList
   // Try to find the parent node
   MCUrlInfo parent = MCApp->urlsCrawled()->urlInfo(hashParent);
   if (parent.isValid() == false) {
-    ILogger::Trace() << QString("The hash signature '%1' doesn't match any known url. All links were thrown.")
-                        .arg(QString(hashParent.toHex()));
+    ILogger::Notice() << QString("The hash signature '%1' doesn't match any known url. All links were thrown.")
+                         .arg(QString(hashParent.toHex()));
     return;
   }
 
@@ -350,8 +350,8 @@ void MCServer::clientLinkNodesMessage_(const QByteArray& hashParent, const QList
     // Try to find the node which match the hash signature
     MCUrlInfo child = MCApp->urlsCrawled()->urlInfo(hashChild);
     if (child.isValid() == false) {
-      ILogger::Trace() << QString("The hash signature '%1' doesn't match any known url. Link was thrown.")
-                          .arg(QString(hashChild.toHex()));
+      ILogger::Notice() << QString("The hash signature '%1' doesn't match any known url. Link was thrown.")
+                           .arg(QString(hashChild.toHex()));
       continue;
     }
 

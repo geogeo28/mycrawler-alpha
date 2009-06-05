@@ -52,7 +52,7 @@ public:
       RequestPacketsStart  = 1024, RequestPacketsEnd  = 2047,
       ResponsePacketsStart = 2048, ResponsePacketsEnd = 3071,
       MessagePacketsStart  = 3072, MessagePacketsEnd  = 4095,
-      CompressedMessagePacketsStart  = 4096, CompressedMessagePacketsEnd = 5119,
+      CompressedMessagePacketsStart = 4096, CompressedMessagePacketsEnd = 5119,
     };
 
     typedef enum {

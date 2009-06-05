@@ -3,13 +3,15 @@
 
 #define SerializationVersion  QDataStream::Qt_4_5
 
-#define MC_DATASTREAM_WRITE(buff, stream) \
-  QByteArray buff; \
-  QDataStream stream(&buff, QIODevice::WriteOnly); \
-  stream.setVersion(SerializationVersion);
+#define MC_DATASTREAM_WRITE(buffer, byteArray, dataStream) \
+  QByteArray byteArray; \
+  QBuffer buffer(&byteArray); \
+  buffer.open(QIODevice::WriteOnly); \
+  QDataStream dataStream(&buffer); \
+  dataStream.setVersion(SerializationVersion);
 
-#define MC_DATASTREAM_READ(in, stream) \
-  QDataStream stream(in); \
-  stream.setVersion(SerializationVersion);
+#define MC_DATASTREAM_READ(buffer, dataStream) \
+  QDataStream dataStream(buffer); \
+  dataStream.setVersion(SerializationVersion);
 
 #endif // MACROS_H
