@@ -43,6 +43,8 @@ occured too. Bug not observed with a Freebox.
 - MCClientPeer must known how data are stored into messages DataNodesMessage and LinkNodesMessage.
 - Create typedefs for template classes. For instance QList<MCUrlInfo> -> MCUrlInfoList...
 - Add a method urlString into the class MCUrlInfo. Avoid to do url().toString(QUrl::None).
+- Check code with calls of signal in slots. The validity of variables must be assured during all execution of the slot.
+- Use return value of MCUrlsCollection::addUrl instead of MCUrlsCollection::urlExists.
 
 
 MyCrawlerServer :
@@ -55,6 +57,7 @@ X The class MCServer must be thread-safe. Added Read/Write mutex. Keep an eye on
 (2009-05-28 Rev 149) - Bug : The peer address of a client is not showed after load the server history.
 - Bug : Column' state of the Tree Widget MCClientsTreeWidget is lost when another form is selected and the application is closed.
 - MCClientThread* must be const MCClientThread* in signals of MCServer.
+- Check if the url crawled sent by the user is currently beeing crawled by another user !
 
 
 MyCrawlerClient :
