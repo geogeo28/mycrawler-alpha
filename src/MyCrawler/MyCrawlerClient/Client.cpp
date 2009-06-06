@@ -89,6 +89,17 @@ MCClient::~MCClient() {
   ILogger::Debug() << "Destroyed.";
 }
 
+bool MCClient::setState(State state) {
+  Assert(state != UnavailableState);
+
+  if ((m_enumState == UnavailableState) || (state == m_enumState)) {
+    return false;
+  }
+
+  setState_(state);
+  return true;
+}
+
 void MCClient::connectToHost(const MCServerInfo& serverInfo) {
   if (m_clientPeer.state() != QAbstractSocket::UnconnectedState) {
     m_clientPeer.disconnect();
@@ -101,6 +112,10 @@ void MCClient::connectToHost(const MCServerInfo& serverInfo) {
   init_();
   m_serverInfo = serverInfo;
   m_clientPeer.connectToHost(serverInfo.ip(), serverInfo.port());
+}
+
+void MCClient::sendSeedUrlRequest() {
+  m_clientPeer.sendSeedUrlRequest();
 }
 
 void MCClient::sendDataNodes(int n, const QByteArray& nodes) {
@@ -127,6 +142,8 @@ QString MCClient::connectionStateToString(ConnectionState state) {
 QString MCClient::stateToString(State state) {
   switch (state) {
     case IdleState:            return QT_TRANSLATE_NOOP(MCClient, "Idle");
+    case CrawlState:           return QT_TRANSLATE_NOOP(MCClient, "Crawling");
+    case SendNodesState:       return QT_TRANSLATE_NOOP(MCClient, "Send nodes");
 
     default:
       return QT_TRANSLATE_NOOP(MCClient, "Unavailable");
@@ -223,6 +240,8 @@ void MCClient::peerSeedUrlResponse_(const QString& url, quint32 depth) {
   }
 
   MCApp->urlsInQueue()->addUrl(urlInfo);
+
+  emit seedUrlReceived(urlInfo);
 }
 
 void MCClient::timerEvent(QTimerEvent *event) {
@@ -270,11 +289,6 @@ void MCClient::disconnected_() {
   emit disconnected();
 }
 
-void MCClient::idle_() {
-  // Send Seed Urls Request
-  m_clientPeer.sendSeedUrlRequest();
-}
-
 void MCClient::setConnectionState_(ConnectionState state) {
   // Do nothing if the connection state didn't changed
   if (state == m_enumConnectionState) {
@@ -315,11 +329,4 @@ void MCClient::setState_(State state) {
 
   // Emit signal if set
   emit MCClient::stateChanged(state);
-
-  // Manage specific states
-  switch (state) {
-    case IdleState: idle_(); break;
-
-    default:;
-  }
 }

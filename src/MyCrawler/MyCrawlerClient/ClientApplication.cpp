@@ -63,7 +63,6 @@ void MCClientApplication::init_() {
   m_pNetworkManager->setProxy(MCClientApplication::proxy());
 
   m_pNetworkManager->setBaseRequest(request);
-  m_pNetworkManager->setProcessingPendingRequests(true);
 
   m_pCrawl = new MCCrawl(m_pNetworkManager, m_pUrlsInQueue, m_pUrlsNeighbor, m_pUrlsCrawled, 2);
 
