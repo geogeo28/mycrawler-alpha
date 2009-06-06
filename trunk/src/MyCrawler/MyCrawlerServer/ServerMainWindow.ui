@@ -25,7 +25,7 @@
     <item>
      <widget class="MyQTabWidget" name="tabWidgetForms">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tabServerLog">
        <attribute name="title">
@@ -349,7 +349,7 @@
        <attribute name="title">
         <string>Storage</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout">
         <item>
          <widget class="QGroupBox" name="groupBoxStorageUrlsCrawled">
           <property name="sizePolicy">
@@ -367,7 +367,7 @@
           <property name="title">
            <string>Urls crawled</string>
           </property>
-          <layout class="QVBoxLayout" name="_2">
+          <layout class="QVBoxLayout">
            <item>
             <widget class="MCUrlsCrawledTreeWidget" name="treeWidgetStorageUrlsCrawled">
              <property name="sizePolicy">
@@ -415,6 +415,19 @@
            </item>
           </layout>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabGraph">
+       <attribute name="title">
+        <string>Graph</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="CPict" name="graphicWidgetGraph"/>
         </item>
        </layout>
       </widget>
@@ -496,6 +509,7 @@
    <addaction name="doMainToolBarClients"/>
    <addaction name="doMainToolBarTasks"/>
    <addaction name="doMainToolBarStorage"/>
+   <addaction name="doMainToolBarGraph"/>
    <addaction name="doMainToolBarPreferences"/>
    <addaction name="doMainToolBarExit"/>
   </widget>
@@ -686,6 +700,24 @@
     <number>3</number>
    </property>
   </action>
+  <action name="doMainToolBarGraph">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/MainToolBar/GraphIcon</normaloff>:/MainToolBar/GraphIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Graph</string>
+   </property>
+   <property name="toolTip">
+    <string>Nodes spacialization</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>4</number>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -722,6 +754,11 @@
    <class>MCUrlsCrawledTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>../Shared/UrlsCrawledTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CPict</class>
+   <extends>QGraphicsView</extends>
+   <header>../Graph/cpict.h</header>
   </customwidget>
  </customwidgets>
  <resources>

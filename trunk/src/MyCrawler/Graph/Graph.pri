@@ -1,7 +1,3 @@
-SOURCES += Node.cpp \
-           Edge.cpp \
-           Graph.cpp
-HEADERS += Node.h \
-           Edge.h \
-           Graph.h
-			
+DEPENDPATH += ../Graph/
+HEADERS += cpict.h 
+SOURCES += cpict.cpp	

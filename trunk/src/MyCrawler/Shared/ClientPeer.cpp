@@ -338,11 +338,6 @@ void MCClientPeer::processIncomingData_() {
     // Discard 8 reserved bytes
     (void) read(8);
 
-    // Initialize keep-alive timer
-    if (!d->keepAliveTimer) {
-      d->keepAliveTimer = startTimer(d->keepAliveInterval);
-    }
-
     d->receivedHandShake = true;
     emit handShakeReceived();
 
@@ -350,6 +345,12 @@ void MCClientPeer::processIncomingData_() {
       sendHandShakePacket_();
     }*/
   }
+
+  // Restart keep-alive timer
+  if (d->keepAliveTimer) {
+    killTimer(d->keepAliveTimer);
+  }
+  d->keepAliveTimer = startTimer(d->keepAliveInterval);;
 
   do {
     // New packet
@@ -474,7 +475,6 @@ void MCClientPeer::sendHandShakePacket_() {
   if (d->timeout > 0) {
     d->timeoutTimer = startTimer(d->timeout);
   }
-
 
   MC_DATASTREAM_WRITE(buffer, bytes, out);
 
@@ -844,7 +844,7 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
     // KeepAlive (demand)
     case KeepAlivePacket:
     {
-      d->keepAliveTimer = startTimer(d->keepAliveInterval); // Restart KeepAlive timer
+      //d->keepAliveTimer = startTimer(d->keepAliveInterval); // Restart KeepAlive timer
       sendPacket_(KeepAliveAcknowledgmentPacket);
     }
     break;
