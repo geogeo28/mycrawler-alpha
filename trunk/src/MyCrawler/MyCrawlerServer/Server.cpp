@@ -326,8 +326,35 @@ void MCServer::clientDataNodesMessage_(const QList<MCUrlInfo>& nodes) {
   Q_UNUSED(client);
 
   // Add the node into the list of urls crawled
-  foreach (const MCUrlInfo& node, nodes) {
-    MCApp->urlsCrawled()->addUrl(node);
+  foreach (MCUrlInfo node, nodes) {    
+    MCUrlInfo queuedUrl = MCApp->urlsInQueue()->urlInfo(node.hash());
+
+    // Url in queue
+    if (queuedUrl.isValid() == true) {
+      // TODO : Check if the url is currently crawled by another user !!!
+
+      // Url already exists in the queue Url
+      if (node.isCrawled() == false) {
+        continue;
+      }
+
+      // Drop in the url in the list of url crawled
+      queuedUrl.setCrawled(true);
+      MCApp->urlsInQueue()->removeUrl(queuedUrl);
+      node = queuedUrl;
+    }
+
+    // Add url in the list of url crawled
+    if (node.isCrawled() == true) {
+      // Url not in the list of url crawled
+      if (MCApp->urlsCrawled()->urlExists(node) != true) {
+        MCApp->urlsCrawled()->addUrl(node);
+      }
+    }
+    // Url unknown
+    else {
+      MCApp->urlsInQueue()->addUrl(node);
+    }
   }
 }
 
@@ -348,11 +375,14 @@ void MCServer::clientLinkNodesMessage_(const QByteArray& hashParent, const QList
   // Create links
   foreach (const QByteArray& hashChild, hashChildren) {
     // Try to find the node which match the hash signature
-    MCUrlInfo child = MCApp->urlsCrawled()->urlInfo(hashChild);
+    MCUrlInfo child = MCApp->urlsInQueue()->urlInfo(hashChild);
     if (child.isValid() == false) {
-      ILogger::Notice() << QString("The hash signature '%1' doesn't match any known url. Link was thrown.")
-                           .arg(QString(hashChild.toHex()));
-      continue;
+      child = MCApp->urlsCrawled()->urlInfo(hashChild);
+      if (child.isValid() == false) {
+        ILogger::Notice() << QString("The hash signature '%1' doesn't match any known url. Link was thrown.")
+                             .arg(QString(hashChild.toHex()));
+        continue;
+      }
     }
 
     // Add to parent node this successor

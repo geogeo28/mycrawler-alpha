@@ -42,16 +42,20 @@ class MCUrlInfoPrivate : public QSharedData
     QList<MCUrlInfo> successors;
     QList<MCUrlInfo> ancestors;
 
+    bool isCrawled;
+
     CDataContainer dataContainer;
 };
 
 MCUrlInfoPrivate::MCUrlInfoPrivate()
-  : depth(0)
+  : depth(0),
+    isCrawled(false)
 {}
 
 MCUrlInfoPrivate::MCUrlInfoPrivate(const QUrl& url, quint32 depth)
   : url(url),
-    depth(depth)
+    depth(depth),
+    isCrawled(false)
 {
   hash = QCryptographicHash::hash(url.toEncoded(QUrl::None), QCryptographicHash::Sha1);
 }
@@ -119,6 +123,14 @@ QList<MCUrlInfo> MCUrlInfo::successors() const {
 
 QList<MCUrlInfo> MCUrlInfo::ancestors() const {
   return d->ancestors;
+}
+
+bool MCUrlInfo::isCrawled() const {
+  return d->isCrawled;
+}
+
+void MCUrlInfo::setCrawled(bool crawled) {
+  d->isCrawled = crawled;
 }
 
 MCUrlInfo MCUrlInfo::clone() const {

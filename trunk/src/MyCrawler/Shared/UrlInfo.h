@@ -55,10 +55,17 @@ public:
     QList<MCUrlInfo> successors() const;
     QList<MCUrlInfo> ancestors() const;
 
+    bool isCrawled() const;
+    void setCrawled(bool crawled);
+
     MCUrlInfo clone() const;
 
     void setData(const QString& name, const QVariant& data);
     QVariant data(const QString& name) const;
+
+public:
+    bool operator==(const MCUrlInfo& urlInfo) const { return (this->hash() == urlInfo.hash()); }
+    bool operator!=(const MCUrlInfo& urlInfo) const { return !(*this == urlInfo); }
 
 public:
     static QUrl decodedUrl(const QUrl& url);
