@@ -1,4 +1,4 @@
-QT += network
+QT += network opengl
 TARGET = MyCrawlerServer
 TEMPLATE = app
 CONFIG += qt \
@@ -27,6 +27,7 @@ include(../Components/Utilities.pri)
 include(../Components/Widgets.pri)
 include(../Shared/Shared.pri)
 include(../QtGraph/QtGraph.pri)
+include(../Graph/Graph.pri)
 include(Network.pri)
 include(GUI.pri)
 RESOURCES += resources.qrc

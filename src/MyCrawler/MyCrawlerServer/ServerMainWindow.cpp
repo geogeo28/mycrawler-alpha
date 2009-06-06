@@ -23,8 +23,6 @@
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
-#include "UrlInfo.h"
-
 #include "ServerMainWindow.h"
 #include "DialogPreferences.h"
 #include "ServerApplication.h"
@@ -99,6 +97,9 @@ void MCServerMainWindow::setupForms_() {
   treeWidgetStorageUrlsCrawled->setup();
   MCSettings->loadLayout<QTreeWidget>(treeWidgetStorageUrlsCrawled, "StorageUrlsCrawledTreeWidget");
   treeWidgetStorageUrlsCrawled->setupHeaderContextMenu();
+
+  // Graph
+  m_idUpdateGraphTimer = startTimer(300);
 }
 
 void MCServerMainWindow::setupComponents_() {
@@ -114,6 +115,8 @@ void MCServerMainWindow::setupComponents_() {
   QObject::connect(MCServer::instance(), SIGNAL(clientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)), this, SLOT(slotClientErrorProcessingPacket(MCClientThread*,MCClientPeer::PacketError,MCClientPeer::PacketType,quint32,MCClientPeer::ErrorBehavior)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionRefused(MCClientThread*,QString)), this, SLOT(slotClientConnectionRefused(MCClientThread*,QString)));
   QObject::connect(MCServer::instance(), SIGNAL(clientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)), this, SLOT(slotClientConnectionStateChanged(MCClientThread*, MCClientThread::ConnectionState)));
+
+  QObject::connect(MCApp->urlsCrawled(), SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(slotUrlCrawledAdded(MCUrlInfo)), Qt::QueuedConnection);
 }
 
 void MCServerMainWindow::cleanAll_() {
@@ -135,7 +138,8 @@ void MCServerMainWindow::closeWindow_() {
 }
 
 MCServerMainWindow::MCServerMainWindow(QWidget *parent)
-  : QMainWindow(parent)
+  : QMainWindow(parent),
+    m_idUpdateGraphTimer(0)
 {
   ILogger::Debug() << "Construct.";
 
@@ -393,10 +397,49 @@ void MCServerMainWindow::slotClientConnectionStateChanged(MCClientThread* client
   );
 }
 
+void MCServerMainWindow::slotUrlCrawledAdded(MCUrlInfo urlInfo) {
+   CFNode *parentNode(graphicWidgetGraph->addNewNode(urlInfo.url().toString(QUrl::None)));
+   urlInfo.setData("CFNode", qVariantFromValue<CFNode*>(parentNode));
+
+   // Create links of successors
+   foreach (MCUrlInfo successor, urlInfo.successors()) {
+     if (successor.isCrawled() == false) {
+       continue;
+     }
+
+     CFNode* succNode = qVariantValue<CFNode*>(successor.data("CFNode"));
+     if (succNode) {
+       parentNode->addLink(succNode);
+     }
+   }
+
+   // Create links of ancestors
+   foreach (MCUrlInfo ancestor, urlInfo.ancestors()) {
+     if (ancestor.isCrawled() == false) {
+       continue;
+     }
+
+     CFNode* ancNode = qVariantValue<CFNode*>(ancestor.data("CFNode"));
+     if (ancNode) {
+       ancNode->addLink(parentNode);
+     }
+   }
+}
+
 void MCServerMainWindow::closeEvent(QCloseEvent* event) {
   disconnectServer_(); // Forces to disconnect all clients
   closeWindow_();
   event->accept();
+}
+
+void MCServerMainWindow::timerEvent(QTimerEvent* event) {
+  if (event->timerId() == m_idUpdateGraphTimer) {
+    // Update graph only if the user is on the tab Graph
+    if (tabWidgetForms->currentIndex() == 4) {
+      graphicWidgetGraph->calculate();
+      graphicWidgetGraph->repaint();
+    }
+  }
 }
 
 bool MCServerMainWindow::connectServer_() {

@@ -32,6 +32,20 @@
 
 static QRegExp RegExpHTTPLink("<a\\s+href=[\"']?([^\"'>]+)[\"'>]", Qt::CaseInsensitive);
 
+static const char* BlackList[] = {
+  "*.google.*",
+  "*.youtube.*",
+  "*.forum-discussions.*",
+  "*.yahoo.*",
+  "*.web-tricheur.*",
+  "*.pixelinvaders.*"
+  "*.alvasoft.*",
+  "*.witi.*",
+  "*.pockett.*",
+  "*.vive-internet-gratuit.*"
+};
+static const int BlackListCount = sizeof(BlackList) / sizeof(char*);
+
 MCCrawl::MCCrawl(
   CNetworkManager* networkManager,
   MCUrlsCollection* urlsInQueue, MCUrlsCollection* urlsNeighbor, MCUrlsCollection* urlsCrawled,
@@ -169,6 +183,21 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo parentUrl){
 
     // Only the HTTP protocol is supported
     if (url.scheme().toLower() != "http") {
+      continue;
+    }
+
+    // In the black list
+    QString host = url.host().toLower();
+    int i = 0;
+    for (; i < BlackListCount; ++i) {
+      const char* pattern = BlackList[i];
+      QRegExp reg(pattern, Qt::CaseSensitive, QRegExp::Wildcard);
+      if (reg.exactMatch(host)) {
+        ILogger::Trace() << host;
+        break;
+      }
+    }
+    if (i != BlackListCount) {
       continue;
     }
 

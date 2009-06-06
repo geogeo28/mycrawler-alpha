@@ -52,7 +52,7 @@ void MCClientApplication::init_() {
 
   // Crawler (must be deprecated)
   m_bCrawlerActivated = false;
-  m_pNetworkManager = new CNetworkManager(3);
+  m_pNetworkManager = new CNetworkManager(5);
 
   QNetworkRequest request;
   request.setRawHeader("Accept", "text/html");

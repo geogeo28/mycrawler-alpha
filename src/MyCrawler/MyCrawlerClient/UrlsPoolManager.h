@@ -39,7 +39,7 @@ public:
     MCUrlsPoolManager(
       CNetworkManager* networkManager,
       const MCUrlsCollection* urlsCrawledCollection, const MCUrlsCollection* urlsNeighborCollection,
-      int urlCount = 50, quint32 packetAverageSize = 128000,
+      int urlCount = 50, quint32 packetAverageSize = 64000,
       QObject* parent = NULL
     );
 

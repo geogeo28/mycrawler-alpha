@@ -27,6 +27,8 @@
 #include <QtGui>
 #include <QPointer>
 
+#include "UrlInfo.h"
+
 #include "ui_ServerMainWindow.h"
 #include "Server.h"
 #include "ClientThread.h"
@@ -72,8 +74,11 @@ private slots:
     void slotClientConnectionRefused(MCClientThread* client, const QString& reason);
     void slotClientConnectionStateChanged(MCClientThread* client, MCClientThread::ConnectionState state);
 
+    void slotUrlCrawledAdded(MCUrlInfo urlInfo);
+
 protected:
     void closeEvent(QCloseEvent* event);
+    void timerEvent(QTimerEvent* event);
 
 private:
     bool connectServer_();
@@ -81,6 +86,8 @@ private:
 
 private:
     QPointer<QProgressDialog> m_pProgressDialogCloseClients;
+
+    int m_idUpdateGraphTimer;
 };
 
 #endif // SERVERMAINWINDOW_H
