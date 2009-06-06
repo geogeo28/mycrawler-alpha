@@ -49,7 +49,9 @@ public:
 
     typedef enum {
       UnavailableState,
-      IdleState
+      IdleState,
+      CrawlState,
+      SendNodesState
     } State;
 
 public:
@@ -76,12 +78,17 @@ public:
     QAbstractSocket::SocketError error() const { return m_clientPeer.error(); }
     QString errorString() const { return m_clientPeer.errorString(); }
 
+    State state() const { return m_enumState; }
+    bool setState(State state);
+
     void connectToHost(const MCServerInfo& serverInfo);
     void connectToHost(const QHostAddress& address, quint16 port) { connectToHost(MCServerInfo(address, port)); }
 
     ConnectionState connectionState() const { return m_enumConnectionState; }
     bool hasHandShakeReceived() const { return m_bHandShakeReceived; }
     bool isConnectionRefused() const { return m_bConnectionRefused; }
+
+    void sendSeedUrlRequest();
 
     void sendDataNodes(int n, const QByteArray& nodes);
     void sendLinkNodes(int n, const QByteArray& links);
@@ -98,6 +105,7 @@ signals:
     void connected();
     void disconnected();
     void stateChanged(MCClient::State state);
+    void seedUrlReceived(MCUrlInfo urlInfo);
 
 public slots:
     void disconnect(int msecs = 30000);
@@ -121,7 +129,6 @@ private:
     void connected_();
     void closing_();
     void disconnected_();
-    void idle_();
     void setConnectionState_(ConnectionState state);
     void setState_(State state);
 

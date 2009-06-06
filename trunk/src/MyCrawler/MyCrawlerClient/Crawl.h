@@ -28,6 +28,8 @@
 #include "UrlInfo.h"
 #include "UrlsCollection.h"
 
+#include "Client.h"
+
 class NetworkManagerThread;
 class CNetworkManager;
 
@@ -46,13 +48,14 @@ public:
 public:
     quint32 maxDepth() const { return m_u32MaxDepth; }
 
-public slots:
-    //void start();
-    //void stop();
-
 private slots:
     void queueUrlAdded_(MCUrlInfo urlInfo);
+    void networkManagerResponseHeaderReceived_(int statusCode, const NetworkManagerThread* thread);
     void networkManagerFinished_(const NetworkManagerThread* networkThread);
+    void networkManagerAllDone_();
+
+    void clientStateChanged_(MCClient::State state);
+    void clientSeedUrlReceived_(MCUrlInfo urlInfo);
 
 private:
     void analyzeContent_(QIODevice* device, MCUrlInfo parentUrl);
@@ -63,7 +66,8 @@ private:
     MCUrlsCollection* m_pUrlsNeighbor;
     MCUrlsCollection* m_pUrlsCrawled;
     quint32 m_u32MaxDepth;
-    bool m_bStarted;
+    quint32 m_seedUrlDepth;
+
 };
 
 #endif // CRAWL_H

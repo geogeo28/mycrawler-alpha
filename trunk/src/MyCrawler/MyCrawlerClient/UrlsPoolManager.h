@@ -39,13 +39,14 @@ public:
     MCUrlsPoolManager(
       CNetworkManager* networkManager,
       const MCUrlsCollection* urlsCrawledCollection, const MCUrlsCollection* urlsNeighborCollection,
-      int urlCount = 50, quint32 packetAverageSize = 256000,
+      int urlCount = 50, quint32 packetAverageSize = 128000,
       QObject* parent = NULL
     );
 
 public:
     int urlCount() const { return m_nUrlCount; }
     quint32 packetAverageSize() const { return m_u32PacketAverageSize; }
+    bool transferRequestPosted() const { return m_bTransferRequest; }
 
 signals:
     void urlToTransferAdded(MCUrlInfo urlInfo);

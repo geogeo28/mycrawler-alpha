@@ -28,6 +28,7 @@
 #include "UrlsCollection.h"
 
 #include "Crawl.h"
+#include "Client.h"
 
 static QRegExp RegExpHTTPLink("<a\\s+href=[\"']?([^\"'>]+)[\"'>]", Qt::CaseInsensitive);
 
@@ -43,7 +44,7 @@ MCCrawl::MCCrawl(
     m_pUrlsNeighbor(urlsNeighbor),
     m_pUrlsCrawled(urlsCrawled),
     m_u32MaxDepth(maxDepth),
-    m_bStarted(false)
+    m_seedUrlDepth(0)
 {
   AssertCheckPtr(urlsInQueue);
   AssertCheckPtr(urlsNeighbor);
@@ -52,28 +53,31 @@ MCCrawl::MCCrawl(
 
   qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
 
-  QObject::connect(m_pUrlsInQueue, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)), Qt::DirectConnection);
+  QObject::connect(m_pUrlsInQueue, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)));
+  QObject::connect(m_pNetworkManager, SIGNAL(responseHeaderReceived(int,const NetworkManagerThread*)), this, SLOT(networkManagerResponseHeaderReceived_(int,const NetworkManagerThread*)));
   QObject::connect(m_pNetworkManager, SIGNAL(finished(const NetworkManagerThread*)), this, SLOT(networkManagerFinished_(const NetworkManagerThread*)));
+  QObject::connect(m_pNetworkManager, SIGNAL(allDone()), this, SLOT(networkManagerAllDone_()), Qt::QueuedConnection);
+
+  QObject::connect(MCClient::instance(), SIGNAL(stateChanged(MCClient::State)), this, SLOT(clientStateChanged_(MCClient::State)));
+  QObject::connect(MCClient::instance(), SIGNAL(seedUrlReceived(MCUrlInfo)), this, SLOT(clientSeedUrlReceived_(MCUrlInfo)));
 }
-
-/*void MCCrawl::start() {
-  if (m_pNetworkManager->pendingRequestsCollection().isEmpty()) {
-    return;
-  }
-
-  m_bStarted = true;
-  m_pNetworkManager->setProcessingPendingRequests(true);
-}*/
-
-/*void MCCrawl::stop() {
-  m_bStarted = false;
-  m_pNetworkManager->setProcessingPendingRequests(false);
-}*/
 
 void MCCrawl::queueUrlAdded_(MCUrlInfo urlInfo) {
   //if (m_bStarted == true) {
   m_pNetworkManager->addPendingRequest(urlInfo);
+
+  if (MCClient::instance()->state() == MCClient::IdleState) {
+    MCClient::instance()->setState(MCClient::CrawlState);
+  }
+
   //}
+}
+
+void MCCrawl::networkManagerResponseHeaderReceived_(int statusCode, const NetworkManagerThread* thread) {
+  QString contentType = thread->reply()->header(QNetworkRequest::ContentTypeHeader).toString();
+  if (!contentType.startsWith("text", Qt::CaseInsensitive)) {
+    thread->reply()->abort();
+  }
 }
 
 void MCCrawl::networkManagerFinished_(const NetworkManagerThread* networkThread) {
@@ -92,6 +96,46 @@ void MCCrawl::networkManagerFinished_(const NetworkManagerThread* networkThread)
   }
 
   analyzeContent_(reply, currentUrl);
+}
+
+void MCCrawl::networkManagerAllDone_() {
+  if (m_pNetworkManager->pendingRequests().isEmpty() == true) {
+    MCClient::instance()->setState(MCClient::IdleState);
+  }
+  else if (m_pNetworkManager->processingPendingRequests() == false) {
+    MCClient::instance()->setState(MCClient::CrawlState);
+  }
+}
+
+void MCCrawl::clientStateChanged_(MCClient::State state) {
+  switch (state) {
+    case MCClient::UnavailableState:
+    case MCClient::SendNodesState:
+      m_pNetworkManager->setProcessingPendingRequests(false);
+      break;
+
+    case MCClient::IdleState:
+    {
+      if (m_pNetworkManager->pendingRequests().isEmpty() == true) {
+        MCClient::instance()->sendSeedUrlRequest();
+      }
+      else {
+        MCClient::instance()->setState(MCClient::CrawlState);
+      }
+    }
+    break;
+
+    case MCClient::CrawlState:
+      m_pNetworkManager->setProcessingPendingRequests(true);
+      break;
+
+    default:;
+  }
+}
+
+void MCCrawl::clientSeedUrlReceived_(MCUrlInfo urlInfo) {
+  Assert(urlInfo.isValid() == true);
+  m_seedUrlDepth = urlInfo.depth();
 }
 
 void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo parentUrl){
@@ -180,7 +224,7 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo parentUrl){
     }
 
     // Neighbor url
-    if (currentDepth >= maxDepth()) {
+    if (currentDepth >= (m_seedUrlDepth + maxDepth())) {
       m_pUrlsNeighbor->addUrl(currentUrl);
     }
     // Add in pending requests

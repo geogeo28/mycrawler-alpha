@@ -47,8 +47,8 @@ MCUrlsPoolManager::MCUrlsPoolManager(
   AssertCheckPtr(urlsNeighborCollection);
   Assert(packetAverageSize >= 2048);
 
-  QObject::connect(m_pUrlsCrawledCollection, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(addUrlToTransfer(MCUrlInfo)), Qt::QueuedConnection);
-  QObject::connect(m_pUrlsNeighborCollection, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(addUrlToTransfer(MCUrlInfo)), Qt::QueuedConnection);
+  QObject::connect(m_pUrlsCrawledCollection, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(addUrlToTransfer(MCUrlInfo)));
+  QObject::connect(m_pUrlsNeighborCollection, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(addUrlToTransfer(MCUrlInfo)));
   QObject::connect(m_pNetworkManager, SIGNAL(allDone()), this, SLOT(networkManagerAllDone_()), Qt::QueuedConnection);
 }
 
@@ -57,30 +57,21 @@ void MCUrlsPoolManager::addUrlToTransfer(MCUrlInfo urlInfo) {
   emit urlToTransferAdded(urlInfo);
 
   // Push a transfer request
-  if (m_lstUrlsToTransfer.count() == urlCount()) {
-    m_pNetworkManager->setProcessingPendingRequests(false); // Stop network manager
+  /*if (m_lstUrlsToTransfer.count() == urlCount()) {
     m_bTransferRequest = true;
+    MCClient::instance()->setState(MCClient::SendNodesState);
 
     // All threads in network manager are stopped
     if (m_pNetworkManager->threadsInProcessing() == 0) {
       networkManagerAllDone_();
     }
-  }
+  }*/
 }
 
 void MCUrlsPoolManager::networkManagerAllDone_() {
-  // A transfer request was set
-  if (m_bTransferRequest == true) {
-    m_bTransferRequest = false;
-
-    // Send data
-    flush_();
-
-    // Restart network manager
-    m_pNetworkManager->setProcessingPendingRequests(true);
-  }
-  // No pending request
-  else if (m_pNetworkManager->pendingRequests().isEmpty()) {
+  // No pending request or a transfer request was posted
+  if ((m_pNetworkManager->pendingRequests().isEmpty() == true)/* || (m_bTransferRequest == true)*/) {
+    //m_bTransferRequest = false;
     flush_();
   }
 }
@@ -98,7 +89,7 @@ void MCUrlsPoolManager::sendDataNodes_(int n) {
 
     ++nPackaged;
 
-    if ((quint32)buffer.bytesAvailable() >= packetAverageSize()) {
+    if ((quint32)buffer.size() >= packetAverageSize()) {
       MCClient::instance()->sendDataNodes(nPackaged, bytes);
 
       bytes.clear();
@@ -131,7 +122,7 @@ void MCUrlsPoolManager::sendLinkNodes_(int n) {
       out << succ.hash();
       ++nPackaged;
 
-      if ((quint32)buffer.bytesAvailable() >= packetAverageSize()) {
+      if ((quint32)buffer.size() >= packetAverageSize()) {
         MCClient::instance()->sendLinkNodes(nPackaged, bytes);
 
         bytes.clear();

@@ -28,6 +28,8 @@
 #include <QMap>
 #include <QList>
 
+#include "UrlInfo.h"
+
 class QString;
 class QTimerEvent;
 class QByteArray;
@@ -35,7 +37,6 @@ class QDataStream;
 
 class CNetworkInfo;
 class MCServerInfo;
-class MCUrlInfo;
 
 class MCClientPeerRequestInfo;
 class MCClientPeerRequestsQueuesContainer;
