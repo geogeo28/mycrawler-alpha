@@ -43,7 +43,7 @@ class NetworkManagerThread {
     int id() const {return m_nId;}
     void setId(int id) {m_nId = id;}
     QNetworkReply* reply() const {return m_pReply;}
-    void setReply(QNetworkReply* reply) {m_pReply = reply;} // Utile seulement lors d'une redirection
+    void setReply(QNetworkReply* reply); // Utile seulement lors d'une redirection
     int count() const {return m_nCount;}
     bool inProcess() const {return m_bInProcess;}
 
@@ -84,6 +84,7 @@ class CNetworkManager : public QObject
     void setBaseRequest(const QNetworkRequest& baseRequest) {m_baseRequest = baseRequest;}
     const RepliesList& replies() const {return m_lstReplies;}
     //QNetworkReply* doRequest(const QUrl& url);
+    int threadsInProcessing() const { return m_lstReplies.count(); }
 
     static CTransferRate* transferRateManager(QNetworkReply* reply);
 
@@ -91,7 +92,7 @@ class CNetworkManager : public QObject
     void addPendingRequest(const MCUrlInfo& url);
     bool processingPendingRequests() const {return m_bProcessingPendingRequests;}
     //void clearPendingRequests() {m_lstPendingRequests.clear();}
-    //const QList<QUrl>& pendingRequests() const {return m_lstPendingRequests;}
+    const QQueue<MCUrlInfo>& pendingRequests() const {return m_lstPendingRequests;}
     bool hasPendingRequests() const {return !m_lstPendingRequests.isEmpty();}
     const NetworkManagerThread* thread(int thread) const;
     const NetworkManagerThread* thread(const QNetworkReply* reply) const;

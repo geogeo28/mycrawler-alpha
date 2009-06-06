@@ -608,11 +608,13 @@ void MCClientPeer::processDataNodesMessagePacket_(QDataStream& data) {
   QList<MCUrlInfo> nodes;
 
   while ((data.atEnd() == false) && (data.status() == QDataStream::Ok)) {
-    QString url;   data >> url;
-    quint32 depth; data >> depth;
+    bool isCrawled; data >> isCrawled;
+    quint32 depth;  data >> depth;
+    QUrl url;       data >> url;
 
     // Invalid url
     MCUrlInfo urlInfo(url, depth);
+    urlInfo.setCrawled(isCrawled);
     if (urlInfo.isValid() == false) {
       errorProcessingPacket_(InvalidPacketContentError, ContinueBehavior);
     }

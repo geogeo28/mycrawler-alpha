@@ -51,7 +51,7 @@ public:
     bool addUrl(const QUrl& url);
     bool removeUrl(const QByteArray& hash);
     bool removeUrl(const MCUrlInfo& urlInfo) { return removeUrl(urlInfo.hash()); }
-    void removeAll();
+    void removeAllUrls();
 
     MCUrlInfo urlInfo(const QByteArray& hash) const;
     MCUrlInfo takeOne();
@@ -64,6 +64,7 @@ public:
 signals:
     void urlAdded(MCUrlInfo urlInfo);
     void urlRemoved(MCUrlInfo urlInfo);
+    void allUrlsRemoved();
 
 private:
     QExplicitlySharedDataPointer<MCUrlsCollectionPrivate> d;

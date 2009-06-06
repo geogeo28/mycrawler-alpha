@@ -18,6 +18,7 @@
  * RCSID $Id$
  ****************************************************************************/
 
+#include <QRegExp>
 #include <QSet>
 #include <QByteArray>
 
@@ -28,17 +29,20 @@
 
 #include "Crawl.h"
 
+static QRegExp RegExpHTTPLink("<a\\s+href=[\"']?([^\"'>]+)[\"'>]", Qt::CaseInsensitive);
+
 MCCrawl::MCCrawl(
+  CNetworkManager* networkManager,
   MCUrlsCollection* urlsInQueue, MCUrlsCollection* urlsNeighbor, MCUrlsCollection* urlsCrawled,
-  CNetworkManager* networkManager, quint32 depth,
+  quint32 maxDepth,
   QObject* parent
 )
   : QObject(parent),
+    m_pNetworkManager(networkManager),
     m_pUrlsInQueue(urlsInQueue),
     m_pUrlsNeighbor(urlsNeighbor),
     m_pUrlsCrawled(urlsCrawled),
-    m_pNetworkManager(networkManager),
-    m_u32Depth(depth),
+    m_u32MaxDepth(maxDepth),
     m_bStarted(false)
 {
   AssertCheckPtr(urlsInQueue);
@@ -47,9 +51,9 @@ MCCrawl::MCCrawl(
   AssertCheckPtr(networkManager);
 
   qRegisterMetaType<MCUrlInfo>("MCUrlInfo");
-  QObject::connect(m_pUrlsInQueue, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)), Qt::QueuedConnection);
 
-  QObject::connect(m_pNetworkManager, SIGNAL(success(const NetworkManagerThread*)), this, SLOT(networkManagerFinished_(const NetworkManagerThread*)));
+  QObject::connect(m_pUrlsInQueue, SIGNAL(urlAdded(MCUrlInfo)), this, SLOT(queueUrlAdded_(MCUrlInfo)), Qt::DirectConnection);
+  QObject::connect(m_pNetworkManager, SIGNAL(finished(const NetworkManagerThread*)), this, SLOT(networkManagerFinished_(const NetworkManagerThread*)));
 }
 
 /*void MCCrawl::start() {
@@ -76,38 +80,47 @@ void MCCrawl::networkManagerFinished_(const NetworkManagerThread* networkThread)
   QNetworkReply* reply = networkThread->reply();
   AssertCheckPtr(reply);
 
+  MCUrlInfo currentUrl = networkThread->urlInfo();
+  m_pUrlsInQueue->removeUrl(currentUrl);
+
+  // TODO : Avoid to loose somes links
+  m_pUrlsNeighbor->removeUrl(currentUrl);
+
   // Error during downloading the page, don't continue
   if (reply->error() != QNetworkReply::NoError) {
     return;
   }
 
-  analyzeContent_(reply, networkThread->urlInfo());
+  analyzeContent_(reply, currentUrl);
 }
 
-void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){ 
-  m_pUrlsCrawled->addUrl(urlInfoParent);
+void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo parentUrl){
+  // Url parent is now crawled
+  parentUrl.setCrawled(true);
+  m_pUrlsCrawled->addUrl(parentUrl);
   
-  quint32 nextDepth = urlInfoParent.depth() + 1;
-  QSet<QByteArray> lstUrlsInPage;
+  // Current depth of sub links
+  quint32 currentDepth = parentUrl.depth() + 1;
+  QSet<QByteArray> lstUrlsInPage; // Urls previously analyzed in the page
   
+  // Extract page content
   QTextStream textStream(device);
   QString str = textStream.readAll();
 
-  QRegExp oRegex("<a\\s+href=[\"']?([^\"'>]+)[\"'>]", Qt::CaseInsensitive);  // Lien Url
   int pos = 0;
-  while ((pos = oRegex.indexIn(str, pos))!=-1) {
+  while ((pos = RegExpHTTPLink.indexIn(str, pos))!=-1) {
     QApplication::processEvents();
 
-    QString parsedUrl = oRegex.cap(1).simplified();
-    pos += oRegex.matchedLength();
+    QString parsedUrl = RegExpHTTPLink.cap(1).simplified();
+    pos += RegExpHTTPLink.matchedLength();
 
     if (parsedUrl.startsWith("#") || parsedUrl.startsWith("javascript:", Qt::CaseInsensitive) || parsedUrl.startsWith("mailto:", Qt::CaseInsensitive))
       continue;
 
-    // TOTO : Pb url décodée plusieurs fois !
+    // Create an absolute url
     QUrl url = QUrl(parsedUrl);
     if (QUrl(parsedUrl).isRelative()) {
-      url = MCUrlInfo::absoluteUrl(urlInfoParent.url().toString(QUrl::None), parsedUrl);
+      url = MCUrlInfo::absoluteUrl(parentUrl.url().toString(QUrl::None), parsedUrl);
     }
 
     // Only the HTTP protocol is supported
@@ -115,47 +128,64 @@ void MCCrawl::analyzeContent_(QIODevice* device, MCUrlInfo urlInfoParent){
       continue;
     }
 
-    // Create a new url info and add in queue
-    MCUrlInfo newUrlInfo(url, nextDepth);
-    if (newUrlInfo.isValid() == false) {
+    // Create a new url info
+    MCUrlInfo currentUrl(url, currentDepth);
+    if (currentUrl.isValid() == false) {
       ILogger::Notice() << "Invalid url : " << url.toString(QUrl::None);
       continue;
     }
 
-    // Url already analyzed
-    if (lstUrlsInPage.contains(newUrlInfo.hash()) == true) {
+    // Recursif link (parent <=> current)
+    if (currentUrl.hash() == parentUrl.hash()) {
       continue;
     }
 
-    // Add new url in the list of urls already analyzed
-    lstUrlsInPage.insert(newUrlInfo.hash());
+    // Check if the url was already analyzed in the page
+    if (lstUrlsInPage.contains(currentUrl.hash()) == true) {
+      continue;
+    }
 
-    // Recursif link
-    if (newUrlInfo.hash() == urlInfoParent.hash()) {
+    // Add url in the list of urls already analyzed in the page
+    lstUrlsInPage.insert(currentUrl.hash());
+
+    // Url already crawled
+    if (m_pUrlsCrawled->urlExists(currentUrl) == true) {
+      MCUrlInfo urlCrawled = m_pUrlsCrawled->urlInfo(currentUrl.hash());
+      parentUrl.addSuccessor(urlCrawled);
       continue;
     }
 
     // Url already crawled
-    if (m_pUrlsCrawled->urlExists(newUrlInfo) == true) {
-      MCUrlInfo urlCrawled = m_pUrlsCrawled->urlInfo(newUrlInfo.hash());
-      urlCrawled.addAncestor(urlInfoParent);
-      continue;
+    MCUrlInfo tmpUrl = m_pUrlsCrawled->urlInfo(currentUrl.hash());
+    if (tmpUrl.isValid() == false) {
+      // Url already in the list of neighbor
+      tmpUrl = m_pUrlsNeighbor->urlInfo(currentUrl.hash());
+      // Url already in the queueing requests
+      if (tmpUrl.isValid() == false) {
+        tmpUrl = m_pUrlsInQueue->urlInfo(currentUrl.hash());
+      }
     }
 
-    // Url already in neighbor
-    // TODO : To complete
-
-    // Neighbor url
-    if (nextDepth == m_u32Depth) {
-      //m_pUrlsNeighbor->addUrl(newUrlInfo);
-      continue;
-    }
-    // Url ready to be crawled
-    else {
-      m_pUrlsInQueue->addUrl(newUrlInfo);
+    // Current url is now the url found in one list of urls
+    if (tmpUrl.isValid() == true) {
+      currentUrl = tmpUrl;
     }
 
     // Create edge
-    urlInfoParent.addSuccessor(newUrlInfo);
+    parentUrl.addSuccessor(currentUrl);
+
+    // Url already presents in one list of urls
+    if (tmpUrl.isValid() == true) {
+      continue;
+    }
+
+    // Neighbor url
+    if (currentDepth >= maxDepth()) {
+      m_pUrlsNeighbor->addUrl(currentUrl);
+    }
+    // Add in pending requests
+    else {
+      m_pUrlsInQueue->addUrl(currentUrl);
+    }
   }
 }

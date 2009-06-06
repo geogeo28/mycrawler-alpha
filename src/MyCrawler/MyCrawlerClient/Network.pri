@@ -1,6 +1,6 @@
 HEADERS += Client.h \
     ServersList.h \
-    UrlsCrawledPoolManager.h
+    UrlsPoolManager.h
 SOURCES += Client.cpp \
     ServersList.cpp \
-    UrlsCrawledPoolManager.cpp
+    UrlsPoolManager.cpp

@@ -620,7 +620,7 @@
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_3">
                <item>
-                <widget class="QTreeWidget" name="treeWidgetCrawlerUrlsToTransfer">
+                <widget class="MCUrlsToTransferTreeWidget" name="treeWidgetCrawlerUrlsToTransfer">
                  <property name="autoScroll">
                   <bool>false</bool>
                  </property>
@@ -947,6 +947,11 @@
    <class>MCUrlsNeighborTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>UrlsNeighborTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsToTransferTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>UrlsToTransferTreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

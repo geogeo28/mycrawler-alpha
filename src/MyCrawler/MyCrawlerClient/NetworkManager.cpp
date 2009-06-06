@@ -32,10 +32,14 @@ NetworkManagerThread::NetworkManagerThread(int id, QNetworkReply* reply, MCUrlIn
   }
 }
 
+void NetworkManagerThread::setReply(QNetworkReply* reply) {
+  m_pReply = reply;
+}
+
 void NetworkManagerThread::start(QNetworkReply* reply, MCUrlInfo urlInfo) {
-  Q_CHECK_PTR(reply);
+  AssertCheckPtr(reply);
   Assert(urlInfo.isValid() == true);
-  Q_ASSERT(m_bInProcess==false);
+  Assert(m_bInProcess==false);
 
   m_pReply = reply;
   m_urlInfo = urlInfo;
@@ -44,7 +48,7 @@ void NetworkManagerThread::start(QNetworkReply* reply, MCUrlInfo urlInfo) {
 }
 
 void NetworkManagerThread::end() {
-  Q_ASSERT(m_bInProcess==true);
+  Assert(m_bInProcess==true);
   m_bInProcess = false;
 }
 
@@ -53,7 +57,7 @@ CNetworkManager::CNetworkManager(int threads, QObject* parent)
     m_nThreads(threads), m_lstThreads(NULL),
     m_bProcessingPendingRequests(false)
 {
-  Q_ASSERT(threads>=0);
+  Assert(threads>=0);
 
   // Liste des threads
   if (threads) {
@@ -125,7 +129,7 @@ void CNetworkManager::addPendingRequest(const MCUrlInfo& urlInfo) {
 }
 
 void CNetworkManager::setProcessingPendingRequests(bool processing) {
-  //Q_ASSERT(m_bProcessingPendingRequests!=processing);
+  //Assert(m_bProcessingPendingRequests!=processing);
   m_bProcessingPendingRequests = processing;
 
   if ((processing == true) && hasPendingRequests()) {
@@ -214,31 +218,37 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
   transferRate->stop();
 
   NetworkManagerThread* pThread = thread_(reply);
+  AssertCheckPtr(pThread);
+
+  Assert(pThread->id()!=-1);
 
   // Correspond à une requête de redirection
   QUrl urlRedirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
-  m_lstReplies.removeOne(reply);
-  if (!m_lstReplies.removeOne(reply) && urlRedirection.isValid()) {
-    urlRedirection = reply->url().resolved(urlRedirection);
 
-    // Only the HTTP protocol is supported
-    if (urlRedirection.scheme().toLower() == "http") {
-      QNetworkReply* newReply = this->doRequest_(urlRedirection);
+  // Redirection
+  if (!m_lstReplies.removeOne(reply)) {
+    if (urlRedirection.isValid()) {
+      urlRedirection = reply->url().resolved(urlRedirection);
 
-      // Copie les propriétés
-      foreach (const QByteArray& propertyName, reply->dynamicPropertyNames())
-        newReply->setProperty(propertyName, reply->property(propertyName));
-      pThread->setReply(newReply);
+      // Only the HTTP protocol is supported
+      if (urlRedirection.scheme().toLower() == "http") {
+        QNetworkReply* newReply = this->doRequest_(urlRedirection);
 
-      reply->setProperty("Thread", QVariant());
-      reply->setProperty("ThreadId", QVariant());
+        // Copie les propriétés
+        foreach (const QByteArray& propertyName, reply->dynamicPropertyNames())
+          newReply->setProperty(propertyName, reply->property(propertyName));
+        pThread->setReply(newReply);
 
-      reply->close();
-      reply->deleteLater();
-      reply = NULL;
+        reply->setProperty("Thread", QVariant());
+        reply->setProperty("ThreadId", QVariant());
 
-      emit started(pThread);
-      return;
+        reply->close();
+        reply->deleteLater();
+        reply = NULL;
+
+        emit started(pThread);
+        return;
+      }
     }
   }
 
@@ -247,9 +257,9 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
 
   emit finished(pThread);
 
-  if (pThread->id()==-1) delete pThread;
+  //if (pThread->id()==-1) delete pThread;
   // TODO : Bug Qt 4.4.0
-  else pThread->end();
+  //else pThread->end();
   /*else if (!reply->property("Finished").isValid()) {
     pThread->end();
     reply->setProperty("Finished", -1);
@@ -264,12 +274,16 @@ void CNetworkManager::slotNetworkReplyFinished(QNetworkReply* reply) {
   reply->deleteLater();
   reply = NULL;
 
-  if (m_lstReplies.isEmpty())
-    emit allDone();
+  pThread->end();
 
   // Exécute une autre requête en attente dans la file
-  if ((pThread->id() != -1) && (processingPendingRequests() == true) && hasPendingRequests())
+  if ((pThread->id() != -1) && (processingPendingRequests() == true) && hasPendingRequests()) {
     nextPendingRequest_(pThread->id());
+    return;
+  }
+
+  if (m_lstReplies.isEmpty())
+    emit allDone();
 }
 
 void CNetworkManager::slotTransferRateUpdated() {
@@ -285,7 +299,7 @@ QNetworkReply* CNetworkManager::doRequest_(const QUrl& url) {
   // Check proxy !
   //m_pNetworkManager->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, "proxyweb.utc.fr", 3128));
   QNetworkReply* reply = m_pNetworkManager->get(m_baseRequest);
-  Q_CHECK_PTR(reply); // Normalement cela ne doit jamais se produire !
+  AssertCheckPtr(reply); // Normalement cela ne doit jamais se produire !
 
   // Gestionnaire de calcul du taux de transfert
   CTransferRate* transferRate = new CTransferRate(reply, CTransferRate::DEFAULT_TIME_UPDATE, reply);
@@ -311,7 +325,7 @@ int CNetworkManager::threadInWaiting_() const {
 
 void CNetworkManager::nextPendingRequest_(int thread) {
   int thread_free = (thread==-1)?threadInWaiting_():thread;
-  Q_ASSERT((processingPendingRequests()==true) && hasPendingRequests() && (thread_free!=-1));
+  Assert((processingPendingRequests()==true) && hasPendingRequests() && (thread_free!=-1));
 
   MCUrlInfo urlInfo = m_lstPendingRequests.dequeue();
   Assert(urlInfo.isValid() == true);

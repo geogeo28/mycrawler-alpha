@@ -56,7 +56,7 @@ MCUrlsCollection& MCUrlsCollection::operator=(const MCUrlsCollection& urlCollect
 
 MCUrlsCollection::~MCUrlsCollection()
 {
-  removeAll();
+  emit allUrlsRemoved();
 
   // QExplicitlySharedDataPointer takes care of deleting for us
 }
@@ -97,19 +97,16 @@ bool MCUrlsCollection::removeUrl(const QByteArray& hash) {
     return false;
   }
 
-  d->urls.remove(hash);
+  int n = d->urls.remove(hash);
   emit urlRemoved(url);
 
-  return true;
+  return (n == 1);
 }
 
-void MCUrlsCollection::removeAll() {
-  MCUrlsCollectionPrivate::Iterator it(d->urls);
-  while (it.hasNext()) {
-    emit urlRemoved(it.next().value());
-  }
-
+void MCUrlsCollection::removeAllUrls() {
   d->urls.clear();
+
+  emit allUrlsRemoved();
 }
 
 MCUrlInfo MCUrlsCollection::urlInfo(const QByteArray& hash) const {
