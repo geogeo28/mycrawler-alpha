@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/MainToolBar" >
+    <file alias="CrawlerIcon" >icons/MainToolBar/Crawler.png</file>
+    <file alias="ServersIcon" >icons/MainToolBar/Servers.png</file>
+  </qresource>
+  <qresource prefix="/Servers" >
+    <file alias="ServerIcon" >icons/Servers/Server.png</file>
+  </qresource>
+</RCC>

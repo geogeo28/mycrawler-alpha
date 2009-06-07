@@ -1,0 +1,68 @@
+***********
+TODO list :
+***********
+
+Components :
+------------
+
+X Add a level MemoryTrace into the logger.
+X Add memory manager to tracking memory leaks.
+X Create a testing module. See QTest library.
+X Bug : Cannot show a message box in the logger CLoggerMsgBox from a thread without GUI widget.
+X (thread-unsafe controlled, see notes) Remove the pointer 'm_pClient' and the method 'clientPeer()' in the class MCClientThread because it's thread-unsafe.
+X (the slot must be protected but not signals emitted) Avoid to use a mutex in the slots of MCClientThread.
+X Improve ServerLogWidget. See CTRL + A behavior. Copy one or more lines of the log must be possible. Add a context menu.
+X Bug (Major) : When a computer plays the role of server with an Internet connection and another computer with the same Internet connection
+plays the role of client, the server sees the client authenticating and disconnected states with the error 'The remote host closed the
+connection' three times. In the client, after  the state connected and 15 seconds, the error 'The remote host closed the connection'
+occured too. Bug not observed with a Freebox.
+(2009-04-27 Rev 41) - Reorganize the src folder with packages (with .pri or .pro files).
+(2009-04-27 Rev 41) - Add a base exception named Exception with upper exceptions such as CAssertException, CBadAddressException...
+(2009-04-27 Rev 41) - Add the CLoggerConsole inherited of ILogger to log messages into a console.
+(2009-04-27 Rev 41) - ILogger instance shared with different logger with different levels in order to register logs with ILogger::instance().
+               MemoryTrace => memory.log
+               NoticeAll => stdout and mycrawler.log
+(2009-04-28 Rev 49) - Add a level Trace into the logger.
+(2009-04-29 Rev 53) - Add settings capability. See QSettings class.
+(2009-05-06 Rev 71) - Bug : When an exception occured no message box is shown even if a widget has been created.
+(2009-05-18 Rev 121) - Added a new type of exception (CFileException).
+(2009-05-19 Rev 126) - The settings must be load and saved in IApplication instances (MCServerApplication and MCClientApplication).
+(2009-05-19 Rev 128) - Add the code for the button 'Default values' in the dialog preferences.
+(2009-05-21 Rev 134) - Send an error message to the host if the method 'refuseConnection()' is call in the class MCClientPeer.
+(2009-05-27 Rev 146) - Manage a ConnectionRefused packet before received an handshake.
+(2009-05-28 Rev 149) - The class MCServerInfo must be thread-safe.
+(2009-05-30 Rev 157) - MCClientPeer : Split requests and responses in two categories. Added a RequestTimeoutTimer and check if the data to read is the reponse to a specific request.
+(2009-05-30 Rev 157) - MCClientPeer : Added PendingRequestTimeout.
+- Derived QTreeWidgetItem with a own class in order to improve columns sorting.
+- Bug : The error 'Connection refused' is never processed because the connection is closed just after the message was emitted.
+- Don't emit the signal 'disconnected' when the connection is refused by the server or the client wasn't authenticated.
+- Avoid tables of QTreeWidgetItem* in TreeWidgets. Prefer to use a backtracker (QObject dynamic property).
+- Store order of the Url in the class MCUrlsContainer (See column order in MCUrlsInQueueWidget).
+- Prefer used Java-style iterators rather than STL-style iterators.
+- Prefer used methods take, erase... of Qt containers rather than remove, value... 
+- MCClientPeer must known how data are stored into messages DataNodesMessage and LinkNodesMessage.
+- Create typedefs for template classes. For instance QList<MCUrlInfo> -> MCUrlInfoList...
+- Add a method urlString into the class MCUrlInfo. Avoid to do url().toString(QUrl::None).
+- Check code with calls of signal in slots. The validity of variables must be assured during all execution of the slot.
+- Use return value of MCUrlsCollection::addUrl instead of MCUrlsCollection::urlExists.
+
+
+MyCrawlerServer :
+-----------------
+X The class MCServer must be thread-safe. Added Read/Write mutex. Keep an eye on this singleton.
+(2009-05-17 Rev 112) - Detect multi connections with the same MAC address (remote client).
+(2009-05-17 Rev 117) - Improve the management of the mutex in the class MCClientThread.
+(2009-05-19 Rev 126) - Use a setting in the Preferences Dialog for save/or not the server history.
+(2009-05-21 Rev 132) - Clean-up the code in MCClientsTreeWidgets (factorize the code).
+(2009-05-28 Rev 149) - Bug : The peer address of a client is not showed after load the server history.
+- Bug : Column' state of the Tree Widget MCClientsTreeWidget is lost when another form is selected and the application is closed.
+- MCClientThread* must be const MCClientThread* in signals of MCServer.
+- Check if the url crawled sent by the user is currently beeing crawled by another user !
+
+
+MyCrawlerClient :
+-----------------
+X Store MCServerInfo in each item of MCServersTreeWidget.
+(2009-05-26 Rev 144) - Load the proxy settings before call the method 'connectToHost' of MCClient.
+(2009-05-26 Rev 144) - Add an enumerate type 'Connection states' in MCClient (Connecting even during authenticating...).
+- When a client is disconnected to the server, the urls in queue must be clear... ?

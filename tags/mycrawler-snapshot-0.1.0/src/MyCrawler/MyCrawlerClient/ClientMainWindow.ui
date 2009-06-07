@@ -1,0 +1,1060 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <author>ANNEHEIM Geoffrey</author>
+ <class>MCClientMainWindow</class>
+ <widget class="QMainWindow" name="MCClientMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>743</width>
+    <height>699</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ServerMainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout">
+    <property name="spacing">
+     <number>6</number>
+    </property>
+    <property name="margin">
+     <number>2</number>
+    </property>
+    <item>
+     <widget class="MyQTabWidget" name="tabWidgetForms">
+      <property name="currentIndex">
+       <number>2</number>
+      </property>
+      <widget class="QWidget" name="tabClientLog">
+       <attribute name="title">
+        <string>Client log</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="CLogTreeWidget" name="treeWidgetClientLog">
+          <property name="autoScroll">
+           <bool>false</bool>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::NoSelection</enum>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="rootIsDecorated">
+           <bool>false</bool>
+          </property>
+          <property name="itemsExpandable">
+           <bool>false</bool>
+          </property>
+          <property name="allColumnsShowFocus">
+           <bool>true</bool>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="expandsOnDoubleClick">
+           <bool>false</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout">
+          <item>
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonClientLogCopy">
+            <property name="text">
+             <string>Copy To Clipboard</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonClientLogClear">
+            <property name="text">
+             <string>Clean</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabServers">
+       <attribute name="title">
+        <string>Servers</string>
+       </attribute>
+       <layout class="QHBoxLayout">
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="MCServersTreeWidget" name="treeWidgetServers">
+          <property name="autoScroll">
+           <bool>false</bool>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ExtendedSelection</enum>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="rootIsDecorated">
+           <bool>false</bool>
+          </property>
+          <property name="itemsExpandable">
+           <bool>false</bool>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="animated">
+           <bool>true</bool>
+          </property>
+          <property name="allColumnsShowFocus">
+           <bool>true</bool>
+          </property>
+          <property name="expandsOnDoubleClick">
+           <bool>false</bool>
+          </property>
+          <attribute name="headerShowSortIndicator" stdset="0">
+           <bool>true</bool>
+          </attribute>
+          <column>
+           <property name="text">
+            <string notr="true">1</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout">
+          <item>
+           <widget class="QPushButton" name="buttonConnectDisconnect">
+            <property name="text">
+             <string>Connect</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBoxAddServer">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Add a server</string>
+            </property>
+            <layout class="QVBoxLayout">
+             <item>
+              <layout class="QHBoxLayout">
+               <item>
+                <layout class="QVBoxLayout">
+                 <item>
+                  <widget class="QLabel" name="lblAddServerIP">
+                   <property name="text">
+                    <string>IP address :</string>
+                   </property>
+                   <property name="buddy">
+                    <cstring>textAddServerIP</cstring>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="textAddServerIP">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>100</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>100</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="baseSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <spacer>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeType">
+                  <enum>QSizePolicy::Fixed</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>10</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <layout class="QVBoxLayout">
+                 <item>
+                  <widget class="QLabel" name="lblAddServerPort">
+                   <property name="text">
+                    <string>Port :</string>
+                   </property>
+                   <property name="buddy">
+                    <cstring>spinBoxAddServerPort</cstring>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="spinBoxAddServerPort">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>60</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
+                   <property name="maximum">
+                    <number>65535</number>
+                   </property>
+                   <property name="value">
+                    <number>8080</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblAddServerName">
+               <property name="text">
+                <string>Name :</string>
+               </property>
+               <property name="buddy">
+                <cstring>textAddServerIP</cstring>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="textAddServerName">
+               <property name="maxLength">
+                <number>64</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout">
+               <item>
+                <spacer>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>58</width>
+                   <height>13</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="buttonAddServer">
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabCrawler">
+       <attribute name="title">
+        <string>Crawler</string>
+       </attribute>
+       <layout class="QVBoxLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="tabCrawlerExtended">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tabCrawlerInProgress">
+           <attribute name="title">
+            <string>In progress</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QGroupBox" name="groupBoxCrawlerUrlsInQueue">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>Urls in queue</string>
+              </property>
+              <layout class="QVBoxLayout">
+               <item>
+                <widget class="MCUrlsInQueueTreeWidget" name="treeWidgetCrawlerUrlsInQueue">
+                 <property name="autoScroll">
+                  <bool>false</bool>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::NoSelection</enum>
+                 </property>
+                 <property name="rootIsDecorated">
+                  <bool>false</bool>
+                 </property>
+                 <property name="itemsExpandable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sortingEnabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="animated">
+                  <bool>true</bool>
+                 </property>
+                 <property name="allColumnsShowFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="expandsOnDoubleClick">
+                  <bool>false</bool>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string notr="true">1</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBoxCrawlerUrlsCrawled">
+              <property name="title">
+               <string>Urls crawled</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout">
+               <item>
+                <widget class="MCUrlsCrawledTreeWidget" name="treeWidgetCrawlerUrlsCrawled">
+                 <property name="autoScroll">
+                  <bool>false</bool>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::DoubleClicked</set>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::SingleSelection</enum>
+                 </property>
+                 <property name="rootIsDecorated">
+                  <bool>false</bool>
+                 </property>
+                 <property name="itemsExpandable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sortingEnabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="animated">
+                  <bool>true</bool>
+                 </property>
+                 <property name="allColumnsShowFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="expandsOnDoubleClick">
+                  <bool>false</bool>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string notr="true">1</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBoxCrawlerUrlsInProcessing">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>190</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Urls in processing</string>
+              </property>
+              <layout class="QVBoxLayout">
+               <item>
+                <widget class="TreeWidgetThreadsInfos" name="treeWidgetThreadsInfos">
+                 <property name="sizeIncrement">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true"/>
+                 </property>
+                 <property name="autoScroll">
+                  <bool>false</bool>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="showDropIndicator" stdset="0">
+                  <bool>false</bool>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::NoSelection</enum>
+                 </property>
+                 <property name="autoExpandDelay">
+                  <number>-1</number>
+                 </property>
+                 <property name="indentation">
+                  <number>20</number>
+                 </property>
+                 <property name="rootIsDecorated">
+                  <bool>false</bool>
+                 </property>
+                 <property name="uniformRowHeights">
+                  <bool>true</bool>
+                 </property>
+                 <property name="itemsExpandable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="allColumnsShowFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>false</bool>
+                 </property>
+                 <property name="expandsOnDoubleClick">
+                  <bool>false</bool>
+                 </property>
+                 <property name="columnCount">
+                  <number>5</number>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string>#</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Url</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Progression</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Taux de transfert</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Etat</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabCrawlerToTransfer">
+           <attribute name="title">
+            <string>To transfer</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="QGroupBox" name="groupBoxCrawlerUrlsNeighbor">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>Neighbor Urls</string>
+              </property>
+              <layout class="QVBoxLayout" name="_2">
+               <item>
+                <widget class="MCUrlsNeighborTreeWidget" name="treeWidgetCrawlerUrlsNeighbor">
+                 <property name="autoScroll">
+                  <bool>false</bool>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="showDropIndicator" stdset="0">
+                  <bool>false</bool>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::NoSelection</enum>
+                 </property>
+                 <property name="rootIsDecorated">
+                  <bool>false</bool>
+                 </property>
+                 <property name="itemsExpandable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sortingEnabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="animated">
+                  <bool>true</bool>
+                 </property>
+                 <property name="allColumnsShowFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="expandsOnDoubleClick">
+                  <bool>false</bool>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string notr="true">1</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBoxCrawlerUrlsToTransfer">
+              <property name="title">
+               <string>Urls to transfer</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="MCUrlsToTransferTreeWidget" name="treeWidgetCrawlerUrlsToTransfer">
+                 <property name="autoScroll">
+                  <bool>false</bool>
+                 </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="selectionMode">
+                  <enum>QAbstractItemView::NoSelection</enum>
+                 </property>
+                 <property name="rootIsDecorated">
+                  <bool>false</bool>
+                 </property>
+                 <property name="itemsExpandable">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sortingEnabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="animated">
+                  <bool>true</bool>
+                 </property>
+                 <property name="allColumnsShowFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="expandsOnDoubleClick">
+                  <bool>false</bool>
+                 </property>
+                 <column>
+                  <property name="text">
+                   <string notr="true">1</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>743</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="doFilePreferences"/>
+    <addaction name="separator"/>
+    <addaction name="doFileExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <widget class="QMenu" name="menuViewToolBars">
+     <property name="title">
+      <string>Toolbars</string>
+     </property>
+    </widget>
+    <addaction name="menuViewToolBars"/>
+    <addaction name="doViewStatusBar"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="doHelpAbout"/>
+    <addaction name="doHelpAboutQt"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Main menu</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>64</width>
+     <height>64</height>
+    </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="doMainToolBarConnectDisconnect"/>
+   <addaction name="separator"/>
+   <addaction name="doMainToolBarClientLog"/>
+   <addaction name="doMainToolBarServers"/>
+   <addaction name="doMainToolBarCrawler"/>
+   <addaction name="doMainToolBarPreferences"/>
+   <addaction name="doMainToolBarExit"/>
+  </widget>
+  <action name="doMainToolBarExit">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/MainToolBar/ExitIcon</normaloff>:/MainToolBar/ExitIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="toolTip">
+    <string>Exit the application</string>
+   </property>
+  </action>
+  <action name="doMainToolBarPreferences">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/MainToolBar/PreferencesIcon</normaloff>:/MainToolBar/PreferencesIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+   <property name="iconText">
+    <string>Preferences</string>
+   </property>
+   <property name="toolTip">
+    <string>Preferences dialog</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
+   </property>
+  </action>
+  <action name="doFileExit">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/Menu/ExitIcon</normaloff>:/Menu/ExitIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="toolTip">
+    <string>Exit application</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::QuitRole</enum>
+   </property>
+  </action>
+  <action name="doViewStatusBar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Status bar</string>
+   </property>
+  </action>
+  <action name="doHelpAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::AboutRole</enum>
+   </property>
+  </action>
+  <action name="doHelpAboutQt">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/Menu/AboutQtIcon</normaloff>:/Menu/AboutQtIcon</iconset>
+   </property>
+   <property name="text">
+    <string>About Qt</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::AboutQtRole</enum>
+   </property>
+  </action>
+  <action name="doFilePreferences">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/Menu/PreferencesIcon</normaloff>:/Menu/PreferencesIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
+   </property>
+  </action>
+  <action name="doMainToolBarClientLog">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/MainToolBar/LogIcon</normaloff>:/MainToolBar/LogIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Client Log</string>
+   </property>
+   <property name="toolTip">
+    <string>Show client log</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>0</number>
+   </property>
+  </action>
+  <action name="doMainToolBarServers">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/MainToolBar/ServersIcon</normaloff>
+     <normalon>:/MainToolBar/ServerUnconnectedIcon</normalon>:/MainToolBar/ServersIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Servers</string>
+   </property>
+   <property name="toolTip">
+    <string>Servers list</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>1</number>
+   </property>
+  </action>
+  <action name="doMainToolBarConnectDisconnect">
+   <property name="icon">
+    <iconset resource="../Shared/shared.qrc">
+     <normaloff>:/MainToolBar/UnconnectedIcon</normaloff>
+     <normalon>:/MainToolBar/ConnectedIcon</normalon>:/MainToolBar/UnconnectedIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+   <property name="toolTip">
+    <string>Connect / Disconnect</string>
+   </property>
+  </action>
+  <action name="doMainToolBarCrawler">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/MainToolBar/CrawlerIcon</normaloff>:/MainToolBar/CrawlerIcon</iconset>
+   </property>
+   <property name="text">
+    <string>Crawler</string>
+   </property>
+   <property name="toolTip">
+    <string>Crawler</string>
+   </property>
+   <property name="FormIndex" stdset="0">
+    <number>2</number>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>MyQTabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>../Components/Widgets/MyQTabWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CLogTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Components/Widgets/LogTreeWidget.h</header>
+   <slots>
+    <slot>copyToClipboard()</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>MCServersTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>ServersTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TreeWidgetThreadsInfos</class>
+   <extends>QTreeWidget</extends>
+   <header>TreeWidgetThreadsInfos.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsInQueueTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Shared/UrlsInQueueTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsCrawledTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>../Shared/UrlsCrawledTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsNeighborTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>UrlsNeighborTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MCUrlsToTransferTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>UrlsToTransferTreeWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="resources.qrc"/>
+  <include location="../Shared/shared.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>doMainToolBarExit</sender>
+   <signal>triggered()</signal>
+   <receiver>MCClientMainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>265</x>
+     <y>238</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>doFileExit</sender>
+   <signal>triggered()</signal>
+   <receiver>MCClientMainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>265</x>
+     <y>238</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonConnectDisconnect</sender>
+   <signal>clicked()</signal>
+   <receiver>doMainToolBarConnectDisconnect</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>451</x>
+     <y>159</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonClientLogClear</sender>
+   <signal>clicked()</signal>
+   <receiver>treeWidgetClientLog</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>511</x>
+     <y>461</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>489</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonClientLogCopy</sender>
+   <signal>clicked()</signal>
+   <receiver>treeWidgetClientLog</receiver>
+   <slot>copyToClipboard()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>463</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>395</x>
+     <y>363</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <designerdata>
+  <property name="gridDeltaX">
+   <number>10</number>
+  </property>
+  <property name="gridDeltaY">
+   <number>10</number>
+  </property>
+  <property name="gridSnapX">
+   <bool>true</bool>
+  </property>
+  <property name="gridSnapY">
+   <bool>true</bool>
+  </property>
+  <property name="gridVisible">
+   <bool>true</bool>
+  </property>
+ </designerdata>
+</ui>

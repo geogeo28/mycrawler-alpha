@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="/MainToolBar" >
+    <file alias="StorageIcon" >icons/MainToolBar/Storage.png</file>
+    <file alias="GraphIcon" >icons/MainToolBar/Graph.png</file>
+    <file alias="ClientsIcon" >icons/MainToolBar/Clients.png</file>
+    <file alias="TasksIcon" >icons/MainToolBar/Tasks.png</file>
+  </qresource>
+  <qresource prefix="/Clients" >
+    <file alias="UnauthenticatedIcon" >icons/Clients/Unauthenticated.png</file>
+    <file alias="ConnectedLocalIcon" >icons/Clients/ConnectedLocal.png</file>
+    <file alias="ConnectedRemoteIcon" >icons/Clients/ConnectedRemote.png</file>
+    <file alias="UnconnectedIcon" >icons/Clients/Unconnected.png</file>
+  </qresource>
+</RCC>
