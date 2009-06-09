@@ -59,6 +59,8 @@ public:
     void merge(const MCUrlsCollection& urls);
     QList<MCUrlInfo> urls() const;
 
+    bool exportGDF(const QString& fileName) const;
+
     MCUrlsCollection clone() const;
 
 signals:

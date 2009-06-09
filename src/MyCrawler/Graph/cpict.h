@@ -6,7 +6,9 @@
 
 #include <QMutex>
 
-#define MARGE 4.0
+#define MARGE 10.0
+#define MARGEBONUS 200.0
+#define MARGECOEFBONUS 1.25
 #define MARGEREPPELMIN 2.0
 #define MARGEREPPELMAX 4.0
 #define NBCNMAXRND 3
@@ -79,11 +81,11 @@ class CNode
         void repercutDelta(const QPointF &dlt);
         void repercutDeltaX(float dltX);
         void repercutDeltaY(float dltY);
-		
+
         CFNode *getRandomNode();
-		
+
         void setRandLink(CNode *root);
-		
+
         static SList *makeAleatList(unsigned int numMax,CNode *root);
 
         //void attractForce(float gravity);
@@ -123,25 +125,32 @@ class CFNode : public CNode
 };
 
 class QMouseEvent;
+class QWheelEvent;
 class CPict : public QGLWidget
 {
+    Q_OBJECT
+
 private:
     CNode *root;
     QPointF p;
     QPointF oldMous;
     QPointF zoomSvP;
     CNode *selectedNode;
+    CNode *fllowedNode;
     float scl;
 
     GLint objOpGlID;
-	
+
     CNode *initAleatGraphRec(float px=0.0,float py=0.0,int prof=3);
+
+    void calculBase();
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent * event);
     virtual void mouseReleaseEvent(QMouseEvent * event);
     virtual void mouseDoubleClickEvent(QMouseEvent* event);
+    virtual void wheelEvent(QWheelEvent *event);
 
 protected:
     virtual void initializeGL();
@@ -161,7 +170,7 @@ public:
 
     CFNode *addNewNode(const QString &addr,bool *isNew=NULL);
 
-    static bool ShowLinks;
+    static bool showLinks;
 };
 
 Q_DECLARE_METATYPE(CFNode*);

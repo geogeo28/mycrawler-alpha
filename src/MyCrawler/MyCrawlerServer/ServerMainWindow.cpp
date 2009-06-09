@@ -217,6 +217,10 @@ void MCServerMainWindow::on_buttonTasksAddSeedUrl_clicked() {
   textTasksSeedUrl->setText("http://");
 }
 
+void MCServerMainWindow::on_buttonGraphExportGDF_clicked() {
+  MCApp->urlsCrawled()->exportGDF("graph.gdf");
+}
+
 void MCServerMainWindow::slotProgressClientFinished(MCClientThread* client) {
   AssertCheckPtr(client);
 
