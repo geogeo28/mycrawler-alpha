@@ -1,13 +1,13 @@
 #include "cpict.h"
 
-//#include <QPainter>
+#include <QPainter>
 #include <QMouseEvent>
 
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
 
-bool CPict::ShowLinks = true;
+bool CPict::showLinks = true;
 
 //initialisation du générateur de nbres aleatoires
 inline void randomize(){
@@ -31,32 +31,43 @@ CNode::~CNode()
 
 float CNode::updateSize(double &x,double &y)
 {
-    float tx(0.0),ty(0.0),sz(0.0),tmpf(0.0);
+    float tx,ty;
 
-    CNode *nxt(this);
-    /*
-    while(nxt)
+    if(this->suivant)
     {
-        tmpf+=nxt->size;
-        tx+=nxt->p.x()*nxt->size;
-        ty+=nxt->p.y()*nxt->size;
+        float sz(0.0),tmpf(0.0);
 
-        nxt=nxt->suivant;
+        CNode *nxt(this);
+        /*
+        while(nxt)
+        {
+            tmpf+=nxt->size;
+            tx+=nxt->p.x()*nxt->size;
+            ty+=nxt->p.y()*nxt->size;
+
+            nxt=nxt->suivant;
+        }
+        if(tmpf>0.00000000001){x=tx/tmpf;y=ty/tmpf;}
+        nxt=this;
+        */
+
+        while(nxt)
+        {
+            tx=nxt->p.x()-x;
+            ty=nxt->p.y()-y;
+            tmpf=sqrtf(tx*tx+ty*ty)+nxt->size;
+            if(tmpf>sz)sz=tmpf;
+            nxt=nxt->suivant;
+        }
+
+        return sz;
     }
-    if(tmpf>0.00000000001){x=tx/tmpf;y=ty/tmpf;}
-    nxt=this;
-    */
-
-    while(nxt)
+    else
     {
-        tx=nxt->p.x()-x;
-        ty=nxt->p.y()-y;
-        tmpf=sqrtf(tx*tx+ty*ty)+nxt->size;
-        if(tmpf>sz)sz=tmpf;
-        nxt=nxt->suivant;
+            tx=this->p.x()-x;
+            ty=this->p.y()-y;
+            return (sqrtf(tx*tx+ty*ty)+MARGECOEFBONUS*(this->size));
     }
-
-    return sz;
 }
 
 void CNode::updateSizeRec()
@@ -294,7 +305,7 @@ CFNode *CNode::addNewNode(const QString &addr,bool *isNew)
     else if(addr.left(8).compare("https://",Qt::CaseInsensitive)==0)spltList=(addr.right(addr.length()-8)).split('/',QString::SkipEmptyParts);
     else spltList=addr.split('/',QString::KeepEmptyParts);
 
-    if(spltList.isEmpty())return NULL;
+    if(spltList.isEmpty() || spltList.length()>8)return NULL;
 
     QStringList::iterator it,itP(spltList.begin()),ed(spltList.end());
 
@@ -489,33 +500,44 @@ void CNode::attractForce2(float gravity)
 
 float CNode::updateSizeRecPriv(double &x,double &y)
 {
-    float tx(0.0),ty(0.0),sz(0.0),tmpf(0.0);
+    float tx,ty;
 
-    CNode *nxt(this);
-    /*
-    while(nxt)
+    if(this->suivant)
     {
-        tmpf+=nxt->size;
-        tx+=nxt->p.x()*nxt->size;
-        ty+=nxt->p.y()*nxt->size;
+        float sz(0.0),tmpf(0.0);
 
-        nxt=nxt->suivant;
+        CNode *nxt(this);
+        /*
+        while(nxt)
+        {
+            tmpf+=nxt->size;
+            tx+=nxt->p.x()*nxt->size;
+            ty+=nxt->p.y()*nxt->size;
+
+            nxt=nxt->suivant;
+        }
+        if(tmpf>0.00000000001){x=tx/tmpf;y=ty/tmpf;}
+        nxt=this;
+        */
+
+        while(nxt)
+        {
+            if(nxt->fils)nxt->size=MARGE+nxt->fils->updateSizeRecPriv(nxt->p.rx(),nxt->p.ry());
+            tx=nxt->p.x()-x;
+            ty=nxt->p.y()-y;
+            tmpf=sqrtf(tx*tx+ty*ty)+nxt->size;
+            if(tmpf>sz)sz=tmpf;
+            nxt=nxt->suivant;
+        }
+        return sz;
     }
-    if(tmpf>0.00000000001){x=tx/tmpf;y=ty/tmpf;}
-    nxt=this;
-    */
-
-    while(nxt)
+    else
     {
-        if(nxt->fils)nxt->size=MARGE+nxt->fils->updateSizeRecPriv(nxt->p.rx(),nxt->p.ry());
-        tx=nxt->p.x()-x;
-        ty=nxt->p.y()-y;
-        tmpf=sqrtf(tx*tx+ty*ty)+nxt->size;
-        if(tmpf>sz)sz=tmpf;
-        nxt=nxt->suivant;
+            if(this->fils)this->size=MARGE+this->fils->updateSizeRecPriv(this->p.rx(),this->p.ry());
+            tx=this->p.x()-x;
+            ty=this->p.y()-y;
+            return (sqrtf(tx*tx+ty*ty)+MARGECOEFBONUS*(this->size));
     }
-
-    return sz;
 }
 
 void CNode::freeNode()
@@ -554,7 +576,6 @@ void CNode::draw(float oldPx,float oldPy,GLint objOpGlID,matrix &mat, float scl)
         glLoadIdentity();
         glMultMatrixf(mat.m);
         glCallList(objOpGlID);
-
         if(nxt->fils)nxt->fils->draw(oldPx,oldPy,objOpGlID,mat,scl);
         nxt=nxt->suivant;
     }
@@ -573,7 +594,7 @@ void CNode::setRandLink(CNode *root)
 
 void CNode::drawLinks(QPointF &p,float scl)
 {
-    if (CPict::ShowLinks == false) {
+    if (CPict::showLinks == false) {
       return;
     }
 
@@ -665,9 +686,9 @@ void CNode::reppel()
     }
 
     nxtI=this;
-    float ix,iy,ir;
-    float dx,dy;
-    float dist,sumR;
+    qreal ix,iy,ir;
+    qreal dx,dy;
+    qreal dist,sumR;
     QPointF tmpDlt;
 
     while(nxtI)
@@ -697,12 +718,13 @@ void CNode::reppel()
                     dist=sqrt(dist);
                     sumR-=dist;
                     sumR/=dist;
-                    sumR*=0.5;
+                    sumR*=0.6;
                     dx*=sumR;dy*=sumR;
-                    nxtJ->p.rx()+=dx;
-                    nxtJ->p.ry()+=dy;
+                    //nxtJ->p.rx()+=dx;
+                    //nxtJ->p.ry()+=dy;
                     tmpDlt.setX(dx);
                     tmpDlt.setY(dy);
+                    nxtJ->p+=tmpDlt;
                     ix-=dx;
                     iy-=dy;
                     if(nxtJ->fils)nxtJ->fils->repercutDelta(tmpDlt);
@@ -740,9 +762,9 @@ void CNode::reppel(float repForce,float degrad)
     }
 
     nxtI=this;
-    float ix,iy,ir;
-    float dx,dy;
-    float dist,sumR;
+    qreal ix,iy,ir;
+    qreal dx,dy;
+    qreal dist,sumR;
     QPointF tmpDlt;
 
     while(nxtI)
@@ -759,35 +781,42 @@ void CNode::reppel(float repForce,float degrad)
             if(dist<0.000001)
             {
                 sumR=(ir+nxtJ->size+MARGEREPPELMAX)*0.5;
-                nxtJ->p.rx()+=sumR;
-                if(nxtJ->fils)nxtJ->fils->repercutDeltaX(sumR);
-                ix-=sumR;
+                if(rand()%2)
+                {
+                    nxtJ->p.rx()+=sumR;
+                    if(nxtJ->fils)nxtJ->fils->repercutDeltaX(sumR);
+                    ix-=sumR;
+                }
+                else
+                {
+                    nxtJ->p.ry()+=sumR;
+                    if(nxtJ->fils)nxtJ->fils->repercutDeltaY(sumR);
+                    iy-=sumR;
+                }
             }
             else
             {
                 sumR=ir+nxtJ->size+MARGEREPPELMIN;
-                if(dist<sumR*sumR)
+
+                dist=sqrt(dist);
+
+                if(dist<sumR)
                 {
-                    sumR+=(MARGEREPPELMAX-MARGEREPPELMIN);
-                    dist=sqrtf(dist);
-                    sumR-=dist;
-                    sumR/=dist;
-                    if(sumR<0.01)sumR=0.01;
-                    sumR*=0.5;
-                    dx*=sumR;dy*=sumR;
-                    //nxtJ->p.rx()+=dx;
-                    //nxtJ->p.ry()+=dy;
-                    tmpDlt.setX(dx);
-                    tmpDlt.setY(dy);
+                    qreal tSumR(sumR+(MARGEREPPELMAX-MARGEREPPELMIN));
+                    tSumR-=dist;
+                    tSumR/=dist;
+                    if(tSumR<0.01)tSumR=0.01;
+                    tSumR*=0.5;
+                    tmpDlt.setX(dx*tSumR);
+                    tmpDlt.setY(dy*tSumR);
                     nxtJ->p+=tmpDlt;
-                    ix-=dx;
-                    iy-=dy;
+                    ix-=tmpDlt.x();
+                    iy-=tmpDlt.y();
                     if(nxtJ->fils)nxtJ->fils->repercutDelta(tmpDlt);
                 }
-                else
+
                 {
                     //sumR+=(MARGEREPPELMAX-MARGEREPPELMIN);
-                    dist=sqrtf(dist);
                     if((dist-sumR)<0.01)dist=sumR+0.01;
                     dist=(repForce/(dist*(dist-sumR)))*sumR;
                     if(dist<0.0)dist=0.0;
@@ -1083,9 +1112,11 @@ void CFNode::attractGrav(float gravity)
     p.setY(py);
 }
 */
-CPict::CPict(QWidget *parent):QGLWidget(parent),root(NULL),p(250.0,250.0),scl(0.5)
+CPict::CPict(QWidget *parent):QGLWidget(QGLFormat(QGL::SampleBuffers),parent),root(NULL),p(250.0,250.0),selectedNode(NULL),fllowedNode(NULL),scl(0.5)
 {
     setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    setAutoFillBackground(false);
+    setMouseTracking(true);
 }
 CPict::~CPict(){if(root){root->freeNode();delete root;root=NULL;}}
 
@@ -1134,17 +1165,28 @@ void CPict::paintEvent(QPaintEvent *pev){updateGL();}
 void CPict::mousePressEvent(QMouseEvent *event)
 {
     oldMous=event->posF();
-    if(event->buttons() & Qt::LeftButton)
+    Qt::MouseButtons msb(event->buttons());
+
+    if(msb & Qt::LeftButton)
     {
         selectedNode=root->selectedNode((oldMous-p)/scl);
     }
-    else if(event->buttons() & Qt::RightButton)zoomSvP=oldMous;
-    QGLWidget::mousePressEvent(event);
+    else if(msb & Qt::RightButton)
+    {
+        //zoomSvP=oldMous;
+        fllowedNode=NULL;
+    }
+    else if(msb & Qt::MidButton)
+    {
+        fllowedNode=root->selectedNode((oldMous-p)/scl);
+    }
+    QGLWidget::mouseReleaseEvent(event);
 }
 
 void CPict::mouseMoveEvent(QMouseEvent * event)
 {
     Qt::MouseButtons msb(event->buttons());
+    zoomSvP=event->posF();
 
     if(msb)
     {
@@ -1165,32 +1207,62 @@ void CPict::mouseMoveEvent(QMouseEvent * event)
                 if(selectedNode->fils)selectedNode->fils->repercutDelta(dlt);
                 */
             }
-            else p+=pt;
+            else
+            {
+                fllowedNode=NULL;
+                p+=pt;
+            }
         }
 
-        if(msb & Qt::MidButton){p+=pt;}
+        /*
+        if(msb & Qt::MidButton)
+        {
+        }
+        */
 
         if(msb & Qt::RightButton)
         {
+            /*
             float oldScl(scl);
             scl-=pt.y()*0.01*scl;if(scl==0.0)scl=0.001;
             //p=(p-QPointF(width()/2,height()/2))*(scl/oldScl)+QPointF(width()/2,height()/2);
             p=(p-zoomSvP)*(scl/oldScl)+zoomSvP;
+            */
+            p+=pt;
         }
 
+        if((msb & Qt::LeftButton && selectedNode))calculBase();
         repaint();
     }
-    QGLWidget::mouseMoveEvent(event);
+    QGLWidget::mouseReleaseEvent(event);
 }
 
 void CPict::mouseReleaseEvent(QMouseEvent *event){QGLWidget::mouseReleaseEvent(event);}
 
-#include "Debug/Logger.h"
-
 void CPict::mouseDoubleClickEvent(QMouseEvent* event) {
-  ShowLinks = !ShowLinks;
-
+  CPict::showLinks = !CPict::showLinks;
   QGLWidget::mouseDoubleClickEvent(event);
+}
+
+void CPict::wheelEvent(QWheelEvent *event)
+{
+    if(fllowedNode)
+    {
+        scl+=(event->delta())*0.002*scl;if(scl==0.0)scl=0.001;
+        p=QPointF(width()*0.5,height()*0.5)-fllowedNode->p*scl;
+    }
+    else
+    {
+        QPointF zoomSvP(event->pos());
+        float oldScl(scl);
+        scl+=(event->delta())*0.002*scl;if(scl==0.0)scl=0.001;
+        //p=(p-QPointF(width()/2,height()/2))*(scl/oldScl)+QPointF(width()/2,height()/2);
+        p=(p-zoomSvP)*(scl/oldScl)+zoomSvP;
+    }
+
+    repaint();
+            
+    QGLWidget::wheelEvent(event);
 }
 
 void CPict::initializeGL ()
@@ -1215,18 +1287,30 @@ void CPict::initializeGL ()
     glEnd();
     glEndList();
 }
+void CPict::calculBase()
+{
+    if(root)
+    {
+        root->reppel(0.0,0.0);
+        root->updateSizeRec();
 
-void CPict::calculate() {
- if(root)
- {
-    //root->attractForce(10.0);
-    root->calculNewSize();
-    root->updateFSize();
-    root->attractForce2(0.8);
-    root->reppel(10.0,0.9);
-    root->centerForce(0.001,0.1,0.5);
-    root->updateSizeRec();
-  }
+        if(fllowedNode)p=QPointF(width()*0.5,height()*0.5)-fllowedNode->p*scl;
+    }
+}
+void CPict::calculate()
+{
+    if(root)
+  {
+        //root->attractForce(10.0);
+        root->calculNewSize();
+        root->updateFSize();
+        root->attractForce2(0.8);
+        root->centerForce(0.001,0.1,0.5);
+        root->reppel(20.0,0.95);
+        root->updateSizeRec();
+
+        if(fllowedNode)p=QPointF(width()*0.5,height()*0.5)-fllowedNode->p*scl;
+    }
 }
 
 void CPict::paintGL()
@@ -1247,6 +1331,18 @@ void CPict::paintGL()
     glBegin(GL_LINES);
     if(root)root->drawLinks(p,scl);
     glEnd();
+
+    if(root)
+    {
+        CNode *snd(root->selectedNode((zoomSvP-p)/scl));
+        if(snd)
+        {
+            QPainter p(this);
+            p.drawText(zoomSvP,snd->name);
+            p.end();
+        }
+    }
+
 }
 void CPict::resizeGL(int width,int height)
 {

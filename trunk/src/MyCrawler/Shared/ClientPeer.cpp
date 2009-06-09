@@ -752,7 +752,7 @@ void MCClientPeer::sendPacket_(PacketType packetType, const QByteArray& data) {
 
   // Compress data if necessary
   if ((nPacketType >= CompressedMessagePacketsStart) && (nPacketType <= CompressedMessagePacketsEnd)) {
-    bytesData = /*qCompress(*/data/*)*/;
+    bytesData = qCompress(data);
   }
   // Not compressed data
   else {
@@ -813,7 +813,7 @@ void MCClientPeer::processPacket_(PacketType packetType, quint32 packetSize, con
   // Uncompress if necessary
   int nPacketType = static_cast<int>(packetType);
   if ((nPacketType >= CompressedMessagePacketsStart) && (nPacketType <= CompressedMessagePacketsEnd)) {
-    bytes = /*qUncompress(*/rawBytes/*)*/;
+    bytes = qUncompress(rawBytes);
   }
   // Raw bytes
   else {

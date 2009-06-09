@@ -19,6 +19,8 @@
  ****************************************************************************/
 
 #include <QMap>
+#include <QFile>
+#include <QTextStream>
 
 #include "Debug/Exception.h"
 
@@ -144,6 +146,32 @@ void MCUrlsCollection::merge(const MCUrlsCollection& urls) {
 
 QList<MCUrlInfo> MCUrlsCollection::urls() const {
   return d->urls.values();
+}
+
+bool MCUrlsCollection::exportGDF(const QString& fileName) const {
+  QFile f(fileName);
+  if (!f.open(QIODevice::WriteOnly)) {
+    return false;
+  }
+
+  QTextStream in(&f);
+  in << "nodedef>name VARCHAR,inDegrees INTEGER,outDegrees INTEGER,label VARCHAR" << endl;
+  foreach (const MCUrlInfo& node, d->urls) {
+    in << node.hash().toHex() << ","
+       << node.ancestors().count() << "," << node.successors().count() << ","
+       << node.url().toEncoded(QUrl::None)
+       << endl;
+  }
+
+  in << "edgedef>node1 VARCHAR,node2 VARCHAR,directed BOOLEAN" << endl;
+  foreach (const MCUrlInfo& parent, d->urls) {
+    foreach (const MCUrlInfo& child, parent.successors()) {
+      in << parent.hash().toHex() << "," << child.hash().toHex() << "," << "true" << endl;
+    }
+  }
+
+  f.close();
+  return true;
 }
 
 MCUrlsCollection MCUrlsCollection::clone() const {
