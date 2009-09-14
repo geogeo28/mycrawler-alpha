@@ -26,6 +26,7 @@
 #include <QSharedData>
 #include <QUrl>
 #include <QList>
+#include <QMetaType>
 
 class QVariant;
 

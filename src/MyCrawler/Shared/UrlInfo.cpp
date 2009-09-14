@@ -103,7 +103,7 @@ quint32 MCUrlInfo::depth() const {
 }
 
 void MCUrlInfo::setDepth(quint32 depth) {
-  Assert(depth >= 0);
+  //Assert(depth >= 0);
   d->depth = depth;
 }
 

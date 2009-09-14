@@ -119,7 +119,7 @@ protected:
 
     void setDevice(QIODevice* device);
     void setString(QString* string);
-    virtual void write(LogLevel level, const QString& message) { *this << "\n"; }
+    virtual void write(LogLevel level, const QString& message) { Q_UNUSED(level); Q_UNUSED(message); *this << "\n"; }
 
 private:
     static CLoggerManipulator Log_(LogLevel level, const char* func = NULL, const void* object = NULL);

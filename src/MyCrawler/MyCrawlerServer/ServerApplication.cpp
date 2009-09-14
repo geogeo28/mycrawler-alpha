@@ -78,8 +78,10 @@ MCServerApplication::MCServerApplication(int &argc, char** argv)
   installLoggers();
 
   // Install settings manager
-  CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
-  CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
+  #if defined(Q_WS_WIN)
+    CSettings::setPath(CSettings::XmlFormat, CSettings::UserScope, applicationDirPath());
+    CSettings::setMethodWriteValue(CSettings::NotEmptyValues);
+  #endif
   installSettings("settings");
   MCSettings->setLayoutPrefixKey("WidgetsLayouts");
 

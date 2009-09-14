@@ -26,15 +26,15 @@
 #include <QThread>
 #include <QPointer>
 #include <QList>
+#include <QMutex>
 
 #include "ClientPeer.h"
 #include "UrlsCollection.h"
 
-class QMutex;
+#include "Utilities/NetworkInfo.h"
+
 class QHostAddress;
 class QByteArray;
-
-class CNetworkInfo;
 
 class MCUrlInfo;
 class MCServerInfo;
