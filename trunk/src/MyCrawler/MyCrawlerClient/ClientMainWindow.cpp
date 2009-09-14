@@ -20,6 +20,7 @@
 
 #include <QHostAddress>
 
+#include "Config/Config.h"
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 
@@ -244,6 +245,8 @@ void MCClientMainWindow::on_buttonAddServer_clicked() {
 }
 
 void MCClientMainWindow::slotClientError(QAbstractSocket::SocketError error) {
+  Q_UNUSED(error);
+
   treeWidgetClientLog->write(
     CLogTreeWidget::ErrorIcon,
     QString("Error : %1.")

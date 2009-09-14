@@ -1,6 +1,11 @@
 #ifndef MACROS_H
 #define MACROS_H
 
+#include <QByteArray>
+#include <QBuffer>
+#include <QIODevice>
+#include <QDataStream>
+
 #define SerializationVersion  QDataStream::Qt_4_5
 
 #define MC_DATASTREAM_WRITE(buffer, byteArray, dataStream) \

@@ -3,6 +3,7 @@
 
 #include <QGLWidget>
 #include <QList>
+#include <QMetaType>
 
 #include <QMutex>
 

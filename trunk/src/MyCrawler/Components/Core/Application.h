@@ -36,7 +36,10 @@ class QWidget;
 
 class CLoggerConsole;
 class CLoggerFile;
-class CLoggerDebug;
+class CLoggerMsgBox;
+#ifdef QT_DEBUG
+  class CLoggerDebug;
+#endif
 
 class IApplication : public QApplication
 {

@@ -88,6 +88,8 @@ void MCCrawl::queueUrlAdded_(MCUrlInfo urlInfo) {
 }
 
 void MCCrawl::networkManagerResponseHeaderReceived_(int statusCode, const NetworkManagerThread* thread) {
+  Q_UNUSED(statusCode);
+
   QString contentType = thread->reply()->header(QNetworkRequest::ContentTypeHeader).toString();
   if (!contentType.startsWith("text", Qt::CaseInsensitive)) {
     thread->reply()->abort();

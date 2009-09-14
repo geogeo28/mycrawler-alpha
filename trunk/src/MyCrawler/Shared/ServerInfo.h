@@ -24,8 +24,9 @@
 #define SERVERINFO_H
 
 #include <QSharedData>
+#include <QHostAddress>
+#include <QMetaType>
 
-class QHostAddress;
 class QString;
 
 class MCServerInfoPrivate;

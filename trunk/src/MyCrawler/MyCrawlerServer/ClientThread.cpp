@@ -159,6 +159,8 @@ void MCClientThread::refuseConnection(const QString& reason) {
 }
 
 void MCClientThread::peerError_(QAbstractSocket::SocketError socketError) {
+  Q_UNUSED(socketError);
+
   QMutexLocker locker(&mutex);
   setError_(ClientPeerError, true);
 }

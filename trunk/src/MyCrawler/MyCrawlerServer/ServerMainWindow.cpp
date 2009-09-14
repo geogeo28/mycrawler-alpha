@@ -20,6 +20,7 @@
 
 #include <QUrl>
 
+#include "Config/Config.h"
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
 

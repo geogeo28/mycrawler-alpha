@@ -23,6 +23,8 @@
 #ifndef SETTINGSAPPLICATION_H
 #define SETTINGSAPPLICATION_H
 
+#include <QtGlobal>
+
 struct MCSettingsApplication
 {
   static const char* SettingTagCurrentForm;

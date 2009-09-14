@@ -35,8 +35,18 @@ CSettings::CSettings(
   Scope scope,
   QObject* parent
 )
-  : QSettings(XmlFormat, scope, folderName, fileName, parent)
-{}
+  :
+#if defined(Q_WS_WIN)
+  QSettings(XmlFormat, scope, folderName, fileName, parent)
+#else
+  QSettings(fileName, QSettings::NativeFormat, parent)
+#endif
+{
+  #if !defined(Q_WS_WIN)
+    Q_UNUSED(folderName);
+    Q_UNUSED(scope);
+  #endif
+}
 
 CSettings::~CSettings()
 {}

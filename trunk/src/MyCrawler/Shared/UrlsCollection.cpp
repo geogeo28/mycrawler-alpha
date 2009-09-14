@@ -21,6 +21,7 @@
 #include <QMap>
 #include <QFile>
 #include <QTextStream>
+#include <QHash>
 
 #include "Debug/Exception.h"
 

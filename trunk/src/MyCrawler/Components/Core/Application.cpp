@@ -25,7 +25,10 @@
 #include "Debug/Logger.h"
 #include "Debug/Loggers/LoggerConsole.h"
 #include "Debug/Loggers/LoggerFile.h"
-#include "Debug/Loggers/LoggerDebug.h"
+#include "Debug/Loggers/LoggerMsgBox.h"
+#ifdef QT_DEBUG
+  #include "Debug/Loggers/LoggerDebug.h"
+#endif
 
 void IApplication::cleanAll_() {
 
@@ -38,7 +41,7 @@ IApplication::IApplication(int &argc, char **argv)
   qsrand(QDateTime::currentDateTime().toTime_t());
 
   #if defined(Q_WS_MAC)
-    QApplication::setQuitOnLastWindowClosed(false);
+    QApplication::setQuitOnLastWindowClosed(true); // Force to destroy the application when user closes the last window
   #else
     QApplication::setQuitOnLastWindowClosed(true);
   #endif

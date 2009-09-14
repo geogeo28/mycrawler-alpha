@@ -195,6 +195,8 @@ void ILogger::setString(QString* string) {
 CLoggerManipulator ILogger::Log_(LogLevel level, const char* func, const void* object) {
   // Disable debugging
   #ifndef QT_DEBUG
+    Q_UNUSED(func);
+    Q_UNUSED(object);
     if (level == DebugLevel) { return CLoggerManipulator(); }
   #endif
 

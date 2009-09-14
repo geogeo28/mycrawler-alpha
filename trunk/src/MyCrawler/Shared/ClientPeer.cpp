@@ -22,6 +22,7 @@
 #include <QTime>
 #include <QByteArray>
 #include <QDataStream>
+#include <QTimerEvent>
 
 #include "Debug/Exception.h"
 #include "Debug/Logger.h"
